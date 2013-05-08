@@ -1,23 +1,23 @@
 Welcome to bitbucket!
 
-In case this is your first time using version control and online repositories, here is a
-brief overview.  The code is stored in a repository on bitbucket.  You can "pull" the 
-most recent version of the code from the online repository, make changes on your local 
-copy of the code, "commit" those changes, and then "push" those changes from your local
-copy to the online repository copy of the code.  
+In case this is your first time using version control and online repositories, here 
+is a brief overview.  The code is stored in a repository on bitbucket.  You can 
+"pull" the most recent version of the code from the online repository, make changes 
+on your local copy of the code, "commit" those changes, and then "push" those 
+changes from your local copy to the online repository copy of the code.  
 
-There are a couple good habits to cultivate when using version control in collaboration
-with others.  
+There are a couple good habits to cultivate when using version control in 
+collaboration with others.  
 
 The first is to always make sure you are up-to-date on the newest version
 of the online repository before you start changing the code by doing:
 $ git pull
 This will pull any changes that have been pushed to the online repository to your 
-local copy of the repository.  You will be prompted to enter your password, so  you may
-as well go ahead and make it something you can remember.  
+local copy of the repository.  You will be prompted to enter your password, so  you 
+may as well go ahead and make it something you can remember.  
 
-The second thing is to commit your work in stages, once you have completed and tested
-a specific thing.  Some useful commands to help you track changes to the code:
+The second thing is to commit your work in stages, once you have completed and 
+tested a specific part.  Some useful commands to help you track changes to the code:
 $ git status
 tells you which files have been changed since the last commit.
 $ git diff
@@ -34,10 +34,11 @@ $ git commit [file name]
 commits a specific file. You can also just use "git add" to add files to be commited
 and then just type "git commit".
 $ git checkout [file name]
-allows you to reload a file as it was during the last commit.  This is extremely useful
-if you want to play around with a code, adding various print statements, and then when
-you want to commit new changes, you don't have to edit the code to change it back, you 
-just have to type "checkout" and all changes since the last commit will be deleted. 
+allows you to reload a file as it was during the last commit.  This is extremely 
+useful if you want to play around with a code, adding various print statements, and 
+then when you want to commit new changes, you don't have to edit the code to change 
+it back, you just have to type "checkout" and all changes since the last commit will 
+be deleted. 
 
 The third thing is to make sure you remember to push your changes from the local 
 copy to the online repository, otherwise no one else will be able to use your edits:
