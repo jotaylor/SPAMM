@@ -1,10 +1,20 @@
-Welcome to bitbucket!
+Welcome to bitbucket!  Hello!
+
 
 In case this is your first time using version control and online repositories, here 
 is a brief overview.  The code is stored in a repository on bitbucket.  You can 
 "pull" the most recent version of the code from the online repository, make changes 
 on your local copy of the code, "commit" those changes, and then "push" those 
 changes from your local copy to the online repository copy of the code.  
+
+To initially download a new repository to your local file system:
+1.) Create a local directory where you want this repository to live.
+2.) Copy the "https:username..." from the Bitbucket.
+3.) Enter the following into your command line: $ git clone https://...
+
+The very first time you push something from a newly created local repository, you need to use the following:
+$ git push -u origin master
+**Note, you do NOT need to use this for any subsequent pushes from this local repository
 
 There are a couple good habits to cultivate when using version control in 
 collaboration with others.  
