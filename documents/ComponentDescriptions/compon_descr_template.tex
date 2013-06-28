@@ -1,0 +1,150 @@
+\documentclass[12pt,letterpaper]{article}
+%\usepackage{natbib}
+%\usepackage{type1cm}
+%\usepackage{epsf}
+%\usepackage{graphicx}
+%\usepackage{asp2006}
+%stop double-spaced lists:
+%\usepackage{mdwlist}
+%\doublespace
+\pagestyle{plain}
+
+%If you look into the documentation, the attributes to \titlespacing are
+%command, left margin, above-skip and below-skip respectively. The *
+%notation replaces the formal notation using plus/minus and etc. If you
+%set it to zero, headings will snug up to the paragraphs above and below
+%them:
+%\usepackage[compact]{titlesec}
+%\titlespacing{\section}{0pt}{*2}{*1}
+%\titlespacing{\subsection}{0pt}{*2}{*1}
+%\titlespacing{\subsubsection}{0pt}{*1}{*1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\oddsidemargin  0.0in
+	\evensidemargin 0.0in
+	\textwidth      6.5in
+	\headheight     0.0in
+	\topmargin      0.0in
+	\textheight=9.0in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\parskip}{-1pt}
+\setlength{\parsep}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\topsep}{0pt}
+\setlength{\partopsep}{0pt}
+
+%\usepackage{fancyhdr}
+%\pagestyle{fancy}
+%\fancyhf{}
+%\fancyfoot[C]{Project \thepage\ of 5}
+%\renewcommand{\headrulewidth}{0pt}
+%\renewcommand{\footrulewidth}{0pt}
+%%\raggedbottom
+%\raggedright
+%\setlength{\tabcolsep}{0in}
+
+
+\newcommand{\IUE}{{\it IUE}}
+\newcommand{\HST}{{\it HST}}
+\newcommand{\kms}{\ifmmode {\rm km\ s}^{-1} \else km s$^{-1}$\fi}
+\newcommand{\Msun}{\ifmmode {\rm M}_{\odot} \else M$_{\odot}$\fi}
+\newcommand{\Lsun}{\ifmmode {\rm L}_{\odot} \else L$_{\odot}$\fi}
+\newcommand{\qo}{\ifmmode q_{\rm o} \else $q_{\rm o}$\fi}
+\newcommand{\Ho}{\ifmmode H_{\rm o} \else $H_{\rm o}$\fi}
+\newcommand{\ho}{\ifmmode h_{\rm o} \else $h_{\rm o}$\fi}
+\newcommand{\ltsim}{\raisebox{-.5ex}{$\;\stackrel{<}{\sim}\;$}}
+\newcommand{\gtsim}{\raisebox{-.5ex}{$\;\stackrel{>}{\sim}\;$}}
+\newcommand{\vFWHM}{\ifmmode v_{\mbox{\tiny FWHM}} \else
+                    $v_{\mbox{\tiny FWHM}}$\fi}
+\newcommand{\CCF}{\ifmmode F_{\it CCF} \else $F_{\it CCF}$\fi}
+\newcommand{\ACF}{\ifmmode F_{\it ACF} \else $F_{\it ACF}$\fi}
+\newcommand{\Halpha}{\ifmmode {\rm H}\alpha \else H$\alpha$\fi}
+\newcommand{\Hbeta}{\ifmmode {\rm H}\beta \else H$\beta$\fi}
+\newcommand{\Hgamma}{\ifmmode {\rm H}\gamma \else H$\gamma$\fi}
+\newcommand{\Hdelta}{\ifmmode {\rm H}\delta \else H$\delta$\fi}
+\newcommand{\Lya}{\ifmmode {\rm Ly}\alpha \else Ly$\alpha$\fi}
+\newcommand{\Lyb}{\ifmmode {\rm Ly}\beta \else Ly$\beta$\fi}
+\newcommand{\HeI}{\ifmmode {\rm He}\,{\sc i}\,\lambda5876 \else 
+	          He\,{\sc i}\,$\lambda5876$\fi}
+\newcommand{\HeII}{\ifmmode {\rm He}\,{\sc ii}\,\lambda4686 \else 
+	           He\,{\sc ii}\,$\lambda4686$\fi}
+\newcommand{\hi}{H\,{\sc i}}
+\newcommand{\hii}{H\,{\sc ii}}
+\newcommand{\hei}{He\,{\sc i}}
+\newcommand{\heii}{He\,{\sc ii}}
+\newcommand{\fe}{Fe}
+\newcommand{\feii}{Fe\,{\sc ii}}
+\newcommand{\feiii}{Fe\,{\sc iii}}
+\newcommand{\fevi}{Fe\,{\sc vi}}
+\newcommand{\fevii}{Fe\,{\sc vii}}
+\newcommand{\fex}{Fe\,{\sc x}}
+\newcommand{\fexi}{Fe\,{\sc xi}}
+\newcommand{\fexiv}{Fe\,{\sc xiv}}
+\newcommand{\neiii}{Ne\,{\sc iii}}
+\newcommand{\neiv}{Ne\,{\sc iv}}
+\newcommand{\nev}{Ne\,{\sc v}}
+\newcommand{\ci}{C\,{\sc i}}
+\newcommand{\cii}{C\,{\sc ii}}
+\newcommand{\ciii}{\ifmmode {\rm C}\,{\sc iii} \else C\,{\sc iii}\fi}
+\newcommand{\civ}{C\,{\sc iv}}
+\newcommand{\CIV}{\ifmmode {\rm C}\,{\sc iv}\,\lambda1549 \else 
+	           C\,{\sc iv}\,$\lambda1549$\fi}
+\newcommand{\Ni}{N\,{\sc i}}
+\newcommand{\nii}{N\,{\sc ii}}
+\newcommand{\niii}{N\,{\sc iii}}
+\newcommand{\niv}{N\,{\sc iv}}
+\newcommand{\nv}{N\,{\sc v}}
+\newcommand{\oi}{O\,{\sc i}}
+\newcommand{\oii}{O\,{\sc ii}}
+\newcommand{\oiii}{O\,{\sc iii}}
+\newcommand{\ob}{[O\,{\sc iii}]\,$\lambda \lambda 4959,5007$}
+\newcommand{\oiv}{O\,{\sc iv}}
+\newcommand{\ov}{O\,{\sc v}}
+\newcommand{\ovi}{O\,{\sc vi}}
+\newcommand{\mgi}{Mg\,{\sc i}}
+\newcommand{\mgii}{Mg\,{\sc ii}}
+\newcommand{\siiii}{Si\,{\sc iii}}
+\newcommand{\Sizw}{Si\,{\sc ii}}
+\newcommand{\siiv}{Si\,{\sc iv}}
+\newcommand{\si}{S\,{\sc i}}
+\newcommand{\sii}{S\,{\sc ii}}
+\newcommand{\siii}{S\,{\sc iii}}
+\newcommand{\caii}{Ca\,{\sc ii}}
+\newcommand{\cav}{Ca\,{\sc v}}
+\newcommand{\aliii}{Al\,{\sc iii}}
+\newcommand{\sigbl}{$\sigma_{\rm blue}$}
+\newcommand{\Flamunit}{erg s$^{-1}$\,cm$^{-2}$\,\AA$^{-1}$}
+\newcommand{\lam}{$\lambda$}
+\begin{document}
+
+\begin{center}
+{\large Project Title}
+\end{center}
+\vspace{0.05in}
+
+\subsection*{Short Project Description}
+
+
+%\begin{center}
+%{\Large This is my Project}
+%\end{center}
+%\vspace{0.1in}
+%\begin{center}
+%{\bf ABSTRACT}
+%\end{center}
+
+\subsection*{Date}
+
+
+
+%\begin{figure}
+%\plotone{figure.eps}
+%\caption{}
+%\end{figure}
+
+
+
+\end{document}
