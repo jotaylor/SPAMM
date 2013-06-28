@@ -1,0 +1,23 @@
+Still to do:
+
+1) Decide on spectral components --> needs people who know components
+-- Marianne (everything)
+-- Gisella (everything but host galaxy)
+-- Roberto (host galaxy)
+-- Kelly (emission lines)
+-- Matthias (Balmer continuum)
+-- Kevin (host galaxy?)
+-- Demitri (host galaxy and stellar pops)
+
+2) Write spectral components --> needs people who can code
+-- Gisella
+-- Roberto
+-- Demitri
+-- Anna
+
+----------------------------------
+Tests that need to be done:
+
+1) Simulated Data: test S/N, resolution, wavelength coverage, components
+2) Real Data: test S/N, resolution, wavelength coverage, components (lines)
+
