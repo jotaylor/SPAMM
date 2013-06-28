@@ -1,11 +1,12 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import sys
 
 import numpy as np
 import emcee
 
-from . import Spectrum
+from Spectrum import Spectrum
 
 class MCMCDidNotConverge(Exception):
 	pass
@@ -22,6 +23,7 @@ def ln_probability(new_params, *args):
 	model = args[0]
 		
 	# generate model spectrum given model parameters
+	print "ln_probability params = {0}".format(new_params)
 	model_spectrum_flux = model.model_spectrum_flux(params=new_params)
 	
 	# calculate the log likelihood
@@ -40,7 +42,7 @@ class Model(object):
 	'''
 	
 	'''
-	def __init__():
+	def __init__(self):
 		self.z = None
 		self._spectrum = None
 		self.components = list()
@@ -48,6 +50,11 @@ class Model(object):
 		self.model_parameters = dict()
 		self.mcmc_param_vector = None
 		self.mask = None
+		
+		
+		self.model_spectrum = Spectrum()
+		# precomputed wavelength range is 1000-10000Å in steps of 0.05Å
+		self.model_spectrum.wavelengths = np.arange(1000, 10000, 0.05)
 	
 # 	@property
 # 	def spectrum(self):
@@ -67,7 +74,7 @@ class Model(object):
 		else:
 			return self._mask
 		
-	@setter.mask
+	@mask.setter
 	def mask(self, new_mask):
 		'''
 		Document me.
@@ -89,14 +96,14 @@ class Model(object):
 		for walker in xrange(n_walkers):
 			walker_params = list()
 			for component in self.components:
-				walker_params.append(component.initial_values)
+				walker_params.append(component.initial_values(self.spectrum))
 			walkers_matrix.append(walker_params)
 
 		# create MCMC sampler
 		sampler = emcee.EnsembleSampler(n_walkers,
 										len(walkers_matrix[0]),
 										ln_probability,
-										self)
+										args=[self])
 		
 		# run!
 		sampler.run_mcmc(walkers_matrix, n_iterations)
@@ -116,6 +123,9 @@ class Model(object):
 		'''
 		Given the parameters in this model, generate a spectrum.
 		
+		DO NOT modify anything in this class from this method as
+		it will be called by multiple MCMC walkers at the same time.
+		
 		@param params Vector of all paramters of all components of model.
 		@returns Numpy array of flux values; use self.spectrum.wavelengths for the wavelengths.
 		'''
@@ -123,15 +133,19 @@ class Model(object):
 		# Combine all components into a single spectrum
 		# Build param vector to pass to MCMC
 		
-		params = params.copy()
+		print "params = {0}: ".format(params)
+		params = list(params) # make a copy as we'll delete elements
 		
-		model_spectrum = numpy.zeros(len(self.spectrum.wavelengths))
+		model_spectrum = Spectrum()
+		model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
+		model_spectrum.wavelengths = self.model_spectrum.wavelengths
+		
 		for component in self.components:
 			
 			# extract parameters from full vector for each component
 			p = params[0:component.parameter_count]
 			del params[0:component.parameter_count]
-			model_spectrum = component.add(model_spectrum, params=p)
+			model_spectrum = component.add(model=self, params=p)
 			
 		return model_spectrum
 
@@ -143,7 +157,12 @@ class Model(object):
 		
 		@params model_spectrum The model spectrum, a numpy array of flux value.
 		'''
-		ln_l = np.pow((model_spectrum_flux - self.spectrum.flux) / 
+		
+		assert model_spectrum_flux is not None, "'model_spectrum_flux' should not be None."
+		print model_spectrum_flux
+		print self.spectrum.flux
+		print self.spectrum.flux_error
+		ln_l = np.power(((model_spectrum_flux - self.spectrum.flux) /
 					   self.spectrum.flux_error), 2)
 		ln_l *= self.mask
 		ln_l = np.sum(ln_l) * -0.5

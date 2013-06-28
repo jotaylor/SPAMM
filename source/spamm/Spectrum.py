@@ -15,7 +15,17 @@ class Spectrum(object):
 		self.wavelengths = None
 		self.flux = None
 		self.flux_error = None
+		self._norm_wavelength = None
+		self._norm_flux = None
+				
+	def normalization_wavelength(self):
+		if self._norm_wavelength is None:
+			self._norm_wavelength = np.median(self.wavelengths)
+		return self._norm_wavelengths
 
+	def normalization_flux(self):
+		assert 1, "fill this in!"
+	
 class SDSSSpectrum(Spectrum):
 	'''
 	A Spectrum class that can process SDSS spectrum FITS files.
@@ -27,5 +37,5 @@ class SDSSSpectrum(Spectrum):
 		@param filepath The full file path to the SDSS spectrum file.
 		'''
 		datafile = open(filepath)
-		<... read  wavelenths, spectrum >
-		self.flux = ...
+		#<... read  wavelenths, spectrum >
+		#self.flux = ...

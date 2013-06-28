@@ -1,7 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import numpy as np
-import module
+from spamm.Spectrum import Spectrum
+from spamm.Model import Model
+from spamm.Components import *
+
+# TODO: astropy units for spectrum
 
 # ----------------
 # Read in spectrum
@@ -9,19 +13,19 @@ import module
 datafile = "../Data/LBQS_qsotemplate.dat"
 wavelengths, flux = np.loadtxt(datafile, unpack=True)
 
-spectrum = module.Spectrum()
+spectrum = Spectrum()
 spectrum.flux = flux
 spectrum.wavelengths = wavelengths
 
 # -----------------
 # Create components
 # -----------------
-nuclear_comp = module.NuclearComponent()
+nuclear_comp = NuclearContinuumComponent()
 
 # ------------
 # Create model
 # ------------
-model = module.Model()
+model = Model()
 
 model.spectrum = spectrum
 model.components.append(nuclear_comp)
