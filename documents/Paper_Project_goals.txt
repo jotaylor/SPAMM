@@ -1,0 +1,31 @@
+We wish to publish a series of papers before making the code public.
+
+Priorities:
+
+1.) Method paper (Demitri)- describes the code, and tests:
+    Tests:
+    **simulated data:  - testing components
+		       - dependence on: i)   S/N
+					ii)  resolution
+					iii) wavelength coverage
+		       - number of, e.g., host/FeII components
+    **Testing with real data (same tests as above)
+
+2.) Application papers
+    a) Xshooter Legacy sample (Kelly)
+    b) SDSS (Marianne)
+    c) Reverberation mapping Atlas (Gisella/Brad)
+    d) Host Galaxy contribution (Roberto/Brad)
+    e) Application of decomposed spectra in modeling RM (Anna)
+    f) Please add more
+
+
+***The initial thought is that these papers should largely go out
+together if at all possible; the largest push will be to publish the
+method paper and public release of the code with at least the papers
+applying it to publically released data.
+
+***Please add your own ideas to this file.
+
+****Disclaimer: All workshop participants are to be co-authors on all
+papers, so please keep the collaboration updated on ideas and progress.
