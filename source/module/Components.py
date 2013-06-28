@@ -1,10 +1,14 @@
 #!/usr/bin/python
 
+from abc import ABCMeta, abstractmethod
+
 class Component(object):
+
+	__metaclass__ = ABCMeta
 
 	def __init__(self):
 		self.z = None
-		self.reddening = None
+		self.reddening_law = None
 		self.model_parameters = list()
 		self.model_parameter_names = list()
 
@@ -14,11 +18,17 @@ class Component(object):
 		else:
 			return self.model_parameters
 
+	@property
 	def parameter_count(self):
 		if self.z:
 			return len(self.model_parameters + 1)
 		else:
 			return len(self.model_parameters)
+
+	@abstractmethod
+	def initial_values(self):
+		pass
+		
 
 	def add(self, spectrum=None, params=None):
 		'''
@@ -32,6 +42,9 @@ class HostGalaxyComponent(Component):
 	
 	def __init__(self):
 		pass
+		
+	def initial_values(self):
+		...
 
 class NuclearComponent(Component):
 
@@ -42,6 +55,9 @@ class NuclearComponent(Component):
 		self.model_parameters.append(-1.3)
 		self.model_parameter_names.append("slope")
 
+	def initial_values(self):
+		...
+
 
 class FeComponent(Component):
 	
@@ -50,5 +66,7 @@ class FeComponent(Component):
 		#self.model_parameters.append(...)
 		#self.model_parameter_names.append("...")
 
+	def initial_values(self):
+		...
 
 

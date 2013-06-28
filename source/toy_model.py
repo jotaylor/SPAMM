@@ -10,21 +10,19 @@ s.wavelengths(scale=[log,linear])
 host_galaxy_component = HostGalaxyComponent()
 fe_emission_component = FeComponent()
 
-r = Reddening()
-r2 = AnotherReddening()
+r = ReddeningLaw()
+r2 = AnotherReddeningLaw()
 
-host_galaxy_component.reddening = r
-fe_emission_component.reddening = r2
+host_galaxy_component.reddening_law = r
+fe_emission_component.reddening_law = r2
+#fe_emission_component.prior("random")
 
 model = Model()
 model.spectrum = s
 model.components.append(host_galaxy_component)
 model.components.append(fe_emission_component)
 
-model.model_parameters["b"] = ...
-
-model.build_model()
-model.run_mcmc()
+model.run_mcmc(n_walkers=200)
 
 try:
 	cf.run_mcmc_analysis(plot=False)

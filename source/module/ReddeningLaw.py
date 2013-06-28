@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
-class Reddening(object):
+class ReddeningLaw(object):
 
 	def __init__(self):
-		pass
+		self.nuclear_reddening
+		self.host_reddening
 		
-class OneKindOfReddening(Reddening):
+class OneKindOfReddeningLaw(ReddeningLaw):
 	def __init__(self):
 		pass
