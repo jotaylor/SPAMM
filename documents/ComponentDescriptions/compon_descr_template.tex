@@ -121,11 +121,59 @@
 \begin{document}
 
 \begin{center}
-{\large Project Title}
+{\large SPAMM -- Spectral Properties of AGN Modeled through MCMC }
 \end{center}
 \vspace{0.05in}
 
-\subsection*{Short Project Description}
+\section*{Spectral Components}
+\subsection*{Nuclear Continuum}
+\begin{equation}
+F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ (\frac{\lambda}{\lambda_0})^{\alpha} 
+\end{equation}
+where $F_{\rm PL,0}$ is the power-law normalization, $\alpha$ is the power-law slope and $\lambda_0$ is the median wavelength 
+of the data wavelength range. 
+\subsubsection*{Priors}
+
+\subsection*{Balmer Continuum}
+If we assume gas clouds with uniform temperature $\rm{T}_{\rm{e}}$, that are partially optically thick, for wavelengths bluer 
+than the Balmer edge ($\lambda_{\rm{BE}}=3646$ \AA, rest frame), the Balmer spectrum can be parameterized as 
+(Grandi et al., 1982): 
+\begin{equation}
+F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}({\rm T}_{{\rm e}}) \ (1-{\rm e}^{-\tau_{{\rm BE}}(\frac{\lambda}{\lambda_{{\rm BE}}})^3}), \ \lambda<\lambda_{\rm{BE}}
+\end{equation}
+where $B_{\lambda}({\rm T}_{{\rm e}})$ is the Planck function at the electron temperature 
+${\rm T}_{{\rm e}}$, $\tau_{{\rm BE}}$ is the optical 
+depth at the Balmer edge, and $F_{{\rm BE}}$ is the normalized flux density at the Balmer edge.
+\subsubsection*{Priors}
+
+\subsection*{FeII \& FeIII}
+Linear combination of N broadened and scaled iron templates:
+\begin{equation}
+F_{\lambda {\rm{,Fe}}} = \sum_{\rm i=1,..N} F_{\rm{Fe,0,i}} \  {\rm FeTempl}_{\rm{\lambda,i}}(\sigma_i) 
+\end{equation}
+where ${\rm FeTempl}_{\rm{\lambda,i}}$ is the iron template, $F_{\rm Fe,0,i}$ is the template normalization, and $\sigma_i$ is the 
+width of the broadening kernel.
+\subsubsection*{Priors}
+
+\subsection*{Host Galaxy}
+Linear combination of N galaxy templates:
+\begin{equation}
+F_{\lambda {\rm{,Host}}} = \sum_{\rm i=1,..N} F_{\rm{Host,0,i}} \  {\rm HostTempl}_{\rm{\lambda,i}} 
+\end{equation}
+where ${\rm HostTempl}_{\rm{\lambda,i}}$ is the host galaxy template, and $F_{\rm Host,0,i}$ is the template normalization.
+
+\subsubsection*{Priors}
+
+\subsection*{Host Galaxy Reddening}
+
+\subsubsection*{Priors}
+
+\subsection*{Nuclear Reddening}
+
+\subsubsection*{Priors}
+
+\subsection*{Emission lines}
+\subsubsection*{Priors}
 
 
 %\begin{center}
@@ -136,7 +184,6 @@
 %{\bf ABSTRACT}
 %\end{center}
 
-\subsection*{Date}
 
 
 
