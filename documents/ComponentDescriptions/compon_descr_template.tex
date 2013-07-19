@@ -173,8 +173,116 @@ where ${\rm HostTempl}_{\rm{\lambda,i}}$ is the host galaxy template, and $F_{\r
 \subsubsection*{Priors}
 
 \subsection*{Emission lines}
+Functional fitting to broad and narrow emission-line components.
+
+\begin{itemize}
+  \item {\bf Broad Emission Line List, \boldmath{$\lambda_{0,b}$}}
+    \begin{itemize}
+      \itemsep-0.1cm
+      \item \Lya\, $\lambda$1215 (actual $\lambda=1215.670$\AA)
+      \item \nv\, $\lambda$1240 (doublet at $\lambda \lambda$1238.808, 1242.796\AA)
+      \item ``1400 Feature'': \siiv\ (doublet at $\lambda \lambda$1393.755, 1402.770\AA) plus \oiv] blend ($\lambda \lambda$1397.210, 1399.780, 1404.790, 1407.390\AA)
+      \item \niv]\, $\lambda$1486 (actual $\lambda=1486.500$\AA)
+      \item \CIV\ (unresolved doublet at $\lambda \lambda$1548.188, 1550.762\AA) 
+      \item \heii\, $\lambda$1640 (actual $\lambda=1640.720$\AA)
+      \item \oiii] $\lambda$1663 (doublet at $\lambda \lambda$1660.800, 1666.140\AA)
+      \item \ciii]\, $\lambda$1909: actually a blend of \aliii\, $\lambda \lambda$1854.720, 1862.780\AA, \siiii]\, $\lambda=1892.030$\AA, and \ciii]\, $\lambda=1908.734$\AA.
+      \item \mgii\, $\lambda$2798 (doublet at $\lambda \lambda$2796.350, 2803.530\AA)
+      \item \Hdelta\ $\lambda=4101.735$\AA
+      \item \Hgamma\ $\lambda=4340.450$\AA
+      \item \HeII\ (actual $\lambda=4685.650$\AA) 
+      \item \Hbeta\ $\lambda=4861.320$\AA
+      \item \hei\, $\lambda$4922 (actual $\lambda=4921.9$\AA)
+      \item \hei\ $\lambda=5016$\AA 
+      \item \hei\, $\lambda$5876 (actual $\lambda=5875.680$\AA) 
+      \item \hei\, $\lambda$6678 (actual $\lambda=6678.000$\AA) 
+      \item \hei\, $\lambda$7065 (actual $\lambda=7065.300$\AA) 
+      \item \Halpha\ $\lambda=6562.780$\AA
+    \end{itemize}
+
+\item{\bf Narrow Emission Line List, \boldmath{$\lambda_{0,n}$}}
+  \begin{itemize}
+    \itemsep-0.1cm
+    \item {[\nev]\, $\lambda$3425.900\AA}
+    \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA}
+    \item {[\neiii]\, $\lambda$3868.800\AA}
+    \item \heii\ (actual $\lambda=4685.650$\AA) 
+    \item \Hbeta\ $\lambda=4861.320$\AA
+    \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA}
+    \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA}
+    \item \Halpha\ $\lambda=6562.780$\AA
+    \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA}
+  \end{itemize}
+
+\end{itemize}
+
+\subsubsection*{Fitting Function Possibilities}
+
+  \begin{itemize}
+    \item Narrow Lines
+      \begin{itemize}
+        \item Single Gaussian with Prior (1)
+        \item Option (automatically test) for additional (broader) Gaussian to \ob\ base.
+      \end{itemize}
+    \item Broad Lines
+      \begin{itemize}
+        \item Multiple Gaussians
+        \item Multiple Gauss-Hermite polynomials
+        \item Gaussian (very broad) plus Gauss-Hermite (broad)
+        \item Multiple Lorentzians
+      \end{itemize}
+   \end{itemize}
+
+\subsubsection*{Functional Forms}
+
+  \begin{itemize}
+    \item Gaussian:
+      \begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\sigma \sqrt{2\pi}}e^{-\frac{1}{2}\left(\frac{\lambda - \mu}{\sigma}\right)^2},
+        \end{equation}
+        where the Gaussian FWHM$=2\sqrt{2\ln 2}\sigma$ and $\mu=\lambda_0$(b,n).  \\ Free parameters: $f_{\rm peak}$ (peak flux), $\mu$, $\sigma$.
+     \item 6$6{\rm th}$ Order Gauss-Hermite Polynomial:
+       \begin{equation} F_{\lambda} = [f_{\rm peak} \alpha(w)/\sigma]\left(1 + \sum_{j=3}^{6}h_jH_j(w) \right), 
+       \end{equation} 
+       \begin{equation} w\equiv (\lambda - \mu)/\sigma,
+       \end{equation}
+       \begin{equation} \alpha(w) = e^{-\frac{1}{2}w^2}. \end{equation}
+       where this follows the normalization of van der Marel \& Franx (1993, ApJ, 407, 525; first equation).  The $H_j$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578, 787):
+       \begin{equation} H_3(w) = \frac{w(2w^2-3)}{\sqrt{3}}, \end{equation}
+       \begin{equation} H_4(w) = \frac{w^2(4w^2-12)+3}{2\sqrt{6}}, \end{equation}
+       \begin{equation} H_5(w) = \frac{w[w^2(4w^2-20)+15]}{2\sqrt{15}}, \end{equation}
+       \begin{equation} H_6(w) = \frac{w^2[w^2(8w^2-60)+90]-15}{12\sqrt{5}}. \end{equation}
+       Free parameters: $f_{\rm peak}$, $\mu$, $\sigma$, $h_3$, $h_4$, $h_5$, $h_6$.
+
+     \item Lorentzian
+       \begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\pi} \frac{\frac{1}{2}\sigma}{(\lambda - \mu)^2+(\frac{1}{2}\sigma)^2},
+       \end{equation}
+       where $\mu=\lambda_0$(b,n) and the Lorentzian FWHM = $\sigma = 2f_{\rm peak}/(\pi F(\mu))$.
+  \end{itemize}
+
 \subsubsection*{Priors}
 
+  \begin{enumerate}
+    \item Width of narrow forbidden lines tied together and FWHM $<$1200km s$^{-1}$
+    \item Narrow emission line redshift solution, i.e., $\mu = \lambda_{0,n}(1+z)\pm \Delta \mu$ is constant.
+    \item Narrow line doublet ratios fixed:
+      \begin{itemize}
+        \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA; ??:??}
+        \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA;  1:3}
+        \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA; ??:??}
+        \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA; ??;??}
+      \end{itemize}
+    \item Fluxes must be non-negative.
+    \item Tie together the widths of Broad lines of identical species, e.g., \heii\, $\lambda$1640 and \HeII?  (To be discussed).
+    \item assumptions about CIV redshelf?? Additional HeII component?
+    \item Suggested Parameter Space to search (to be discussed)
+      \begin{itemize}
+        \item $f_{\rm peak}/f_{\rm cont}$ = [0, 1.d4, 1.d-3]
+        \item $\mu = \lambda_{0,n}(1+z)\pm 1000\, {\rm km}\, {\rm s}^{-1}; \Delta \mu \sim f$(pixscale)
+        \item $\sigma$ = [100, 3.d4]; $\Delta \sigma \sim f$(pixscale)
+        \item $h_j$ = [-0.3, 0.3, 1.d-3]
+      \end{itemize}
+
+  \end{enumerate}
 
 %\begin{center}
 %{\Large This is my Project}
