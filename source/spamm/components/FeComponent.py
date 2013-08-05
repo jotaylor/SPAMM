@@ -13,7 +13,7 @@ class FeComponent(Component):
 		#self.model_parameter_names.append("...")
 
 	def initial_values(self, spectrum=None):
-		assert 1, "Fille in here!"
+		assert 1, "Fill in here!"
 		pass
 
 	def add(self, model=None, params=None):

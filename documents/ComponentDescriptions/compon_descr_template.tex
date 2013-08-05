@@ -126,6 +126,7 @@
 \vspace{0.05in}
 
 \section*{Spectral Components}
+
 \subsection*{Nuclear Continuum}
 \begin{equation}
 F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ (\frac{\lambda}{\lambda_0})^{\alpha} 
@@ -133,6 +134,13 @@ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ (\frac{\lambda}{\lambda_0})^{\alpha}
 where $F_{\rm PL,0}$ is the power-law normalization, $\alpha$ is the power-law slope and $\lambda_0$ is the median wavelength 
 of the data wavelength range. 
 \subsubsection*{Priors}
+
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt slope}: description of parameter here
+    \item {\tt normalization}: description of parameter here
+\end{itemize}
 
 \subsection*{Balmer Continuum}
 If we assume gas clouds with uniform temperature $\rm{T}_{\rm{e}}$, that are partially optically thick, for wavelengths bluer 
@@ -146,6 +154,12 @@ ${\rm T}_{{\rm e}}$, $\tau_{{\rm BE}}$ is the optical
 depth at the Balmer edge, and $F_{{\rm BE}}$ is the normalized flux density at the Balmer edge.
 \subsubsection*{Priors}
 
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
+
 \subsection*{FeII \& FeIII}
 Linear combination of N broadened and scaled iron templates:
 \begin{equation}
@@ -155,6 +169,12 @@ where ${\rm FeTempl}_{\rm{\lambda,i}}$ is the iron template, $F_{\rm Fe,0,i}$ is
 width of the broadening kernel.
 \subsubsection*{Priors}
 
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
+
 \subsection*{Host Galaxy}
 Linear combination of N galaxy templates:
 \begin{equation}
@@ -163,14 +183,29 @@ F_{\lambda {\rm{,Host}}} = \sum_{\rm i=1,..N} F_{\rm{Host,0,i}} \  {\rm HostTemp
 where ${\rm HostTempl}_{\rm{\lambda,i}}$ is the host galaxy template, and $F_{\rm Host,0,i}$ is the template normalization.
 
 \subsubsection*{Priors}
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
 
 \subsection*{Host Galaxy Reddening}
 
 \subsubsection*{Priors}
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
 
 \subsection*{Nuclear Reddening}
 
 \subsubsection*{Priors}
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
 
 \subsection*{Emission lines}
 Functional fitting to broad and narrow emission-line components.
@@ -283,6 +318,13 @@ Functional fitting to broad and narrow emission-line components.
       \end{itemize}
 
   \end{enumerate}
+
+\subsubsection*{Code Parameters}
+
+\begin{itemize}
+    \item {\tt param1}: description of parameter 1 here
+\end{itemize}
+
 
 %\begin{center}
 %{\Large This is my Project}
