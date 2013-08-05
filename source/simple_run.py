@@ -3,7 +3,7 @@
 import numpy as np
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
-from spamm.Components import *
+from spamm.components import *
 
 # TODO: astropy units for spectrum
 
