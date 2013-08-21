@@ -1,5 +1,10 @@
 \documentclass[12pt,letterpaper]{article}
-%\usepackage{natbib}
+\usepackage{natbib}
+\usepackage{layout}
+\usepackage[british]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{textcomp}
 %\usepackage{type1cm}
 %\usepackage{epsf}
 %\usepackage{graphicx}
@@ -94,9 +99,11 @@
 \newcommand{\civ}{C\,{\sc iv}}
 \newcommand{\CIV}{\ifmmode {\rm C}\,{\sc iv}\,\lambda1549 \else 
 	           C\,{\sc iv}\,$\lambda1549$\fi}
+\newcommand{\alii}{Al\,{\sc ii}}
 \newcommand{\Ni}{N\,{\sc i}}
 \newcommand{\nii}{N\,{\sc ii}}
 \newcommand{\niii}{N\,{\sc iii}}
+%\newcommand{\niii]}{N\,{\sc iii}]\fi}
 \newcommand{\niv}{N\,{\sc iv}}
 \newcommand{\nv}{N\,{\sc v}}
 \newcommand{\oi}{O\,{\sc i}}
@@ -109,6 +116,7 @@
 \newcommand{\mgi}{Mg\,{\sc i}}
 \newcommand{\mgii}{Mg\,{\sc ii}}
 \newcommand{\siiii}{Si\,{\sc iii}}
+\newcommand{\siiiifb}{[Si\,{\sc iii}]}
 \newcommand{\Sizw}{Si\,{\sc ii}}
 \newcommand{\siiv}{Si\,{\sc iv}}
 \newcommand{\si}{S\,{\sc i}}
@@ -131,50 +139,84 @@
 
 \subsection*{Nuclear Continuum}
 \begin{equation}
-F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ (\frac{\lambda}{\lambda_0})^{\alpha} 
+F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} 
 \end{equation}
 where $F_{\rm PL,0}$ is the power-law normalization, $\alpha$ is the power-law slope and $\lambda_0$ is the median wavelength 
-of the data wavelength range. 
-\subsubsection*{Priors}
+of the observed wavelength range. 
 
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
-    \item {\tt slope}: description of parameter here
-    \item {\tt normalization}: description of parameter here
+    \item {\tt param1}: power-law slope ($\alpha_{\lambda}$)
+    \item {\tt param2}: power-law normalization ($F_{\rm PL,0}$)
 \end{itemize}
+
+\subsubsection*{Priors}
+\begin{itemize}
+    \item {\tt $\alpha_{\lambda}$}: flat prior in range [-3,3]
+    \item {\tt $F_{\rm PL,0}$}: flat prior between 0 and the maximum of the spectral flux after computing running median \textit{(to be discussed)} 
+\end{itemize}
+
 
 \subsection*{Balmer Continuum}
 If we assume gas clouds with uniform temperature $\rm{T}_{\rm{e}}$, that are partially optically thick, for wavelengths bluer 
-than the Balmer edge ($\lambda_{\rm{BE}}=3646$ \AA, rest frame), the Balmer spectrum can be parameterized as 
+than the Balmer edge ($\lambda_{\rm{BE}}=3646$ \AA, rest frame), the Balmer spectrum can be parametrized as 
 (Grandi et al., 1982): 
 \begin{equation}
-F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}({\rm T}_{{\rm e}}) \ (1-{\rm e}^{-\tau_{{\rm BE}}(\frac{\lambda}{\lambda_{{\rm BE}}})^3}), \ \lambda<\lambda_{\rm{BE}}
+F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}\left({\rm T}_{{\rm e}}\right) \ \left(1-{\rm e}^{-\tau_{{\rm BE}}\left(\frac{\lambda}{\lambda_{{\rm BE}}}\right)^3}\right), \ \lambda<\lambda_{\rm{BE}}
 \end{equation}
-where $B_{\lambda}({\rm T}_{{\rm e}})$ is the Planck function at the electron temperature 
-${\rm T}_{{\rm e}}$, $\tau_{{\rm BE}}$ is the optical 
-depth at the Balmer edge, and $F_{{\rm BE}}$ is the normalized flux density at the Balmer edge.
-\subsubsection*{Priors}
+where $\rm{B}_{\lambda}(\rm{T}_{\rm{e}})$ is the Planck function at the electron temperature $\rm{T}_{\rm{e}}$, $\tau_{\rm{BE}}$ is the optical 
+depth at the Balmer edge, and $\rm{F}_{\rm{BE}}$ is the normalized flux density at the Balmer edge. 
+At wavelengths $\lambda>$3646 \AA \ high order Balmer lines are merging into a pseudo continuum, yielding a smooth rise to the Balmer edge. 
+
+\textit{Discussion: there is the possibility of supplementing the functional form for $\lambda>$3646 \AA \ with high-order Balmer emission lines (up to n=50), 
+that might be computed using the relative line strengths as given by Storey 1995, case B. Possibly not needed if we are modeling continuum and emission lines 
+(including high-order Balmer lines) at the same time.}
 
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
-    \item {\tt param1}: description of parameter 1 here
+    \item {\tt param1}: electron temperature (${\rm T}_{{\rm e}}$)
+    \item {\tt param2}: optical depth at the Balmer edge ($\tau_{\rm{BE}}$)
+    \item {\tt param3}: normalized flux density at the Balmer edge ($\rm{F}_{\rm{BE}}$)
+\end{itemize}
+
+\subsubsection*{Priors}
+\begin{itemize}
+    \item {\tt ${\rm T}_{{\rm e}}$}: flat prior in the [5,000-20,000] Kelvin range.
+    \item {\tt $\tau_{\rm{BE}}$}: flat prior in the [0.1-2.0] range.    
+    \item {\tt $\rm{F}_{\rm{BE}}$}:
+      \begin{itemize} 
+	\item {Option 1}: if the Balmer edge is included in the spectral range, flat prior between 0 and the observed spectral flux at the Balmer edge after computing 
+	  running median \textit{(to be discussed)}
+	\item {Option 2}: if the Balmer edge is not included in the spectral range, flat prior between 0 and the maximum flux after computing running median 
+	  \textit{(super conservative, to be discussed)}
+      \end{itemize}
 \end{itemize}
 
 \subsection*{FeII \& FeIII}
 Linear combination of N broadened and scaled iron templates:
 \begin{equation}
 F_{\lambda {\rm{,Fe}}} = \sum_{\rm i=1,..N} F_{\rm{Fe,0,i}} \  {\rm FeTempl}_{\rm{\lambda,i}}(\sigma_i) 
-\end{equation}
-where ${\rm FeTempl}_{\rm{\lambda,i}}$ is the iron template, $F_{\rm Fe,0,i}$ is the template normalization, and $\sigma_i$ is the 
-width of the broadening kernel.
-\subsubsection*{Priors}
+\end{equation}		
+where ${\rm FeTempl}_{\rm{\lambda,i}}$ is the iron template, $F_{\rm Fe,0,i}$ is the template normalization, 
+and $\sigma_i$ is the width of the broadening kernel.
 
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
-    \item {\tt param1}: description of parameter 1 here
+    \item {\tt param1}: iron templates (${\rm FeTempl}_{\rm{\lambda,i}}$)
+    \begin{itemize}
+       \item {\tt UV template}: Vestergaard \& Wilkes (2001), (1250-3090) \AA
+       \item {\tt Optical template}: V\'{e}ron-Cetty et al. (2004), (3535-7530) \AA
+       \item {\tt Gap between UV and Optical template}: Beverly Wills, (3090-3534.4) \AA \ \textit{(In Marianne's hands)}
+       \item {\tt} \textit{Discussion: more options?} 
+    \end{itemize}
+    \item {\tt param2}: width of the broadening Lorentzian kernel ($\sigma_i$)
+    \item {\tt param3}: template normalization ($F_{\rm Fe,0,i}$)  
+\end{itemize}
+
+\subsubsection*{Priors}
+\begin{itemize}
+    \item {\tt $\sigma_i$}: flat prior in the [500-20,000] km/s range. The other possibility is to have a Gaussian prior centered on the line width of \Hbeta.
+    \item {\tt $F_{\rm Fe,0,i}$}: flat prior between 0 and the maximum flux after computing running median \textit{(super conservative, to be discussed)}
 \end{itemize}
 
 \subsection*{Host Galaxy}
@@ -191,19 +233,11 @@ Code & Paper & Comments\\ \hline
 \htmladdnormallink{GANDALF}{http://star-www.herts.ac.uk/~sarzi/PaperV_nutshell/PaperV_nutshell.html} & Sarzi et al. 2006, MNRAS, 366, 1151 & Deals with 2D data\\ \hline
 \end{tabular}
 
-\subsubsection*{Priors}
-  \begin{enumerate}
-  	\item Age range of interest?
-	\item Metallicity range?
-	\item redshift
-  \end{enumerate}
-
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
     \item {\tt param1}: Synthesis model: Choice of templates to combine
     \begin{itemize}
-       \item {\tt Option 1}: Observed Template Galaxies
+       \item {\tt Option 1}: Observed Template Galaxies (e.g., Kinney et al. 1996)
        \item {\tt Option 2}: Observed Template Stars
        \item {\tt Option 3}: \href{http://adsabs.harvard.edu/abs/1997A&A...326..950F} {P\'{E}GASE}
        \item {\tt Option 4}: \href{http://www.stsci.edu/science/starburst99/docs/default.htm}{Starburst99}
@@ -212,29 +246,52 @@ Code & Paper & Comments\\ \hline
     \item {\tt param2}: How many models/templates to include
     \item {\tt param3}: Kinematics -- fit or fix?
     \item {\tt param4}: Wavelength Range
-    \item {\tt param5}: Mask -- block certain wavelength rages e.g., H$\alpha$
-    
+    \item {\tt param5}: Mask -- block certain wavelength ranges e.g., H$\alpha$
 \end{itemize}
+
+\subsubsection*{Priors}
+  \begin{enumerate}
+  	\item Age range of interest?
+	\item Metallicity range?
+	\item redshift
+  \end{enumerate}
 
 \subsection*{Host Galaxy Reddening}
 
-\subsubsection*{Priors}
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
-    \item {\tt param1}: Law: Which reddening law to apply
+    \item {\tt param1}: Possible reddening laws:
+    \begin{itemize}
+      \item {\tt Option 1}: Milky Way
+      \item {\tt Option 2}: Large Magellanic Cloud, LMC
+      \item {\tt Option 3}: Small Magellanic Cloud, SMC
+      \item {\tt Option 4}: Fit for $R_v$?
+    \end{itemize}
     \item {\tt param2}: Dust\_geometry: foreground screen or mixed media.
 \end{itemize}
+
+\subsubsection*{Priors}
+  \begin{itemize}
+   \item {\tt $\tau_{\nu}$}: flat between zero and 1.0 \textit{Discussion: do we need higher $\tau$ values?}
+  \end{itemize}
 
 \subsection*{Nuclear Reddening}
 
-\subsubsection*{Priors}
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
-    \item {\tt param1}: Law: Which reddening law to apply
+    \item {\tt param1}: Possible reddening laws:
+    \begin{itemize}
+      \item {\tt Option 1}: Small Magellanic Cloud, SMC
+      \item {\tt Option 2}: Fit for $R_v$?
+    \end{itemize}
     \item {\tt param2}: Dust\_geometry: foreground screen or mixed media.
 \end{itemize}
+
+\subsubsection*{Priors}
+  \begin{itemize}
+   \item {\tt $\tau_{\nu}$}: flat between zero and 1.0 \textit{Discussion: do we need higher $\tau$ values?}
+  \end{itemize}
+
 
 \subsection*{Emission lines}
 Functional fitting to broad and narrow emission-line components.
@@ -264,6 +321,10 @@ Functional fitting to broad and narrow emission-line components.
       \item \Halpha\ $\lambda=6562.780$\AA
     \end{itemize}
 
+\textit{Comment: MV has a long list of Helium and Balmer lines in the optical and UV from H$\alpha$ to the Balmer Jump 
+that goes to high order (\#50 in Balmer line series). The list also has relative line ratios and relative amplitude of 
+BaC jump.}
+
 \item{\bf Narrow Emission Line List, \boldmath{$\lambda_{0,n}$}}
   \begin{itemize}
     \itemsep-0.1cm
@@ -285,8 +346,9 @@ Functional fitting to broad and narrow emission-line components.
   \begin{itemize}
     \item Narrow Lines
       \begin{itemize}
-        \item Single Gaussian with Prior (1)
-        \item Option (automatically test) for additional (broader) Gaussian to \ob\ base.
+        \item Single Gaussian with Prior (1) 
+	\item Double Gaussian with Prior (1)  
+        \item Option (automatically test) for additional (broader) Gaussian to \ob\ base. 
       \end{itemize}
     \item Broad Lines
       \begin{itemize}
@@ -294,6 +356,8 @@ Functional fitting to broad and narrow emission-line components.
         \item Multiple Gauss-Hermite polynomials
         \item Gaussian (very broad) plus Gauss-Hermite (broad)
         \item Multiple Lorentzians
+        \item Mix of Gaussian and Lorentzian(s) (i.e., Voigt profile)
+	\item Powerlaw profiles + 1-2 Gaussians 
       \end{itemize}
    \end{itemize}
 
@@ -303,57 +367,68 @@ Functional fitting to broad and narrow emission-line components.
     \item Gaussian:
       \begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\sigma \sqrt{2\pi}}e^{-\frac{1}{2}\left(\frac{\lambda - \mu}{\sigma}\right)^2},
         \end{equation}
-        where the Gaussian FWHM$=2\sqrt{2\ln 2}\sigma$ and $\mu=\lambda_0$(b,n).  \\ Free parameters: $f_{\rm peak}$ (peak flux), $\mu$, $\sigma$.
-     \item 6$6{\rm th}$ Order Gauss-Hermite Polynomial:
+        where the Gaussian FWHM$=2\sqrt{2\ln 2}\sigma$ and $\mu=\lambda_0$(broad, narrow).  \\ Free parameters: $f_{\rm peak}$ (peak flux), $\mu$, $\sigma$.
+	For multiple Gaussian components, the amplitudes can be tied relative to one another (i.e. to the amplitude of the first component).
+
+	\textit{Discussion: MV suggests to use relative velocity shift rather than wavelengths shift, since it is more physical}
+
+     \item $6{\rm th}$ Order Gauss-Hermite Polynomial:
        \begin{equation} F_{\lambda} = [f_{\rm peak} \alpha(w)/\sigma]\left(1 + \sum_{j=3}^{6}h_jH_j(w) \right), 
        \end{equation} 
        \begin{equation} w\equiv (\lambda - \mu)/\sigma,
        \end{equation}
-       \begin{equation} \alpha(w) = e^{-\frac{1}{2}w^2}. \end{equation}
+       \begin{equation} \alpha(w) = \frac{1}{2\sqrt{\pi}} e^{-\frac{1}{2}w^2}. \end{equation}
        where this follows the normalization of van der Marel \& Franx (1993, ApJ, 407, 525; first equation).  The $H_j$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578, 787):
        \begin{equation} H_3(w) = \frac{w(2w^2-3)}{\sqrt{3}}, \end{equation}
        \begin{equation} H_4(w) = \frac{w^2(4w^2-12)+3}{2\sqrt{6}}, \end{equation}
        \begin{equation} H_5(w) = \frac{w[w^2(4w^2-20)+15]}{2\sqrt{15}}, \end{equation}
        \begin{equation} H_6(w) = \frac{w^2[w^2(8w^2-60)+90]-15}{12\sqrt{5}}. \end{equation}
        Free parameters: $f_{\rm peak}$, $\mu$, $\sigma$, $h_3$, $h_4$, $h_5$, $h_6$.
-
      \item Lorentzian
        \begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\pi} \frac{\frac{1}{2}\sigma}{(\lambda - \mu)^2+(\frac{1}{2}\sigma)^2},
        \end{equation}
        where $\mu=\lambda_0$(b,n) and the Lorentzian FWHM = $\sigma = 2f_{\rm peak}/(\pi F(\mu))$.
+     \item Powerlaw profile:
   \end{itemize}
 
 \subsubsection*{Priors}
-
   \begin{enumerate}
-    \item Width of narrow forbidden lines tied together and FWHM $<$1200km s$^{-1}$
+    \item Limit all component positions (i.e., velocity offset from laboratory wavelengths) to within a given wavelength (or velocity) range to prevent the components 
+	  to wander.
+    \item Width and velocity shifts of each of the Gaussian components of narrow forbidden lines tied together and FWHM $<$1200 km s$^{-1}$
+    \item Ranges of widths and velocity shifts to be included. I.e., profile limits to 
+          be specified - either one for each emission line, or for each type of line 
+          (broad, narrow, weak, strong, etc.) \textit{Comment: MV has a separate long list - don't want to list here in case it needs to 
+           be coded differently.}
     \item Narrow emission line redshift solution, i.e., $\mu = \lambda_{0,n}(1+z)\pm \Delta \mu$ is constant.
     \item Narrow line doublet ratios fixed:
       \begin{itemize}
         \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA; ??:?? (This is density dependent)}
         \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA;  1:3}
         \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA; ??:??}
-        \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA; ??;??}
+        \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA; ??:??}
       \end{itemize}
-    \item Balmer line ratios fixed (particularly narrow component)?
-    \item Fluxes must be non-negative.
-    \item Tie together the widths of Broad lines of identical species, e.g., \heii\, $\lambda$1640 and \HeII?  (To be discussed).
-    \item assumptions about CIV redshelf?? Additional HeII component?
-    \item Suggested Parameter Space to search (to be discussed)
+    \item Fix relative line ratios of all Balmer lines 
+    \item Fluxes must be non-negative (BLR and NLR emission)
+    \item Tie together the widths and velocity shifts of broad line components of identical species, e.g., \heii\, $\lambda$1640 and \HeII?  \textit{(To be discussed)}.
+    \item assumptions about CIV redshelf?? Additional HeII component? He\,II, \feii, Al\,III, O\,II].
+    \item Suggested Parameter Space to search \textit{(to be discussed)}
       \begin{itemize}
         \item $f_{\rm peak}/f_{\rm cont}$ = [0, 1.d4, 1.d-3]
         \item $\mu = \lambda_{0,n}(1+z)\pm 1000\, {\rm km}\, {\rm s}^{-1}; \Delta \mu \sim f$(pixscale)
         \item $\sigma$ = [100, 3.d4]; $\Delta \sigma \sim f$(pixscale)
         \item $h_j$ = [-0.3, 0.3, 1.d-3]
       \end{itemize}
-
   \end{enumerate}
 
 \subsubsection*{Code Parameters}
-
 \begin{itemize}
     \item {\tt param1}: description of parameter 1 here
 \end{itemize}
+
+\textit{Discussion: Do we want to measure line dispersion on functional fit to the data or to the residual data (after eliminating the modeled blending line emission from 
+other emission contributions)?}
+
 
 
 %\begin{center}
