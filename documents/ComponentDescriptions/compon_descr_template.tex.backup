@@ -167,7 +167,7 @@ F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}\left({\rm T}_{{\rm e}}\right) \
 where $\rm{B}_{\lambda}(\rm{T}_{\rm{e}})$ is the Planck function at the electron temperature $\rm{T}_{\rm{e}}$, $\tau_{\rm{BE}}$ is the optical 
 depth at the Balmer edge, and $\rm{F}_{\rm{BE}}$ is the normalized flux density at the Balmer edge. 
 At wavelengths $\lambda>$3646 \AA \ high order Balmer lines are merging into a pseudo continuum, yielding a smooth rise to the Balmer edge. 
-Therefore, together with the continuum components, we also model high-order Balmer emission lines (up to n=50).
+Therefore, togther with the continuum components, we also model high-order Balmer emission lines (up to n=50).
 \textit{Comment: MV has a long list of Helium and Balmer lines in the optical and UV from H$\alpha$ to the Balmer Jump 
 that goes to high order (\#50 in Balmer line series). The list also has relative line ratios and relative amplitude of 
 BaC jump.}
@@ -184,7 +184,7 @@ BaC jump.}
     \item {\tt ${\rm T}_{{\rm e}}$}: flat prior in the [5,000-20,000] Kelvin range.
     \item {\tt $\tau_{\rm{BE}}$}: flat prior in the [0.1-2.0] range.    
     \item {\tt $\rm{F}_{\rm{BE}}$}: flat prior between 0 and the flux measured at $\lambda_{\rm BC,max}$, where $\lambda_{\rm BC,max}$ is the wavelength 
-      corresponding to the maximum of the Balmer Continuum in the observed spectral range.       
+      corresponding to the maxixmum of the BC in the observed spectral range.       
 \end{itemize}
 
 \subsection*{FeII \& FeIII}
@@ -214,7 +214,7 @@ and $\sigma_i$ is the width of the broadening kernel.
 \begin{itemize}
     \item {\tt $\sigma_i$}: log-normal prior in the [500-20,000] km/s range. The other possibility is to have a Gaussian prior centered on the line width of \Hbeta.
     \item {\tt $F_{\rm Fe,0,i}$}: flat prior between 0 and the flux measured at $\lambda_{\rm Fe,i,max}$, where $\lambda_{\rm Fe,i,max}$ is the wavelength 
-      corresponding to the maximum of the i-th iron template in the observed spectral range.
+      corresponding to the maxixmum of the i-th iron template in the observed spectral range.
 \end{itemize}
 
 \subsection*{Host Galaxy}
@@ -372,6 +372,7 @@ Functional fitting to broad and narrow emission-line components.
        \begin{equation} H_4(w) = \frac{w^2(4w^2-12)+3}{2\sqrt{6}}, \end{equation}
        \begin{equation} H_5(w) = \frac{w[w^2(4w^2-20)+15]}{2\sqrt{15}}, \end{equation}
        \begin{equation} H_6(w) = \frac{w^2[w^2(8w^2-60)+90]-15}{12\sqrt{5}}. \end{equation}
+       Free parameters: $f_{\rm peak}$, $\mu$, $\sigma$, $h_3$, $h_4$, $h_5$, $h_6$.
 
      \item Lorentzian
        \begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\pi} \frac{\frac{1}{2}\sigma}{(\lambda - \mu)^2+(\frac{1}{2}\sigma)^2},
@@ -383,33 +384,16 @@ Functional fitting to broad and narrow emission-line components.
 
 \subsubsection*{Code Parameters}
 \begin{itemize}
-    \item $\forall$ Gaussian component:
+    \item $\forall$ Gaussian components
 	\begin{itemize}
-	    \item{\tt param1} central wavelength ($\mu$)
-	    \item{\tt param2} width ($\sigma$)
-	    \item{\tt param3} amplitude ($f_{\rm peak}$)	    
+	    \item{tt param1} central wavelength ($\mu$)
+	    \item{tt param2} width ($\sigma$)
+	    \item{tt param3} amplitude ($f_{\rm peak}$)	    
 	\end{itemize}
 
-    \item $\forall$ $6{\rm th}$ Order Gauss-Hermite Polynomial:
-	\begin{itemize}
-	    \item{\tt param1} central wavelength ($\mu$)
-	    \item{\tt param2} width of the Gaussian component($\sigma$)
-	    \item{\tt param3} amplitude of the Gauss-Hermite series ($f_{\rm peak}$)
-	    \item{\tt param4-7} Gauss-Hermite moments $h_3$, $h_4$, $h_5$, $h_6$
-	\end{itemize}   
+    \item $\forall$ Gaussian components
 
-    \item $\forall$ Lorentzian component:
-	\begin{itemize}
-	    \item{\tt param1} central wavelength ($\mu$)
-	    \item{\tt param2} width ($\sigma$)
-	    \item{\tt param3} amplitude ($f_{\rm peak}$)	    
-	\end{itemize}   
-
-    \item $\forall$ Power-law profile:
-	\begin{itemize}
-	    \item{\tt param1}     
-	\end{itemize}   
-
+    
 \end{itemize}
 
 \subsubsection*{Priors}

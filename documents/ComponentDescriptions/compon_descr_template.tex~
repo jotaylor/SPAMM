@@ -167,7 +167,7 @@ F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}\left({\rm T}_{{\rm e}}\right) \
 where $\rm{B}_{\lambda}(\rm{T}_{\rm{e}})$ is the Planck function at the electron temperature $\rm{T}_{\rm{e}}$, $\tau_{\rm{BE}}$ is the optical 
 depth at the Balmer edge, and $\rm{F}_{\rm{BE}}$ is the normalized flux density at the Balmer edge. 
 At wavelengths $\lambda>$3646 \AA \ high order Balmer lines are merging into a pseudo continuum, yielding a smooth rise to the Balmer edge. 
-Therefore, together with the continuum components, we also model high-order Balmer emission lines (up to n=50).
+Therefore, togther with the continuum components, we also model high-order Balmer emission lines (up to n=50).
 \textit{Comment: MV has a long list of Helium and Balmer lines in the optical and UV from H$\alpha$ to the Balmer Jump 
 that goes to high order (\#50 in Balmer line series). The list also has relative line ratios and relative amplitude of 
 BaC jump.}
