@@ -166,11 +166,6 @@ F_{\lambda,{\rm BC}}= F_{{\rm BE}} \ B_{\lambda}\left({\rm T}_{{\rm e}}\right) \
 \end{equation}
 where $\rm{B}_{\lambda}(\rm{T}_{\rm{e}})$ is the Planck function at the electron temperature $\rm{T}_{\rm{e}}$, $\tau_{\rm{BE}}$ is the optical 
 depth at the Balmer edge, and $\rm{F}_{\rm{BE}}$ is the normalized flux density at the Balmer edge. 
-At wavelengths $\lambda>$3646 \AA \ high order Balmer lines are merging into a pseudo continuum, yielding a smooth rise to the Balmer edge. 
-Therefore, together with the continuum components, we also model high-order Balmer emission lines (up to n=50).
-\textit{Comment: MV has a long list of Helium and Balmer lines in the optical and UV from H$\alpha$ to the Balmer Jump 
-that goes to high order (\#50 in Balmer line series). The list also has relative line ratios and relative amplitude of 
-BaC jump.}
 
 \subsubsection*{Code Parameters}
 \begin{itemize}
@@ -185,6 +180,29 @@ BaC jump.}
     \item {\tt $\tau_{\rm{BE}}$}: flat prior in the [0.1-2.0] range.    
     \item {\tt $\rm{F}_{\rm{BE}}$}: flat prior between 0 and the flux measured at $\lambda_{\rm BC,max}$, where $\lambda_{\rm BC,max}$ is the wavelength 
       corresponding to the maximum of the Balmer Continuum in the observed spectral range.       
+\end{itemize}
+
+\subsection*{High order Balmer lines}
+
+At wavelengths $\lambda>$3646 \AA \ high order Balmer lines are merging into a pseudo continuum, yielding a smooth rise to the Balmer edge. 
+Therefore, together with the continuum components, we also model high-order Balmer emission lines (up to n=50). Each high order emission line is modeled with a single 
+Gaussian \textit{(Discussion: is it enough? Should we go for a Lorentzian profile?)}:
+\begin{equation} F_{\lambda} = \frac{f_{\rm peak}}{\sigma \sqrt{2\pi}}e^{-\frac{1}{2}\left(\frac{\lambda - \mu}{\sigma}\right)^2},
+\end{equation}
+
+\subsubsection*{Code Parameters}
+$\forall$ Gaussian component:
+\begin{itemize}	
+      \item{\tt param1} central wavelength ($\mu$)
+      \item{\tt param2} width ($\sigma$)
+      \item{\tt param3} amplitude ($f_{\rm peak}$)	    
+\end{itemize}
+
+\subsubsection*{Priors} 
+\begin{itemize}
+    \item {\tt Global priors for emission lines}
+    \item {Fixed emission line ratios}: either from Marianne's list \textit{(under which assumptions are they computed?)}, or they can be computed using prescription 
+      by Storey \& Hummer (1995), case B ($n_e=10^8-10^9 \ cm^{-3}$)        
 \end{itemize}
 
 \subsection*{FeII \& FeIII}
@@ -424,7 +442,7 @@ Functional fitting to broad and narrow emission-line components.
            be coded differently.}
     \item Narrow emission line redshift solution, i.e., $\mu = \lambda_{0,n}(1+z)\pm \Delta \mu$ is constant.
     \item Narrow line doublet ratios fixed:
-      \begin{itemize}
+  \begin{itemize}
         \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA; ??:?? (This is density dependent)}
         \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA;  1:3}
         \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA; ??:??}
