@@ -4,10 +4,11 @@
 \usepackage[british]{babel}
 \usepackage[latin1]{inputenc}
 \usepackage{amssymb}
+\usepackage{amsmath}
 \usepackage{textcomp}
 %\usepackage{type1cm}
 %\usepackage{epsf}
-%\usepackage{graphicx}
+\usepackage{graphicx}
 %\usepackage{asp2006}
 %stop double-spaced lists:
 %\usepackage{mdwlist}
@@ -272,6 +273,41 @@ Code & Paper & Comments\\ \hline
 \end{tabular}
 
 \subsection*{Host Galaxy Reddening}
+Simple parameterization of reddening law between 0.12 -- 2.2 $\mu$m (Calzetti et al. 2000):
+
+\begin{equation}F_o(\lambda) = F_i(\lambda)10^{-0.4A^\prime(\lambda)} = F_i(\lambda)10^{-0.4E_s(B-V)k^\prime(\lambda)},   \end{equation}
+
+\begin{equation} E_s(B-V) = (0.44\pm0.03)E_g(B-V),  \end{equation}
+
+\[ 
+k^\prime = 
+	\begin{cases}
+	2.659(-1.857+1.040/\lambda) + 4.05  & :~0.63 \mu m \leq \lambda \leq 2.2\mu m \\
+	2.659(-2.156+1.509/\lambda - 0.198/\lambda^2 + 0.011/\lambda^3) + 4.05 & :~0.12 \mu m \leq \lambda \leq 0.63\mu m,
+	\end{cases}
+\]
+$F_o(\lambda)$ and $F_i(\lambda)$ are the dust-obscured and intrinsic continuum flux densities, respectivly; $A^\prime(\lambda)$ is the dust obscuration, $E_s(B-V)$ and $E_g(B-V)$ are the color excess of the stellar continuum and of the nebular emission lines.
+\begin{equation} \beta = 1.9E_g(B-V)+\beta_o.  \end{equation}
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[width=2in]{Gordon_2003_Fig.png} 
+   \caption{Gordon 2003 Plot}
+   \label{fig:Gordonplot}
+\end{figure}
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[width=2in]{Gordon_2003_Tab.png} 
+   \caption{Gordon 2003 Table}
+   \label{fig:Gordonplot}
+\end{figure}
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[width=2in]{Reddening_Draine_fig_21_2.pdf} 
+   \caption{Draine 2011 Plot}
+   \label{fig:Gordonplot}
+\end{figure}
+
 
 \subsubsection*{Code Parameters}
 \begin{itemize}
