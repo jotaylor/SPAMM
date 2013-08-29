@@ -309,48 +309,14 @@ Code & Paper & Comments\\ \hline
 
 
 \subsection*{Emission lines}
-Functional fitting to broad and narrow emission-line components.
-
-\begin{itemize}
-  \item {\bf Broad Emission Line List, \boldmath{$\lambda_{0,b}$}}
-    \begin{itemize}
-      \itemsep-0.1cm
-      \item \Lya\, $\lambda$1215 (actual $\lambda=1215.670$\AA)
-      \item \nv\, $\lambda$1240 (doublet at $\lambda \lambda$1238.808, 1242.796\AA)
-      \item ``1400 Feature'': \siiv\ (doublet at $\lambda \lambda$1393.755, 1402.770\AA) plus \oiv] blend ($\lambda \lambda$1397.210, 1399.780, 1404.790, 1407.390\AA)
-      \item \niv]\, $\lambda$1486 (actual $\lambda=1486.500$\AA)
-      \item \CIV\ (unresolved doublet at $\lambda \lambda$1548.188, 1550.762\AA) 
-      \item \heii\, $\lambda$1640 (actual $\lambda=1640.720$\AA)
-      \item \oiii] $\lambda$1663 (doublet at $\lambda \lambda$1660.800, 1666.140\AA)
-      \item \ciii]\, $\lambda$1909: actually a blend of \aliii\, $\lambda \lambda$1854.720, 1862.780\AA, \siiii]\, $\lambda=1892.030$\AA, and \ciii]\, $\lambda=1908.734$\AA.
-      \item \mgii\, $\lambda$2798 (doublet at $\lambda \lambda$2796.350, 2803.530\AA)
-      \item \Hdelta\ $\lambda=4101.735$\AA
-      \item \Hgamma\ $\lambda=4340.450$\AA
-      \item \HeII\ (actual $\lambda=4685.650$\AA) 
-      \item \Hbeta\ $\lambda=4861.320$\AA
-      \item \hei\, $\lambda$4922 (actual $\lambda=4921.9$\AA)
-      \item \hei\ $\lambda=5016$\AA 
-      \item \hei\, $\lambda$5876 (actual $\lambda=5875.680$\AA) 
-      \item \hei\, $\lambda$6678 (actual $\lambda=6678.000$\AA) 
-      \item \hei\, $\lambda$7065 (actual $\lambda=7065.300$\AA) 
-      \item \Halpha\ $\lambda=6562.780$\AA
-    \end{itemize}
-
-\item{\bf Narrow Emission Line List, \boldmath{$\lambda_{0,n}$}}
-  \begin{itemize}
-    \itemsep-0.1cm
-    \item {[\nev]\, $\lambda$3425.900\AA}
-    \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA}
-    \item {[\neiii]\, $\lambda$3868.800\AA}
-    \item \heii\ (actual $\lambda=4685.650$\AA) 
-    \item \Hbeta\ $\lambda=4861.320$\AA
-    \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA}
-    \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA}
-    \item \Halpha\ $\lambda=6562.780$\AA
-    \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA}
-  \end{itemize}
-
-\end{itemize}
+Functional fitting to broad and narrow emission-line components.  Each
+set of ``broad'' and ``narrow'' lines will be treated as two separate
+components in the code because of the relatively different sets of
+priors associated with each type of line.  In addition, there are some
+priors that are `global' to the type of emission lines, as a class, and
+some that will be `local' to specific emission lines. Regardless of the
+priors, the following functional forms will be options for fitting to
+both narrow and broad emission lines.
 
 \subsubsection*{Fitting Function Possibilities}
 
@@ -430,36 +396,147 @@ Functional fitting to broad and narrow emission-line components.
 
 \end{itemize}
 
-\subsubsection*{Priors}
-  \begin{enumerate}
-    \item Limit all component positions (i.e., velocity offset from laboratory wavelengths) to within a given velocity range to prevent the components 
-	  to wander.
-    \item For multiple Gaussian components, the amplitudes can be tied relative to one another (i.e. to the amplitude of the first component).
-    \item Width and velocity shifts of each of the Gaussian components of narrow forbidden lines tied together and FWHM $<$1200 km s$^{-1}$
-    \item Ranges of widths and velocity shifts to be included. I.e., profile limits to 
-          be specified - either one for each emission line, or for each type of line 
-          (broad, narrow, weak, strong, etc.) \textit{Comment: MV has a separate long list - don't want to list here in case it needs to 
-           be coded differently.}
-    \item Narrow emission line redshift solution, i.e., $\mu = \lambda_{0,n}(1+z)\pm \Delta \mu$ is constant.
-    \item Narrow line doublet ratios fixed:
-  \begin{itemize}
-        \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA; ??:?? (This is density dependent)}
-        \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA;  1:3}
-        \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA; ??:??}
-        \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA; ??:??}
-      \end{itemize}
-    \item Fluxes must be non-negative (BLR and NLR emission)
-    \item Tie together the widths and velocity shifts of broad line components of identical species, e.g., \heii\, $\lambda$1640 and \HeII?  \textit{(To be tested)}.
-    \item assumptions about CIV redshelf?? Additional HeII component? He\,II, \feii, Al\,III, O\,II].
-    \item Suggested Parameter Space to search \textit{(to be discussed)}
-      \begin{itemize}
-        \item $f_{\rm peak}/f_{\rm cont}$ = [0, 1.d4, 1.d-3]
-        \item $\mu = \lambda_{0,n}(1+z)\pm 1000\, {\rm km}\, {\rm s}^{-1}; \Delta \mu \sim f$(pixscale)
-        \item $\sigma$ = [100, 3.d4]; $\Delta \sigma \sim f$(pixscale)
-        \item $h_j$ = [-0.3, 0.3, 1.d-3]
-      \end{itemize}
-  \end{enumerate}
+\subsection*{Narrow Emission lines}
 
+\subsubsection*{Global Priors: for all i=1, N narrow lines}
+\begin{itemize}
+
+  \item $z$: flat prior between 0 and 8 with $z$=constant for all $i$ (This is the most general prior; likely, some knowledge of the redshift will be known, so in that case, this should be a Gaussian prior with much narrower width, centered on estimated redshift)
+  \item $\mu/(1+z)$: flat prior between -1200 and 1200 km s$^{-1}$ with $\mu_i$ = constant for all $i$
+  \item $\sigma_i$: flat prior between 0 and 1200 km s$^{-1}$ with $\sigma_i$ = constant for all $i$ {\it} (this is to fit narrow components that are co-spatial/kinematic with the ``typical'' low density NLR traced by the integrated forbidden line flux; any ``intermediate'' components will be fit with the broad emission lines.  It's also OK to go down to zero width; if the line is not found)
+ \item $F_{\lambda} > 0$
+ \item $F_{\rm peak}/F{\rm cont}$: flat prior with range of 0 to 10,000 (i.e, it's OK for the line not to be found)
+ \item $h_j$: flat prior between -0.3 and 0.3 (KD: this is just what I used in my code for my Gauss-Hermite polynomial fits and it seemed to work OK).
+
+\end{itemize}
+
+\subsubsection*{\bf Narrow Emission Line List, \boldmath{$\lambda_{0,n}$}}
+    \begin{itemize}
+      \itemsep-0.1cm
+      \item {[\nev]\, $\lambda$3425.900\AA}
+      \item {[\oii]\, $\lambda \lambda$3726.000, 3728.800\AA}
+        \begin{itemize}
+          \item {\bf Local Prior:} doublet ratio 1:1 (actually density dependent, but the doublet is too closely spaced to constrain in AGNs; Osterbrock); flat prior in range $1:1\pm 0.3$
+        \end{itemize}
+      \item {[\neiii]\, $\lambda$3868.800\AA}
+      \item \heii\ (actual $\lambda=4685.650$\AA) 
+      \item \Hbeta\ $\lambda=4861.320$\AA
+        \begin{itemize}
+          \item {\bf Local Prior:} ratio of narrow \Hbeta:[\oiii]\, $\lambda$5007; flat prior in range TBD by BPT diagram results (my experience ~0-0.4:1)
+        \end{itemize}
+      \item {[\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA}
+        \begin{itemize}
+        \item {\bf Local Prior:} doublet ratio 1:3 (Osterbrock); flat prior in range $1:3\pm 0.5$
+        \end{itemize}
+      \item {[\oiii]\, $\lambda$5007 blue component}
+          \begin{itemize}
+          \item {\bf Local Prior:} set very loose priors on existence,
+            location and strength; if the overall region fits better
+            between 4959 and 5007 with the addition of a blue component,
+            go with it; I'm not sure what's relevant here for coding...
+            Complicated further because must keep total [\oiii]\,
+            $\lambda$5007 flux ratio with 4959.
+          \end{itemize}
+      \item {[\nii]\, $\lambda \lambda$6548.060, 6583.39\AA}
+        \begin{itemize}
+          \item {\bf Local Prior:} doublet ratio 1:3 (Osterbrock); flat prior in range $1:3\pm 0.5$
+        \end{itemize}
+      \item \Halpha\ $\lambda=6562.780$\AA
+        \begin{itemize}
+          \item {\bf Local Prior:} ratio of narrow \Halpha:[\nii]; flat prior in range TBD by BPT diagram results.
+        \end{itemize}
+      \item {[\Sizw]\, $\lambda \lambda$6716.420, 6730.780\AA}
+        \begin{itemize}
+          \item {\bf Local Prior:} doublet ratio 1.1:1 (Osterbrock); flat prior in range $1.1\pm 0.3:1$
+        \end{itemize}
+    \end{itemize}
+
+**{\it Any other specific requirements related to widths or velocity offsets of individual lines should be listed as local priors.}
+
+\subsubsection*{Additional ``Conditions'' (not really priors, so I'm not sure how they should be coded)}
+\begin{itemize}
+   \item As listed above; the potential presence of a blue component to
+    [\oiii]\, $\lambda \lambda$4958.920, 5006.850\AA.
+\end{itemize} 
+\subsection*{Broad Emission lines}
+
+\subsubsection*{Global Priors: for all i=1, N Broad lines}
+\begin{itemize}
+
+  \item $z$: solution determined from NELs applied; but broad line centers can be allowed to shift relative to this solution.
+  \item $\mu/(1+z)$: flat prior between -6000 and 4000 km s$^{-1}$, independent for each broad line component.
+  \item $\sigma_i$: flat prior between 0 and 12000 km s$^{-1}$; multiple
+    components will account for all ``very broad'', broad, and
+    ``intermediate'' components.  It's also OK to go down to zero width
+    (if the line is not found).
+ \item $F_{\lambda} > 0$
+ \item $F_{\rm peak}/F{\rm cont}$: flat prior with range of 0 to 10,000 (i.e, it's OK for the line not to be found)
+ \item $h_j$: flat prior between -0.3 and 0.3 (KD: this is just what I used in my code for my Gauss-Hermite polynomial fits and it seemed to work OK).
+
+\end{itemize}
+
+\subsubsection*{\bf Broad Emission Line List, \boldmath{$\lambda_{0,b}$}}
+    \begin{itemize}
+      \itemsep-0.1cm
+      \item \Lya\, $\lambda$1215 (actual $\lambda=1215.670$\AA)
+      \item \nv\, $\lambda$1240 (doublet at $\lambda \lambda$1238.808, 1242.796\AA)
+      \item ``1400 Feature'': \siiv\ (doublet at $\lambda \lambda$1393.755, 1402.770\AA) plus \oiv] blend ($\lambda \lambda$1397.210, 1399.780, 1404.790, 1407.390\AA)
+      \item \niv]\, $\lambda$1486 (actual $\lambda=1486.500$\AA)
+      \item \CIV\ (unresolved doublet at $\lambda \lambda$1548.188, 1550.762\AA) 
+      \item \heii\, $\lambda$1640 (actual $\lambda=1640.720$\AA)
+      \item \heii\, $\lambda$1640 blue component
+          \begin{itemize}
+          \item {\bf Local Prior:} set very loose priors on existence,
+            location and strength; if the overall region fits better
+            between \heii\, $\lambda$1640 and \civ with the addition of
+            a blue component, go with it; I'm not sure what's relevant
+            here for coding... I can maybe try to come up with some
+            better priors from looking at data I have, but probably best
+            to just leave it loose and see how it does.
+        \end{itemize}
+      \item \oiii] $\lambda$1663 (doublet at $\lambda \lambda$1660.800, 1666.140\AA)
+      \item \ciii]\, $\lambda$1909: actually a blend of \aliii\, $\lambda \lambda$1854.720, 1862.780\AA, \siiii]\, $\lambda=1892.030$\AA, and \ciii]\, $\lambda=1908.734$\AA.
+      \item \mgii\, $\lambda$2798 (doublet at $\lambda \lambda$2796.350, 2803.530\AA)
+      \item \Hdelta\ $\lambda=4101.735$\AA
+      \item \Hgamma\ $\lambda=4340.450$\AA
+      \item \HeII\ (actual $\lambda=4685.650$\AA) 
+      \item \HeII\ blue component
+          \begin{itemize}
+          \item {\bf Local Prior:} set very loose priors on existence,
+            location and strength; if the overall region fits better
+            between \HeII\ and potential presence of \feii\ and host
+            with the addition of a blue component, go with it; I'm not
+            sure what's relevant here for coding... I can maybe try to
+            come up with some better priors from looking at data I have,
+            but probably best to just leave it loose and see how it
+            does.
+        \end{itemize}
+      \item \Hbeta\ $\lambda=4861.320$\AA
+      \item \hei\, $\lambda$4922 (actual $\lambda=4921.9$\AA)
+      \item \hei\ $\lambda=5016$\AA 
+      \item \hei\, $\lambda$5876 (actual $\lambda=5875.680$\AA) 
+      \item \hei\, $\lambda$6678 (actual $\lambda=6678.000$\AA) 
+      \item \hei\, $\lambda$7065 (actual $\lambda=7065.300$\AA) 
+      \item \Halpha\ $\lambda=6562.780$\AA
+    \end{itemize}
+
+**{\it Any other specific requirements related to widths or velocity offsets of individual lines should be listed as local priors.}
+
+
+\subsubsection*{Additional ``Conditions'' (not really priors, so I'm not sure how they should be coded)}
+\begin{itemize}
+  \item \hei\, $\lambda$4922 and \hei\ $\lambda=5016$\AA are highly
+    blended with \Hbeta, [\oiii], and possibly \feii, and thereby hard to
+    independently constrain.  The condition is therefore that ``if''
+    \hei\, $\lambda$5876 is present in the spectrum,
+    $\sigma_{4922}=\sigma_{5016}=\sigma{5876}$.
+  \item As listed above; the potential presence of a blue component to
+    \heii\, $\lambda$1640 and \heii\, $\lambda$4686.  We see this region
+    in reverberation campaigns when no other \feii\ is present, so we
+    have evidence to suggest it's there; it's just highly blended and
+    somewhat low EW in single spectra.
+\end{itemize} 
+    
 %\begin{center}
 %{\Large This is my Project}
 %\end{center}
