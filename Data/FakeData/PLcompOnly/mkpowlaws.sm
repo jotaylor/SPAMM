@@ -1,0 +1,97 @@
+go
+#macro named go
+	erase
+	expand 1.0
+	ctype black
+	lweight 3
+	ltype 0
+	#SPAMM Powerlaw fits
+	#fitting formula: F_lam = Flam_0*(lam/lam0)^alpha
+	#priors: alpha [-3,3], Flam_0=[0,Fmax]
+	#
+	#define several wavelength arrays, varying range and dispersion
+	set lam1 = 1159.0, 2003.0, 1.0
+	set lam1 = lam1*1.0
+	set lam2 = 4300, 5800, 1.25
+	set lam3 = 3600, 8200, 2
+	set lam4 = 1750.38592, 2932.94592, 0.12448 
+	set lam5 = 2300, 3875, 0.25
+	set lam6 = 1400, 12000, 3
+	#
+	#find median values, lam*_0
+	stats_med lam1 lam1_0 SIQR
+	stats_med lam2 lam2_0 SIQR
+	stats_med lam3 lam3_0 SIQR
+	stats_med lam4 lam4_0 SIQR
+	stats_med lam5 lam5_0 SIQR
+	stats_med lam6 lam6_0 SIQR	
+	echo $lam1_0 $lam2_0 $lam3_0 $lam4_0 $lam5_0 $lam6_0
+	#
+	#arbitrarily set alpha for each template
+	set alpha_1 = -2.2
+	set alpha_2 = 0.1
+	set alpha_3 = -0.9
+	set alpha_4 = -1.4
+	set alpha_5 = -0.2
+	set alpha_6 = -1.7
+	#
+	#set arbitrary normalizations typical of observed QSO fluxes
+	set flam1_0 = 1.8e-17
+	set flam2_0 = 3.5e-16
+	set flam3_0 = 5.7e-15
+	set flam4_0 = 9.3e-16
+	set flam5_0 = 6.6e-15
+	set flam6_0 = 1.4e-14
+	#
+	#calculate spectra
+	set flam_1 = flam1_0*(lam1/$lam1_0)**alpha_1
+	set flam_2 = flam2_0*(lam2/$lam2_0)**alpha_2
+	set flam_3 = flam3_0*(lam3/$lam3_0)**alpha_3
+	set flam_4 = flam4_0*(lam4/$lam4_0)**alpha_4
+	set flam_5 = flam5_0*(lam5/$lam5_0)**alpha_5
+	set flam_6 = flam6_0*(lam6/$lam6_0)**alpha_6
+	#
+	#plot powerlaws to check
+	window 2 3 1 3
+	lim lam1 1 5 box
+	set plotflam1 = flam_1*1.e17
+	connect lam1 plotflam1
+	xlabel wavelength
+	ylabel Flam1 \times 10^{-17} 
+	window 2 3 1 2
+	lim lam2 1 5 box
+	set plotflam2 = flam_2*1.e16
+	connect lam2 plotflam2
+	xlabel wavelength
+	ylabel Flam2 \times 10^{-16} 
+	window 2 3 1 1
+	lim lam3 4 9 box
+	set plotflam3 = flam_3*1.e15
+	connect lam3 plotflam3
+	xlabel wavelength
+	ylabel Flam3 \times 10^{-15} 
+	window 2 3 2 3
+	lim lam4 flam_4 box
+	connect lam4 flam_4
+	xlabel wavelength
+	ylabel Flam4 flux 
+	window 2 3 2 2
+	lim lam5 flam_5 box
+	connect lam5 flam_5
+	xlabel wavelength
+	ylabel Flam5 flux 
+	window 2 3 2 1
+	lim lam6 flam_6 box
+	connect lam6 flam_6
+	xlabel wavelength
+	ylabel Flam6 flux 
+	#
+	#Print out fake spectra
+	define print_noheader 1
+	print fakepowlaw1.dat ' %11.5f   %12.4e \n' {lam1 flam_1}
+	print fakepowlaw2.dat ' %11.5f   %12.4e \n' {lam2 flam_2}
+	print fakepowlaw3.dat ' %11.5f   %12.4e \n' {lam3 flam_3}
+	print fakepowlaw4.dat ' %11.5f   %12.4e \n' {lam4 flam_4}
+	print fakepowlaw5.dat ' %11.5f   %12.4e \n' {lam5 flam_5}
+	print fakepowlaw6.dat ' %11.5f   %12.4e \n' {lam6 flam_6}
+	
