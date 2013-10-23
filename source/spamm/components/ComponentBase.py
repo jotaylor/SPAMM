@@ -15,7 +15,7 @@ class Component(object):
 	def __init__(self):
 		self.z = None
 		self.reddening_law = None
-		self.model_parameters = list()
+		#self.model_parameters = list()
 		self.model_parameter_names = list()
 
 	def parameters(self):
@@ -29,9 +29,9 @@ class Component(object):
 	def parameter_count(self):
 		''' Returns the number of parameters of this component. '''
 		if self.z:
-			return len(self.model_parameters + 1)
+			return len(self.model_parameter_names + 1)
 		else:
-			return len(self.model_parameters)
+			return len(self.model_parameter_names)
 
 	@abstractmethod
 	def initial_values(self, spectrum=None):

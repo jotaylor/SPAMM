@@ -1,9 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
+import pdb
 
+import sys
 import numpy as np
+from scipy import interpolate
+
 import emcee
 
 from Spectrum import Spectrum
@@ -13,18 +16,19 @@ class MCMCDidNotConverge(Exception):
 
 def ln_probability(new_params, *args):
 	'''
-	The function to be passed to the emcee sampler.
+	The likelihood of the logarithm of the model, the function to be passed to the emcee sampler.
 	
 	@param params A vector in the parameter space used as input into sampler.
 	@param args Additional arguments passed to this function (i.e. the Model object).
 	'''
 
-	# make sure "model" is passed in
-	model = args[0]
+	# Make sure "model" is passed in - this needs access to the Model object
+	# since it contains all of the information about the components.
+	model = args[0] # TODO: return an error if this is not the case
 		
 	# generate model spectrum given model parameters
 	print "ln_probability params = {0}".format(new_params)
-	model_spectrum_flux = model.model_spectrum_flux(params=new_params)
+	model_spectrum_flux = model.model_flux(params=new_params)
 	
 	# calculate the log likelihood
 	# ----------------------------
@@ -49,13 +53,16 @@ class Model(object):
 		self.reddening = None
 		self.model_parameters = dict()
 		self.mcmc_param_vector = None
-		self.mask = None
+		self._mask = None
 		
+		self.data_spectrum = None
 		
 		self.model_spectrum = Spectrum()
 		# precomputed wavelength range is 1000-10000Å in steps of 0.05Å
 		self.model_spectrum.wavelengths = np.arange(1000, 10000, 0.05)
-	
+		self.model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
+		
+		
 # 	@property
 # 	def spectrum(self):
 # 		return self._spectrum
@@ -66,13 +73,13 @@ class Model(object):
 	
 	@property
 	def mask(self):
-		if self.spectrum is None:
+		if self.data_spectrum is None:
 			print "Attempting to read the bad pixel mask before a spectrum was defined."
 			sys.exit(1)
 		if self._mask is None:
-			self._mask = np.ones(len(self.spectrum.wavelengths))
-		else:
-			return self._mask
+			self._mask = np.ones(len(self.data_spectrum.wavelengths))
+
+		return self._mask
 		
 	@mask.setter
 	def mask(self, new_mask):
@@ -83,7 +90,15 @@ class Model(object):
 		'''
 		self._mask = new_mask
 
-	def run_mcmc(self, n_walkers=100, n_iterations=1000):
+	def add_component(self, component=None):
+		'''
+		Add a new component to the model.
+		'''
+		print "Adding component"
+		self.components.append(component)
+		self.model_spectrum.flux = component.add(model=self)
+
+	def run_mcmc(self, n_walkers=100, n_iterations=10):
 		'''
 		Method that actually calls the MCMC.
 		
@@ -96,13 +111,13 @@ class Model(object):
 		for walker in xrange(n_walkers):
 			walker_params = list()
 			for component in self.components:
-				walker_params.append(component.initial_values(self.spectrum))
+				walker_params.append(component.initial_values(self.data_spectrum))
 			walkers_matrix.append(walker_params)
 
 		# create MCMC sampler
-		sampler = emcee.EnsembleSampler(n_walkers,
-										len(walkers_matrix[0]),
-										ln_probability,
+		sampler = emcee.EnsembleSampler(nwalkers=n_walkers,
+										dim=len(walkers_matrix[0]),
+										lnpostfn=ln_probability,
 										args=[self])
 		
 		# run!
@@ -119,7 +134,7 @@ class Model(object):
 			param_vector.append(component.parameters())
 		return param_vector
 	
-	def model_spectrum_flux(self, params):
+	def model_flux(self, params):
 		'''
 		Given the parameters in this model, generate a spectrum.
 		
@@ -127,24 +142,25 @@ class Model(object):
 		it will be called by multiple MCMC walkers at the same time.
 		
 		@param params Vector of all paramters of all components of model.
-		@returns Numpy array of flux values; use self.spectrum.wavelengths for the wavelengths.
+		@returns Numpy array of flux values; use self.data_spectrum.wavelengths for the wavelengths.
 		'''
 		
 		# Combine all components into a single spectrum
 		# Build param vector to pass to MCMC
 		
 		print "params = {0}: ".format(params)
-		params = list(params) # make a copy as we'll delete elements
+		params2 = [x for x in params[0]] #list(params) # make a copy as we'll delete elements
 		
 		model_spectrum = Spectrum()
 		model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
 		model_spectrum.wavelengths = self.model_spectrum.wavelengths
 		
+		#pdb.set_trace()
 		for component in self.components:
 			
 			# extract parameters from full vector for each component
-			p = params[0:component.parameter_count]
-			del params[0:component.parameter_count]
+			p = params2[0:component.parameter_count]
+			del params2[0:component.parameter_count]
 			model_spectrum = component.add(model=self, params=p)
 			
 		return model_spectrum
@@ -158,12 +174,17 @@ class Model(object):
 		@params model_spectrum The model spectrum, a numpy array of flux value.
 		'''
 		
-		assert model_spectrum_flux is not None, "'model_spectrum_flux' should not be None."
+		assert model_spectrum_flux is not None, "'model_spectrum.flux' should not be None."
 		print model_spectrum_flux
-		print self.spectrum.flux
-		print self.spectrum.flux_error
-		ln_l = np.power(((model_spectrum_flux - self.spectrum.flux) /
-					   self.spectrum.flux_error), 2)
+		#print self.data_spectrum.flux
+		#print self.data_spectrum.flux_error
+		
+		# This creates a function that can be used to interpolate
+		# values based on the data.
+		f = interpolate.interp1d(self.model_spectrum.wavelengths, self.model_spectrum.flux)
+		interp_model_flux = [f(x) for x in self.data_spectrum.wavelengths]
+		
+		ln_l = np.power(((self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2)
 		ln_l *= self.mask
 		ln_l = np.sum(ln_l) * -0.5
 		return ln_l

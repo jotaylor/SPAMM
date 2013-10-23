@@ -3,6 +3,14 @@
 import numpy as np
 from .ComponentBase import Component
 
+def runningMeanFast(x, N):
+	'''
+	x = array of points
+	N = window width
+	Ref: http://stackoverflow.com/questions/13728392/moving-average-or-running-mean
+	'''
+	return np.convolve(x, np.ones((N,))/N)[(N-1):]
+
 class NuclearContinuumComponent(Component):
 	'''
 	Description of the NuclearComponent here.
@@ -23,11 +31,13 @@ class NuclearContinuumComponent(Component):
 		
 		Needs to sample from prior distribution.
 		'''
-		low = spectrum.wavelengths / spectrum.normalization_wavelength)
-		normalization_init = np.rand.uniform(low=low,
-											 high=)
+		#print "NuclearContinuumComponent:initial_values"
+		
+		high = max(runningMeanFast(spectrum.flux, 5))
+		normalization_init = np.random.uniform(low=0,
+											   high=high)
 
-		slope_init = np.rand.uniform(low=-3.0, high=0.0)
+		slope_init = np.random.uniform(low=-3.0, high=3.0)
 		return [normalization_init, slope_init]
 
 	def ln_priors(self, params):
@@ -36,7 +46,10 @@ class NuclearContinuumComponent(Component):
 		
 		@param params
 		'''
-		ln_p = list()
+		
+		return [0]
+		
+		#ln_p = list(ln(p)
 		
 		# normalization prior
 		
@@ -54,7 +67,11 @@ class NuclearContinuumComponent(Component):
 		
 		@param model_spectrum The model spectrum to add this component to (type Spectrum)
 		'''
-		assert len(params) == 2, "The wrong number of indices were provided."
+		if params == None:
+			params = self.initial_values(spectrum=model.data_spectrum)
 
-		model_spectrum_flux = params[0] * np.power(model.model_spectrum.wavelengths / model.spectrum.normalization_wavelength), params[1])
-		return model_spectrum
+		print "params: type: {0}, {1}".format(type(params), params)
+		assert len(params) == 2, "The wrong number of indices were provided: {0}".format(params)
+
+		model_spectrum_flux = params[0] * np.power((model.model_spectrum.wavelengths / model.data_spectrum.normalization_wavelength), params[1])
+		return model_spectrum_flux
