@@ -1,0 +1,85 @@
+plotgauss
+#plotgauss
+	erase
+	expand 1.3
+	lweight 3
+	add_ctype dgray  190 190 190
+	ctype black
+	#define several wavelength arrays, varying range and dispersion
+	set lam1 = 1159.0, 2003.0, 1.0
+	set lam1 = lam1*1.0
+	set lam2 = 4300, 5800, 1.25
+	set lam3 = 3600, 8200, 2
+	set lam4 = 1750.38592, 2932.94592, 0.12448 
+	set lam5 = 2300, 3875, 0.25
+	set lam6 = 1400, 12000, 3
+	#make single Gaussian Profile for lam1 at CIV
+	define gauss1cen 1549
+	define gauss1sig 20
+	gauss lam1 $gauss1cen $gauss1sig  
+	set gauss1 = gauss * 2e-13
+	define fwhm1 ((2.35*$gauss1sig)/$gauss1cen*3.e5)
+	echo fwhm1 $fwhm1
+	#lim lam1 gauss1 box
+	#connect lam1 gauss1
+	define print_noheader 1
+	print fakeBLcomp1.dat ' %11.5f   %12.4e \n' {lam1 gauss1}
+	#
+	#Make Single Gaussian Broad Hbeta, Narrow Hbeta, OIII 4559 and 5007 for lam2
+	define gauss2_1cen 4861
+	define gauss2_1sig 35
+	define gauss2_2cen 4861
+	define gauss2_2sig 6.5
+	define gauss2_3cen 4959
+	define gauss2_3sig 6.6
+	define gauss2_4cen 5007
+	define gauss2_4sig 6.7
+	gauss lam2 $gauss2_1cen $gauss2_1sig  
+	set gauss2_1 = gauss * 4e-13
+	define fwhm2_1 ((2.35* $gauss2_1sig) / $gauss2_1cen*3.e5)
+	echo fwhm2_Hbbrd $fwhm2_1
+	gauss lam2 $gauss2_2cen $gauss2_2sig  
+	set gauss2_2 = gauss * 0.6e-13
+	define fwhm2_2 ((2.35* $gauss2_2sig) / $gauss2_2cen*3.e5)
+	echo fwhm2_Hbnar $fwhm2_2
+	gauss lam2 $gauss2_3cen $gauss2_3sig  
+	set gauss2_3 = gauss * 2e-13
+	define fwhm2_3 ((2.35* $gauss2_3sig) / $gauss2_3cen*3.e5)
+	echo fwhm2_4959 $fwhm2_3
+	gauss lam2 $gauss2_4cen $gauss2_4sig  
+	set gauss2_4 = gauss * 6e-13
+	define fwhm2_4 ((2.35*$gauss2_4sig)/$gauss2_4cen*3.e5)
+	echo fwhm2_5007 $fwhm2_4
+	set totspec2 = gauss2_1 + gauss2_2 + gauss2_3 + gauss2_4
+	#lim lam2 totspec2 box
+	#connect lam2 totspec2
+	print fakeBLcomp2.dat ' %11.5f   %12.4e \n' {lam2 totspec2}
+	#
+	#Make Single Gaussian for Halpha, Hbeta, and Hgamma
+	#Vary velocity widths slightly to account for typical variations seen
+	#set at small redshift of 0.1, so Ha=7219, Hb=5347, Hg=4774
+	#Set FWHM at Ha=2200, Hb=3000, Hg=3800
+	define gauss3_1cen 7219
+	define gauss3_1sig 22.5
+	define gauss3_2cen 5347
+	define gauss3_2sig 22.8
+	define gauss3_3cen 4774
+	define gauss3_3sig 25.7
+	gauss lam3 $gauss3_1cen $gauss3_1sig  
+	set gauss3_1 = gauss * 12e-13
+	define fwhm3_1 ((2.35* $gauss3_1sig) / $gauss3_1cen*3.e5)
+	echo fwhm3_Ha $fwhm3_1
+	gauss lam3 $gauss3_2cen $gauss3_2sig  
+	set gauss3_2 = gauss * 4e-13
+	define fwhm3_2 ((2.35* $gauss3_2sig) / $gauss3_2cen*3.e5)
+	echo fwhm3_Hb $fwhm3_2
+	gauss lam3 $gauss3_3cen $gauss3_3sig  
+	set gauss3_3 = gauss * 2e-13
+	define fwhm3_3 ((2.35* $gauss3_3sig) / $gauss3_3cen*3.e5)
+	echo fwhm3_Hg $fwhm3_3
+	set totspec3 = gauss3_1 + gauss3_2 + gauss3_3
+	lim lam3 totspec3 box
+	connect lam3 totspec3
+	print fakeBLcomp3.dat ' %11.5f   %12.4e \n' {lam3 totspec3}
+	
+	
