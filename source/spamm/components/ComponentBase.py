@@ -46,11 +46,19 @@ class Component(object):
 		'''
 
 	@abstractmethod
-	def add(self, model=None, params=None):
-		'''
-		Add this component to the given Spectrum.
+	def flux(self, wavelengths=None, parameters=None):
+		pass
+
+# 	@abstractmethod
+# 	def add(self, model=None, params=None):
+# 		'''
+# 		Add this component to the given Spectrum.
+# 		
+# 		@param spectrum The spectrum to add this component to (type: Spectrum object).
+# 		@param params A list of parameters for this component.
+# 		'''
+# 		pass
 		
-		@param spectrum The spectrum to add this component to (type: Spectrum object).
-		@param params A list of parameters for this component.
-		'''
+	@abstractmethod
+	def initialize(self, data_spectrum=None):
 		pass

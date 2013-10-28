@@ -46,11 +46,11 @@ nuclear_comp = NuclearContinuumComponent()
 # Create model
 # ------------
 model = Model()
+model.append_component(component=nuclear_comp)
 
-model.data_spectrum = spectrum
-model.add_component(component=nuclear_comp)
+model.data_spectrum = spectrum # add data
 
-model.run_mcmc(n_walkers=50, n_iterations=100)
+model.run_mcmc(n_walkers=10, n_iterations=100)
 
 # try:
 # 	cf.run_mcmc_analysis(plot=False)

@@ -25,7 +25,8 @@ class NuclearContinuumComponent(Component):
 		super(NuclearContinuumComponent, self).__init__()
 		self.model_parameter_names.append("normalization")
 		self.model_parameter_names.append("slope")
-
+		self._norm_wavelength =  None
+		
 	def initial_values(self, spectrum=None):
 		'''
 		
@@ -39,6 +40,24 @@ class NuclearContinuumComponent(Component):
 
 		slope_init = np.random.uniform(low=-3.0, high=3.0)
 		return [normalization_init, slope_init]
+
+	def initialize(self, data_spectrum=None):
+		'''
+		Perform any initializations where the data is optional.
+		'''
+		if data_spectrum is None:
+			raise Exception("The data spectrum must be specified to initialize {0}.".format("NuclearContinuumComponent"))
+		self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
+
+	def normalization_wavelength(self, data_spectrum_wavelength=None):
+		'''
+		
+		'''
+		if self._norm_wavelength is None:
+			if data_spectrum_wavelength is None:
+				raise Exception("The wavelength array of the data spectrum must be specified.")
+			self._norm_wavelength = np.median(data_spectrum_wavelength)
+		return self._norm_wavelength
 
 	def ln_priors(self, params):
 		'''
@@ -61,17 +80,30 @@ class NuclearContinuumComponent(Component):
 
 		return ln_p
 
-	def add(self, model=None, params=None):
+	def flux(self, wavelengths=None, parameters=None):
 		'''
-		Add the nuclear continuum component to the provided model spectrum.
+		Returns the flux for this component for a given wavelength grid
+		and parameters. Will use the initial parameters if none are specified.
+		'''
+		assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
 		
-		@param model_spectrum The model spectrum to add this component to (type Spectrum)
-		'''
-		if params == None:
-			params = self.initial_values(spectrum=model.data_spectrum)
+		# calculate flux
+		flux = parameters[0] * \
+		       np.power((wavelengths / self.normalization_wavelength()), parameters[1])
+		
+		return flux
 
-		print "params: type: {0}, {1}".format(type(params), params)
-		assert len(params) == 2, "The wrong number of indices were provided: {0}".format(params)
-
-		model_spectrum_flux = params[0] * np.power((model.model_spectrum.wavelengths / model.data_spectrum.normalization_wavelength), params[1])
-		return model_spectrum_flux
+# 	def add_component(self, model=None, params=None):
+# 		'''
+# 		Add the nuclear continuum component to the provided model spectrum.
+# 		
+# 		@param model_spectrum The model spectrum to add this component to (type Spectrum)
+# 		'''
+# 		if params == None:
+# 			params = self.initial_values(spectrum=model.data_spectrum)
+# 
+# 		print "params: type: {0}, {1}".format(type(params), params)
+# 		assert len(params) == 2, "The wrong number of indices were provided: {0}".format(params)
+# 
+# 		model_spectrum_flux = params[0] * np.power((model.model_spectrum.wavelengths / model.data_spectrum.normalization_wavelength), params[1])
+# 		return model_spectrum_flux
