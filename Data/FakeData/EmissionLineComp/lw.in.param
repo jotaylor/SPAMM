@@ -1,0 +1,15 @@
+Number of columns in spectra:  2
+Spectrum fit (1=mean; 2=rms):  1
+Input data (list or single file):           fakeBLcomp4.dat               
+Number of continuum regions fit:  0
+Continuum regions: 
+Cont. F measured between     0.00 and     0.00
+Main integration:  2000.00 -  2200.00
+Rest wavelength of line:  2091.30
+Redshift of data: 0.000000
+ Did not force theory peak at:   2091.3
+ Forced single Peak FWHM using peak at  2091.33664
+ Only single peak found.
+ peakr flux =   3.4218E-13 peakb flux =   3.4218E-13
+ waver=   2091.33664 waveb=   2091.33664
+ Assumed line center going into sigma calc:  2091.33664

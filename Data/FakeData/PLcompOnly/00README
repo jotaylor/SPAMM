@@ -1,0 +1,44 @@
+**********
+This directory contains fake powerlaw component only spectra.  The Excel
+spreadsheet in ../fakedata_properties.xlsx shows all the properties of
+these spectra.
+
+Importantly, the "final" spectra to actually be used (i.e., 3-column
+wavelength, flux, error) are the fakepowlaw*_werr.dat spectra.  A quick
+look plot of these 6 spectra and error spectra are in finpowlaws_werr.eps. 
+
+Everything else in this directory was used to make these spectra:
+
+*Orig_NondegSpec/ subdirectory contains the original spectra with no
+noise added.  They were created with mkpowlaws.sm. 
+
+*adderrspec.sm - creates and adds error spectrum to fake data in
+fakepowlaw*_deg.dat to make fakepowlaw*_werr.dat.
+
+*fakepowlaw*_deg.dat - S/N degraded versions of
+Orig_NondegSpec/fakepowlaw#.dat.  I used my program snr_deg.f to add
+Gaussian noise to degrade the S/N. The Excel spreadsheet
+../fakedata_properties.xlsx gives the S/N of each spectrum and the
+wavelength range the original S/N was measured in to use as a basis for
+degrading it.
+
+*fakepowlaw*_werr.dat - These are the final spectra to be used to fit
+with SPAMM.  The first 2 columns are the same as fakepowlaw*_deg.dat,
+but they now have an error spectrum in the third column added with
+adderrspec.sm.  This process is the same as I used for the fake emission line
+spectra, and so is described in the 00README_errspec_create
+readme file .  Final spectra and
+error spectra can been visualized in finspec_wnoiserr.eps. 
+
+*fracerrspec_dsp*.dat(.fits) - SDSS fractional error spectrum that has
+been converted to the different linear dispersion scales of the 6 fake
+data wavelength arrays.  The ascii versions of these were read into
+adderrspec.sm and used to make the fake error spectra added to each fake
+data spectrum.  See 00README_errspec_create in the ../EmissionLineComp/
+directory for more details.
+
+*mkpowlaws.sm - SM macro that actually makes the initial "no-noise" powerlaw
+spectra that I later copied to Orig_NondegSpec/
+
+
+

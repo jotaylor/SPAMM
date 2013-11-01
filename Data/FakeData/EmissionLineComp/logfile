@@ -1,0 +1,14 @@
+bestfitcomb_origdisp.fits: Resampling using current coordinate system
+bestfitcomb_templ4disp.fits: ap = 1, w1 = 1170.386, w2 = 1758.056, dw =  0.12448, nw = 4722
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp1p0.fits: ap = 1, w1 =    3788., w2 =    9202., dw =       1., nw = 5415
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp1p25.fits: ap = 1, w1 =    3800., w2 =   9202.5, dw =     1.25, nw = 4323
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp2p0.fits: ap = 1, w1 =    3788., w2 =    9202., dw =       2., nw = 2708
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp0p12448.fits: ap = 1, w1 = 3790.386, w2 = 9202.403, dw =  0.12448, nw = 43478
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp0p25.fits: ap = 1, w1 =    3800., w2 =   9202.5, dw =     0.25, nw = 21611
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp3p0.fits: ap = 1, w1 =    3800., w2 =    9203., dw =       3., nw = 1802

@@ -1,0 +1,77 @@
+
+**********
+This directory contains fake Emission line spectra.  The Excel
+spreadsheet in ../fakedata_properties.xlsx shows all the properties of
+these spectra.
+
+Importantly, the "final" spectra to actually be used (i.e., 3-column
+wavelength, flux, error) are the fakeBLcomp*_werr.dat spectra.  A quick
+look plot of these 6 spectra and error spectra are in finspec_wnoiserr.eps
+
+Everything else in this directory was used to make these spectra:
+*adderrspec.sm - creates and adds error spectrum to fake data in
+fakeBLcomp*_deg.dat
+
+*fakeBL4civline.dat - "actual" CIV line fit (to Mrk509 from my
+SDSSvMODSCIVmasses/ directory of RM sample CIV spectra).  I created it
+using the files in the Tempfiles4fake4/ subdirectory: (1) taking the
+original fit, reading it into a fits format so that I could resample the
+dispersion scale to the same linear dispersion as lam4 of the fake data,
+(2) write it back out to ascii format (3) "pretend" redshift it to 0.35
+and match it up with the wavelength scale for this fake spectrum, and
+(4) fill in the rest of the ends of the spectrum with essentially
+zeros.  This file was then read into plotgauss.sm and used to add to the
+rest of the fake lines added to make the final "4th" fake spectrum.
+
+*fakeBLcomp#.dat - "perfect" version of fake data that was created with
+plotgauss.sm for all 6 spectra.  These can be viewed with
+perfectspec.eps.
+
+*fakeBLcomp*_deg.dat - S/N degraded versions of fakeBLcomp#.dat.  I used
+my program snr_deg.f to add Gaussian noise to degrade the S/N.  Since
+there is no underlying continuum emission on these spectra though, the
+range I used to determine the initial S/N was generally chosen near or
+across the peak of an emission line and so it arbitrary and
+meaningless.  I then just degraded it a random amount to look generally
+"typical" of varying amounts of noise.  Actual S/N values should not be
+taken to mean anything or to be relatively comparative to other fake
+data.
+
+*fakeBLcomp*_werr.dat - These are the final spectra to be used to fit
+with SPAMM.  The first 2 columns are the same as fakeBLcomp*_deg.dat,
+but they now have an error spectrum in the third column added with
+adderrspec.sm.  This process is described in the 00README_errspec_create
+readme file.  Final spectra and error spectra can been visualized in
+finspec_wnoiserr.eps. 
+
+*finspec_wnoiserr.eps - plot of finally created emission line fake
+spectra to be fitted with SPAMM.
+
+*fracerrspec_dsp*.dat(.fits) - SDSS fractional error spectrum that has
+been converted to the different linear dispersion scales of the 6 fake
+data wavelength arrays.  The ascii versions of these were read into
+adderrspec.sm and used to make the fake error spectra added to each fake
+data spectrum.  See 00README_errspec_create for more details.
+
+*logfile - from pyraf
+
+*lw.in.param - from using my lintwidth3 program to measure the width of
+the perfect version of the CIV line in the 4th fake spectrum because
+this is really a Gauss-Hermite best fit to an actual CIV line (2
+component fit) and so doesn't have a theoretically calculatable width.
+
+*perfectspec.eps - plot of all initial fake data spectra before adding
+noise.
+
+*plotgauss.sm - SM macro used to create all fake emission line spectra
+with properties that are given in the ../fakedata_properties.xlsx
+spreadsheet and shown in perfectspec.eps.
+
+sdss_frac_errorspec.dat(.fits) the original SDSS fractional error
+spectrum made by dividing the original error spectrum of SDSS 0254 by
+the signal spectrum.  This was used as input in pyraf dispcor to make
+all the fracerrspec_dsp*.fits spectra for the fake data.
+
+
+-K Denney 2013-Nov-1
+**********

@@ -1,7 +1,7 @@
 plotgauss
 #plotgauss
 	erase
-	expand 1.3
+	expand 0.9
 	lweight 3
 	add_ctype dgray  190 190 190
 	ctype black
@@ -13,6 +13,8 @@ plotgauss
 	set lam4 = 1750.38592, 2932.94592, 0.12448 
 	set lam5 = 2300, 3875, 0.25
 	set lam6 = 1400, 12000, 3
+	#
+  #lam1 fake data
 	#make single Gaussian Profile for lam1 at CIV
 	define gauss1cen 1549
 	define gauss1sig 20
@@ -20,12 +22,14 @@ plotgauss
 	set gauss1 = gauss * 2e-13
 	define fwhm1 ((2.35*$gauss1sig)/$gauss1cen*3.e5)
 	echo fwhm1 $fwhm1
-	#lim lam1 gauss1 box
-	#connect lam1 gauss1
+	window 2 3 1 3
+	lim lam1 gauss1 box
+	connect lam1 gauss1
 	define print_noheader 1
 	print fakeBLcomp1.dat ' %11.5f   %12.4e \n' {lam1 gauss1}
 	#
-	#Make Single Gaussian Broad Hbeta, Narrow Hbeta, OIII 4559 and 5007 for lam2
+  #lam2 fake data
+	#Make Single Gaussian Broad Hbeta, Narrow Hbeta, OIII 4559 and 5007
 	define gauss2_1cen 4861
 	define gauss2_1sig 35
 	define gauss2_2cen 4861
@@ -51,10 +55,12 @@ plotgauss
 	define fwhm2_4 ((2.35*$gauss2_4sig)/$gauss2_4cen*3.e5)
 	echo fwhm2_5007 $fwhm2_4
 	set totspec2 = gauss2_1 + gauss2_2 + gauss2_3 + gauss2_4
-	#lim lam2 totspec2 box
-	#connect lam2 totspec2
+	window 2 3 1 2
+	lim lam2 totspec2 box
+	connect lam2 totspec2
 	print fakeBLcomp2.dat ' %11.5f   %12.4e \n' {lam2 totspec2}
 	#
+  #lam3 fake data
 	#Make Single Gaussian for Halpha, Hbeta, and Hgamma
 	#Vary velocity widths slightly to account for typical variations seen
 	#set at small redshift of 0.1, so Ha=7219, Hb=5347, Hg=4774
@@ -78,8 +84,144 @@ plotgauss
 	define fwhm3_3 ((2.35* $gauss3_3sig) / $gauss3_3cen*3.e5)
 	echo fwhm3_Hg $fwhm3_3
 	set totspec3 = gauss3_1 + gauss3_2 + gauss3_3
+	window 2 3 1 1
 	lim lam3 totspec3 box
 	connect lam3 totspec3
 	print fakeBLcomp3.dat ' %11.5f   %12.4e \n' {lam3 totspec3}
-	
-	
+	#
+  #lam4 fake data
+	#CIV line that is true fit to real data with 2-component Gauss-Hermite
+	#plus CIII],SiIII] blend that is a double Gaussian with same widths
+  	#but arbitrarily chosen because I don't know nor feel like looking
+	#up theory relation in width between CIII], SiIII], and CIV.
+	#Oh yeah, and this spectrum is at z=0.35, so peaks/centers are 
+	#CIV=2091.3, SiIII]=2554.2, CIII]=2576.8
+	data fakeBL4civline.dat read {lam4 1 spec4_1 2}
+	define gauss4_1cen 2554.2
+	define gauss4_1sig 24
+	define gauss4_2cen 2576.8
+	define gauss4_2sig 18
+	gauss lam4 $gauss4_1cen $gauss4_1sig  
+	set gauss4_1 = gauss * 16e-13
+	define fwhm4_1 ((2.35* $gauss4_1sig) / $gauss4_1cen*3.e5)
+	echo fwhm4_SiIII $fwhm4_1
+	gauss lam4 $gauss4_2cen $gauss4_2sig  
+	set gauss4_2 = gauss * 28e-13
+	define fwhm4_2 ((2.35* $gauss4_2sig) / $gauss4_2cen*3.e5)
+	echo fwhm4_CIII $fwhm4_2
+	set totspec4 = spec4_1 + gauss4_1 + gauss4_2
+	window 2 3 2 3
+	lim lam4 totspec4 box
+	connect lam4 totspec4
+	print fakeBLcomp4.dat ' %11.5f   %12.4e \n' {lam4 totspec4}
+  #lam5 fake data
+	#MgII line that is a doubles blend of two Gaussians
+	define gauss5_1cen 2796.35
+	define gauss5_1sig 26
+	define gauss5_2cen 2803.53
+	define gauss5_2sig 26
+	gauss lam5 $gauss5_1cen $gauss5_1sig  
+	set gauss5_1 = gauss * 9e-13
+	define fwhm5_1 ((2.35* $gauss5_1sig) / $gauss5_1cen*3.e5)
+	echo fwhm5_MgIIb $fwhm5_1
+	gauss lam5 $gauss5_2cen $gauss5_2sig  
+	set gauss5_2 = gauss * 9e-13
+	define fwhm5_2 ((2.35* $gauss5_2sig) / $gauss5_2cen*3.e5)
+	echo fwhm5_MgIIr $fwhm5_2
+	set totspec5 = gauss5_1 + gauss5_2
+	window 2 3 2 2
+	lim lam5 totspec5 box
+	connect lam5 totspec5
+	print fakeBLcomp5.dat ' %11.5f   %12.4e \n' {lam5 totspec5}
+  #lam6 fake data
+	#CIV, MgII, He1640, He4686, Hbeta, and Halpha, all 2 component broad Gaussians
+      #CIV
+	define gauss6l1_1cen 1549
+	define gauss6l1_1sig 8
+	define gauss6l1_2cen 1535
+	define gauss6l1_2sig 25
+	gauss lam6 $gauss6l1_1cen $gauss6l1_1sig  
+	set gauss6l1_1 = gauss * 34e-13
+	define fwhm6l1_1 ((2.35* $gauss6l1_1sig) / $gauss6l1_1cen*3.e5)
+	echo fwhm6_CIVnar $fwhm6l1_1
+	gauss lam6 $gauss6l1_2cen $gauss6l1_2sig  
+	set gauss6l1_2 = gauss * 28e-13
+	define fwhm6l1_2 ((2.35* $gauss6l1_2sig) / $gauss6l1_2cen*3.e5)
+	echo fwhm6_CIVbrd $fwhm6l1_2
+	set totspec6_line1 = gauss6l1_1 + gauss6l1_2
+      #He1640
+	define gauss6l2_1cen 1640
+	define gauss6l2_1sig 6
+	define gauss6l2_2cen 1624
+	define gauss6l2_2sig 28
+	gauss lam6 $gauss6l2_1cen $gauss6l2_1sig  
+	set gauss6l2_1 = gauss * 4e-13
+	define fwhm6l2_1 ((2.35* $gauss6l2_1sig) / $gauss6l2_1cen*3.e5)
+	echo fwhm6_He1640cen $fwhm6l2_1
+	gauss lam6 $gauss6l2_2cen $gauss6l2_2sig  
+	set gauss6l2_2 = gauss * 16e-13
+	define fwhm6l2_2 ((2.35* $gauss6l2_2sig) / $gauss6l2_2cen*3.e5)
+	echo fwhm6_He1640bl $fwhm6l2_2
+	set totspec6_line2 = gauss6l2_1 + gauss6l2_2
+      #MgII
+	define gauss6l3_1cen 2796.35
+	define gauss6l3_1sig 18
+	define gauss6l3_2cen 2803.53
+	define gauss6l3_2sig 18
+	gauss lam6 $gauss6l3_1cen $gauss6l3_1sig  
+	set gauss6l3_1 = gauss * 15e-13
+	define fwhm6l3_1 ((2.35* $gauss6l3_1sig) / $gauss6l3_1cen*3.e5)
+	echo fwhm6_MgIIbl $fwhm6l3_1
+	gauss lam6 $gauss6l3_2cen $gauss6l3_2sig  
+	set gauss6l3_2 = gauss * 15e-13
+	define fwhm6l3_2 ((2.35* $gauss6l3_2sig) / $gauss6l3_2cen*3.e5)
+	echo fwhm6_MgIIred $fwhm6l3_2
+	set totspec6_line3 = gauss6l3_1 + gauss6l3_2
+      #He4686
+	define gauss6l4_1cen 4686
+	define gauss6l4_1sig 17
+	define gauss6l4_2cen 4640
+	define gauss6l4_2sig 80
+	gauss lam6 $gauss6l4_1cen $gauss6l4_1sig  
+	set gauss6l4_1 = gauss * 1.3e-13
+	define fwhm6l4_1 ((2.35* $gauss6l4_1sig) / $gauss6l4_1cen*3.e5)
+	echo fwhm6_He4686cen $fwhm6l4_1
+	gauss lam6 $gauss6l4_2cen $gauss6l4_2sig  
+	set gauss6l4_2 = gauss * 5.3e-13
+	define fwhm6l4_2 ((2.35* $gauss6l4_2sig) / $gauss6l4_2cen*3.e5)
+	echo fwhm6_He4686bl $fwhm6l4_2
+	set totspec6_line4 = gauss6l4_1 + gauss6l4_2
+      #Hbeta
+	define gauss6l5_1cen 4861
+	define gauss6l5_1sig 20
+	define gauss6l5_2cen 4850
+	define gauss6l5_2sig 45
+	gauss lam6 $gauss6l5_1cen $gauss6l5_1sig  
+	set gauss6l5_1 = gauss * 9e-13
+	define fwhm6l5_1 ((2.35* $gauss6l5_1sig) / $gauss6l5_1cen*3.e5)
+	echo fwhm6_Hbnar $fwhm6l5_1
+	gauss lam6 $gauss6l5_2cen $gauss6l5_2sig  
+	set gauss6l5_2 = gauss * 12e-13
+	define fwhm6l5_2 ((2.35* $gauss6l5_2sig) / $gauss6l5_2cen*3.e5)
+	echo fwhm6_Hbbrdbl $fwhm6l5_2
+	set totspec6_line5 = gauss6l5_1 + gauss6l5_2
+      #Halpha
+	define gauss6l6_1cen 6563
+	define gauss6l6_1sig 26
+	define gauss6l6_2cen 6548
+	define gauss6l6_2sig 50
+	gauss lam6 $gauss6l6_1cen $gauss6l6_1sig  
+	set gauss6l6_1 = gauss * 27e-13
+	define fwhm6l6_1 ((2.35* $gauss6l6_1sig) / $gauss6l6_1cen*3.e5)
+	echo fwhm6_Hanar $fwhm6l6_1
+	gauss lam6 $gauss6l6_2cen $gauss6l6_2sig  
+	set gauss6l6_2 = gauss * 36e-13
+	define fwhm6l6_2 ((2.35* $gauss6l6_2sig) / $gauss6l6_2cen*3.e5)
+	echo fwhm6_Habrdbl $fwhm6l6_2
+	set totspec6_line6 = gauss6l6_1 + gauss6l6_2
+      #combine and plot final spectrum
+	set totspec6 = totspec6_line1 + totspec6_line2 + totspec6_line3 + totspec6_line4 + totspec6_line5 + totspec6_line6
+	window 2 3 2 1
+	lim 1400 7000 totspec6 box
+	connect lam6 totspec6
+	print fakeBLcomp6.dat ' %11.5f   %12.4e \n' {lam6 totspec6}
