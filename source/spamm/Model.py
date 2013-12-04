@@ -11,6 +11,8 @@ import emcee
 
 from Spectrum import Spectrum
 
+iteration_count = 0
+
 class MCMCDidNotConverge(Exception):
 	pass
 
@@ -21,13 +23,16 @@ def ln_probability(new_params, *args):
 	@param new_params A 1D numpy array in the parameter space used as input into sampler.
 	@param args Additional arguments passed to this function (i.e. the Model object).
 	'''
+	global iteration_count
+	iteration_count = iteration_count + 1
+	if iteration_count % 500 == 0:
+		print "iteration count: {0}".format(iteration_count)
 
 	# Make sure "model" is passed in - this needs access to the Model object
 	# since it contains all of the information about the components.
 	model = args[0] # TODO: return an error if this is not the case
 		
 	# generate model spectrum given model parameters
-	print "ln_probability params = {0}".format(new_params)
 	model_spectrum_flux = model.model_flux(params=new_params)
 	
 	# calculate the log likelihood
@@ -39,41 +44,35 @@ def ln_probability(new_params, *args):
 	# -----------------------	
 	ln_prior = model.prior(params=new_params)
 	
-	return ln_likelihood + ln_prior
+	return ln_likelihood + ln_prior # adding two lists
 	
 
 class Model(object):
 	'''
 	
 	'''
-	def __init__(self):
+	def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05):
 		self.z = None
-		self._spectrum = None
 		self.components = list()
-		self.reddening = None
-		self.model_parameters = dict()
-		self.mcmc_param_vector = None
+		#self.reddening = None
+		#self.model_parameters = dict()
+		#self.mcmc_param_vector = None
+
+		# private properties
 		self._mask = None
-		
-		self.output = None # THIS IS TEMPORARY!
-		self.samples = None # THIS IS TEMPORARY!
-		
 		self._data_spectrum = None
+		
+		# the emcee.EnsembleSampler object, defined after run_mcmc() is run
+		self.sampler = None
+
+		# the output of the emcee object, defined after run_mcmc() is run
+		self.sampler_output = None
 		
 		self.model_spectrum = Spectrum()
 		# precomputed wavelength range is 1000-10000Å in steps of 0.05Å
-		self.model_spectrum.wavelengths = np.arange(1000, 10000, 0.05)
+		self.model_spectrum.wavelengths = np.arange(wavelength_start, wavelength_end, wavelength_delta)
 		self.model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
 		
-		
-# 	@property
-# 	def spectrum(self):
-# 		return self._spectrum
-# 	
-# 	@spectrum.setter
-# 	def spectrum(self, new_spectrum):
-# 		self._spectrum = new_spectrum
-	
 	@property
 	def mask(self):
 		if self.data_spectrum is None:
@@ -93,13 +92,6 @@ class Model(object):
 		'''
 		self._mask = new_mask
 
-	def append_component(self, component=None):
-		'''
-		Add a new component to the model.
-		'''
-		print "Adding component"
-		self.components.append(component)
-
 	@property
 	def data_spectrum(self):
 		return self._data_spectrum
@@ -117,7 +109,7 @@ class Model(object):
 		for component in self.components:
 			component.initialize(data_spectrum=new_data_spectrum)
 
-	def run_mcmc(self, n_walkers=100, n_iterations=10):
+	def run_mcmc(self, n_walkers=100, n_iterations=100):
 		'''
 		Method that actually calls the MCMC.
 		
@@ -130,26 +122,28 @@ class Model(object):
 		for walker in xrange(n_walkers):
 			walker_params = list()
 			for component in self.components:
-				#walker_params.append(component.initial_values(self.data_spectrum))
 				walker_params = walker_params + component.initial_values(self.data_spectrum)
 			walkers_matrix.append(walker_params)
-		#print "matrix: {0}".format(walkers_matrix)
-		#sys.exit(1)
+
+		global iteration_count
+		iteration_count = 0
+
 		# create MCMC sampler
-		sampler = emcee.EnsembleSampler(nwalkers=n_walkers,
+		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers,
 										dim=len(walkers_matrix[0]),
 										lnpostfn=ln_probability,
 										args=[self])
 		
 		# run!
-		
-		self.output = sampler.run_mcmc(walkers_matrix, n_iterations)
-		self.samples = sampler.chain[:, 5:, :].reshape((-1, len(walkers_matrix[0])))
-		#print "sampler output: {0}".format(output)
-		#for i in output:
-		#	print type(i.shape())
-		
-		# 
+		self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
+
+	@property
+	def total_parameter_count(self):
+		''' Return the total number of parameters of all components. '''
+		total_no_parameters = 0
+		for c in self.components:
+			total_no_parameters += c.parameter_count
+		return total_no_parameters
 	
 	def parameter_vector(self):
 		'''
@@ -174,14 +168,13 @@ class Model(object):
 		# Combine all components into a single spectrum
 		# Build param vector to pass to MCMC
 		
-		print "params = {0}: (type: {1})".format(params, type(params))
-		#params2 = [x for x in params[0]] #list(params) # make a copy as we'll delete elements
+		print "params = {0}".format(params)
+
+		# make a copy as we'll delete elements
 		params2 = np.copy(params)
 		
 		self.model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
-		#model_spectrum.wavelengths = self.model_spectrum.wavelengths
 		
-		#pdb.set_trace()
 		for component in self.components:
 
 			# extract parameters from full vector for each component
@@ -215,9 +208,6 @@ class Model(object):
 		'''
 		
 		assert model_spectrum_flux is not None, "'model_spectrum.flux' should not be None."
-		print "Model spectrum flux: {0}".format(model_spectrum_flux)
-		#print self.data_spectrum.flux
-		#print self.data_spectrum.flux_error
 		
 		# This creates a function that can be used to interpolate
 		# values based on the data.

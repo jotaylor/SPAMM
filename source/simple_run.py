@@ -30,12 +30,12 @@ sys.excepthook = info
 # ----------------
 # Read in spectrum
 # ----------------
-datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1.dat"
-wavelengths, flux = np.loadtxt(datafile, unpack=True)
+datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
+wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 
 spectrum = Spectrum()
 spectrum.flux = flux
-spectrum.flux_error = [0.05*x for x in spectrum.flux]
+spectrum.flux_error = flux_err
 spectrum.wavelengths = wavelengths
 
 # -----------------
@@ -47,13 +47,15 @@ nuclear_comp = NuclearContinuumComponent()
 # Create model
 # ------------
 model = Model()
-model.append_component(component=nuclear_comp)
+model.components.append(nuclear_comp)
 
 model.data_spectrum = spectrum # add data
 
 model.run_mcmc(n_walkers=10, n_iterations=50)
 
-fig = triangle.corner(model.samples)
+samples = model.sampler.chain[:, 5:, :].reshape((-1, model.total_parameter_count))
+
+fig = triangle.corner(samples)
 fig.savefig("triangle.png")
 
 # try:

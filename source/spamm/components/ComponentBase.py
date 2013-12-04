@@ -18,13 +18,21 @@ class Component(object):
 		#self.model_parameters = list()
 		self.model_parameter_names = list()
 
-	def parameters(self):
-		''' Returns the parameters of this component as a list. '''
-		if self.z:
-			return [self.z] + self.model_parameters
-		else:
-			return self.model_parameters
+# 	def parameters(self):
+# 		''' Returns the parameters of this component as a list. '''
+# 		if self.z:
+# 			return [self.z] + self.model_parameters
+# 		else:
+# 			return self.model_parameters
 
+	def parameter_index(self, parameter_name):
+		''' '''
+		for idx, pname in enumerate(self.model_parameter_names):
+			if parameter_name == pname:
+				return idx
+		
+		return None
+	
 	@property
 	def parameter_count(self):
 		''' Returns the number of parameters of this component. '''
