@@ -55,6 +55,9 @@ class Model(object):
 		self.mcmc_param_vector = None
 		self._mask = None
 		
+		self.output = None # THIS IS TEMPORARY!
+		self.samples = None # THIS IS TEMPORARY!
+		
 		self._data_spectrum = None
 		
 		self.model_spectrum = Spectrum()
@@ -139,7 +142,12 @@ class Model(object):
 										args=[self])
 		
 		# run!
-		sampler.run_mcmc(walkers_matrix, n_iterations)
+		
+		self.output = sampler.run_mcmc(walkers_matrix, n_iterations)
+		self.samples = sampler.chain[:, 5:, :].reshape((-1, len(walkers_matrix[0])))
+		#print "sampler output: {0}".format(output)
+		#for i in output:
+		#	print type(i.shape())
 		
 		# 
 	

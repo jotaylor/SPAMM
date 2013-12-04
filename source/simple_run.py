@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import triangle
 import numpy as np
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -50,7 +51,10 @@ model.append_component(component=nuclear_comp)
 
 model.data_spectrum = spectrum # add data
 
-model.run_mcmc(n_walkers=10, n_iterations=100)
+model.run_mcmc(n_walkers=10, n_iterations=50)
+
+fig = triangle.corner(model.samples)
+fig.savefig("triangle.png")
 
 # try:
 # 	cf.run_mcmc_analysis(plot=False)
