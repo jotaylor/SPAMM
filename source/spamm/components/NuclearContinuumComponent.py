@@ -14,12 +14,12 @@ def runningMeanFast(x, N):
 
 class NuclearContinuumComponent(Component):
 	'''
-	Description of the NuclearComponent here.
-	
+	AGN Continuum Component
+	\f$ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} \f$ 
 	This component has two parameters:
 	
-	slope : 
-	minimization : 
+	normalization : \f$ F_{\rm PL,0} \f$ 
+	slope : \f$ \alpha \f$ 
 	
 	'''
 	def __init__(self):
@@ -37,7 +37,6 @@ class NuclearContinuumComponent(Component):
 		
 	def initial_values(self, spectrum=None):
 		'''
-		
 		Needs to sample from prior distribution.
 		'''
 				
@@ -46,14 +45,12 @@ class NuclearContinuumComponent(Component):
 		self.flux_min = 0
 		self.flux_max = max(runningMeanFast(spectrum.flux, boxcar_width))
 		
-		normalization_init = np.random.uniform(low=self.flux_min,
-											   high=self.flux_max)
+		normalization_init = np.random.uniform(low=self.flux_min,high=self.flux_max)
 
 		self.slope_min = -3.0
 		self.slope_max = 3.0
 
-		slope_init = np.random.uniform(low=self.slope_min,
-									   high=self.slope_max)
+		slope_init = np.random.uniform(low=self.slope_min,high=self.slope_max)
 
 		return [normalization_init, slope_init]
 
@@ -80,25 +77,29 @@ class NuclearContinuumComponent(Component):
 		'''
 		Return a list of the ln of all of the priors.
 		
-		@param params
+		normalization : uniform linear prior between 0 and the maximum of the spectral flux after computing running median
+		slope : uniform linear prior in range [-3,3]
 		'''
 		
 		# need to return parameters as a list in the correct order
 		ln_priors = list()
 		
-		slope = params[self.parameter_index("slope")]
 		normalization = params[self.parameter_index("normalization")]
+		slope = params[self.parameter_index("slope")]
 		
-		if self.slope_min < slope < self.slope_max:
-			ln_priors.append(np.log(1))
-		else:
-			ln_priors.append(np.log(0))
-			# TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
 		
 		if self.normalization_min < normalization < self.normalization_max:
 			ln_priors.append(np.log(1))
 		else:
-			ln_priors.append(np.log(0))
+			#arbitrarily small number
+			ln_priors.append(1.e-17)
+			
+		if self.slope_min < slope < self.slope_max:
+			ln_priors.append(np.log(1))
+		else:
+			#arbitrarily small number
+			ln_priors.append(1.e-17)
+			# TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
 			
 		return ln_priors
 		

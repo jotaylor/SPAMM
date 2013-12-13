@@ -16,9 +16,9 @@ iteration_count = 0
 class MCMCDidNotConverge(Exception):
 	pass
 
-def ln_probability(new_params, *args):
+def ln_posterior(new_params, *args):
 	'''
-	The likelihood of the logarithm of the model, the function to be passed to the emcee sampler.
+	The logarithm of the posterior function -- to be passed to the emcee sampler.
 	
 	@param new_params A 1D numpy array in the parameter space used as input into sampler.
 	@param args Additional arguments passed to this function (i.e. the Model object).
@@ -62,11 +62,11 @@ class Model(object):
 		self._mask = None
 		self._data_spectrum = None
 		
-		# the emcee.EnsembleSampler object, defined after run_mcmc() is run
+		# the emcee.EnsembleSampler object
 		self.sampler = None
 
-		# the output of the emcee object, defined after run_mcmc() is run
-		self.sampler_output = None
+		# the output of the emcee object
+		#self.sampler_output = None
 		
 		self.model_spectrum = Spectrum()
 		# precomputed wavelength range is 1000-10000Å in steps of 0.05Å
@@ -129,14 +129,12 @@ class Model(object):
 		iteration_count = 0
 
 		# create MCMC sampler
-		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers,
-										dim=len(walkers_matrix[0]),
-										lnpostfn=ln_probability,
-										args=[self])
+		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers,dim=len(walkers_matrix[0]),lnpostfn=ln_posterior,args=[self])
 		
 		# run!
-		self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
-
+		#self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
+		self.sampler.run_mcmc(walkers_matrix, n_iterations)
+		
 	@property
 	def total_parameter_count(self):
 		''' Return the total number of parameters of all components. '''
@@ -200,11 +198,12 @@ class Model(object):
 
 	def likelihood(self, model_spectrum_flux=None):
 		'''
-		Calculate the ln likelihood of the given model spectrum.
+		Calculate the ln likelihood of the given model spectrum 
 
-		\f$ L \prop e^{x^2/2} \f$
-		
+		\f$ ln(L) = -0.5 \Sum_n {\left[ \fract{(flux_{Obs}-flux_{model})^2}{\sigma^2} + ln(2 \pi \sigma^2) \right]}\f$
+
 		@params model_spectrum The model spectrum, a numpy array of flux value.
+		The model is interpolated over the data wavelength grid.
 		'''
 		
 		assert model_spectrum_flux is not None, "'model_spectrum.flux' should not be None."
@@ -215,14 +214,14 @@ class Model(object):
 		                         self.model_spectrum.flux)
 		interp_model_flux = [f(x) for x in self.data_spectrum.wavelengths]
 		
-		ln_l = np.power(((self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2)
+		ln_l = np.power(((self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2)+np.log(2*np.pi*np.power(self.data_spectrum.flux_error,2))
 		ln_l *= self.mask
-		ln_l = np.sum(ln_l) * -0.5
+		ln_l = -0.5*(np.sum(ln_l))
 		return ln_l
 
 	def prior(self, params):
 		'''
-		Calculate the priors for all components in the model.
+		Calculate the ln priors for all components in the model.
 		
 		@param params
 		'''

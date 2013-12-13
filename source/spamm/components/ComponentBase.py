@@ -18,13 +18,6 @@ class Component(object):
 		#self.model_parameters = list()
 		self.model_parameter_names = list()
 
-# 	def parameters(self):
-# 		''' Returns the parameters of this component as a list. '''
-# 		if self.z:
-# 			return [self.z] + self.model_parameters
-# 		else:
-# 			return self.model_parameters
-
 	def parameter_index(self, parameter_name):
 		''' '''
 		for idx, pname in enumerate(self.model_parameter_names):
@@ -56,16 +49,6 @@ class Component(object):
 	@abstractmethod
 	def flux(self, wavelengths=None, parameters=None):
 		pass
-
-# 	@abstractmethod
-# 	def add(self, model=None, params=None):
-# 		'''
-# 		Add this component to the given Spectrum.
-# 		
-# 		@param spectrum The spectrum to add this component to (type: Spectrum object).
-# 		@param params A list of parameters for this component.
-# 		'''
-# 		pass
 		
 	@abstractmethod
 	def initialize(self, data_spectrum=None):

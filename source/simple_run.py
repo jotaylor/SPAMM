@@ -3,6 +3,7 @@
 import sys
 import triangle
 import numpy as np
+import matplotlib.pyplot as pl
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
@@ -39,24 +40,36 @@ spectrum.flux_error = flux_err
 spectrum.wavelengths = wavelengths
 
 # -----------------
-# Create components
+# Initialize components
 # -----------------
 nuclear_comp = NuclearContinuumComponent()
 
 # ------------
-# Create model
+# Initialize model
 # ------------
 model = Model()
 model.components.append(nuclear_comp)
-
 model.data_spectrum = spectrum # add data
 
-model.run_mcmc(n_walkers=10, n_iterations=50)
+# ------------
+# Run MCMC
+# ------------
+model.run_mcmc(n_walkers=100, n_iterations=500)
+print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
 
-samples = model.sampler.chain[:, 5:, :].reshape((-1, model.total_parameter_count))
+# ------------
+# Analyze & Plot results
+# ------------
+#discard the first 100 steps (burn in)
+#Flattens the chain to have a flat list of samples
+samples = model.sampler.chain[:, 100:, :].reshape((-1, model.total_parameter_count))
 
-fig = triangle.corner(samples)
+## add plot distributions with histograms instead of triangle
+fig = triangle.corner(samples,labels=["$norm$","$slope$"])
 fig.savefig("triangle.png")
+
+#add analysis of the samples -- producing numbers to quote!
+#global minimum -- percentiles -- et al.
 
 # try:
 # 	cf.run_mcmc_analysis(plot=False)
