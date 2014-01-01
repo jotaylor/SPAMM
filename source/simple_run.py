@@ -64,6 +64,20 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 #Flattens the chain to have a flat list of samples
 samples = model.sampler.chain[:, 100:, :].reshape((-1, model.total_parameter_count))
 
+# Save the samples into a text file to be read by other codes
+np.savetxt("samples.text",samples)
+
+# Plot the chains to check for convergence
+labels=["$\\rm norm$","$\\rm slope$"]
+if np.size(labels) != np.size(samples[0,:]):
+	print("Caution: The number of label names is not correct!")
+for i in xrange(0,np.size(labels)):
+	pl.clf()
+	pl.plot(samples[:,0],'-b')
+	pl.xlabel("$\\rm Chain$")
+	pl.ylabel(labels[i])
+	pl.show()
+
 ## add plot distributions with histograms instead of triangle
 fig = triangle.corner(samples,labels=["$norm$","$slope$"])
 fig.savefig("triangle.png")
