@@ -212,7 +212,10 @@ class Model(object):
 		# values based on the data.
 		f = interpolate.interp1d(self.model_spectrum.wavelengths,
 		                         self.model_spectrum.flux)
-		interp_model_flux = [f(x) for x in self.data_spectrum.wavelengths]
+
+		#It is much more efficient to not use a for loop here.
+		#interp_model_flux = [f(x) for x in self.data_spectrum.wavelengths]
+		interp_model_flux = f(self.data_spectrum.wavelengths)
 		
 		ln_l = np.power(((self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2)+np.log(2*np.pi*np.power(self.data_spectrum.flux_error,2))
 		ln_l *= self.mask
