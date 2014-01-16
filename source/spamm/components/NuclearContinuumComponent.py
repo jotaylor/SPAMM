@@ -92,13 +92,13 @@ class NuclearContinuumComponent(Component):
 			ln_priors.append(np.log(1))
 		else:
 			#arbitrarily small number
-			ln_priors.append(1.e-17)
+			ln_priors.append(-1.e17)
 			
 		if self.slope_min < slope < self.slope_max:
 			ln_priors.append(np.log(1))
 		else:
 			#arbitrarily small number
-			ln_priors.append(1.e-17)
+			ln_priors.append(-1.e17)
 			# TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
 			
 		return ln_priors
