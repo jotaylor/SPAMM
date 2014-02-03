@@ -289,7 +289,7 @@ class HostGalaxyComponent(Component):
 		#print "******* {0}".format(parameters)
 		norm = list() # parameter normalization
 		for i in range(len(self.templates)):
-			norm.append(parameters[i] / self.interpolated_normalization_flux[i] * spectrum.flux_at_normalization_wavelength())
+			norm.append(parameters[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
 #		norm = parameters[0:-1] / self.interpolated_normalization_flux
 		self._flux_arrays[:] = 0.0
 		for i in range(len(self.templates)):
