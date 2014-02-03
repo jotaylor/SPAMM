@@ -25,6 +25,7 @@ class NuclearContinuumComponent(Component):
 	def __init__(self):
 		super(NuclearContinuumComponent, self).__init__()
 
+		self.model_parameter_names = list()
 		self.model_parameter_names.append("normalization")
 		self.model_parameter_names.append("slope")
 		
@@ -35,9 +36,16 @@ class NuclearContinuumComponent(Component):
 		self.slope_min = None
 		self.slope_max = None
 		
+	@property
+	def is_analytic(self):
+		return True	
+	
 	def initial_values(self, spectrum=None):
 		'''
 		Needs to sample from prior distribution.
+		Return type must be a list (not an np.array).
+		
+		Called by the emcee.
 		'''
 				
 		boxcar_width = 5 # width of smoothing function
@@ -53,15 +61,6 @@ class NuclearContinuumComponent(Component):
 		slope_init = np.random.uniform(low=self.slope_min,high=self.slope_max)
 
 		return [normalization_init, slope_init]
-
-	def initialize(self, data_spectrum=None):
-		'''
-		Perform any initializations where the data is optional.
-		'''
-		if data_spectrum is None:
-			raise Exception("The data spectrum must be specified to initialize" + 
-							"{0}.".format(self.__class__.__name__))
-		self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
 
 	def normalization_wavelength(self, data_spectrum_wavelength=None):
 		'''
@@ -87,7 +86,6 @@ class NuclearContinuumComponent(Component):
 		normalization = params[self.parameter_index("normalization")]
 		slope = params[self.parameter_index("slope")]
 		
-		
 		if self.normalization_min < normalization < self.normalization_max:
 			ln_priors.append(np.log(1))
 		else:
@@ -103,7 +101,7 @@ class NuclearContinuumComponent(Component):
 			
 		return ln_priors
 		
-	def flux(self, wavelengths=None, parameters=None):
+	def flux(self, spectrum=None, parameters=None):
 		'''
 		Returns the flux for this component for a given wavelength grid
 		and parameters. Will use the initial parameters if none are specified.
@@ -111,7 +109,8 @@ class NuclearContinuumComponent(Component):
 		assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
 		
 		# calculate flux of the component
-		flux = parameters[0] * \
-		       np.power((wavelengths / self.normalization_wavelength()), parameters[1])
+		normalized_wavelengths = spectrum.wavelengths / \
+			self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
+		flux = parameters[0] * np.power(normalized_wavelengths, parameters[1])
 		
 		return flux

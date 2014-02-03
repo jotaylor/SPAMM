@@ -25,7 +25,7 @@ def ln_posterior(new_params, *args):
 	'''
 	global iteration_count
 	iteration_count = iteration_count + 1
-	if iteration_count % 500 == 0:
+	if iteration_count % 2000 == 0:
 		print "iteration count: {0}".format(iteration_count)
 
 	# Make sure "model" is passed in - this needs access to the Model object
@@ -70,8 +70,18 @@ class Model(object):
 		
 		self.model_spectrum = Spectrum()
 		# precomputed wavelength range is 1000-10000Å in steps of 0.05Å
-		self.model_spectrum.wavelengths = np.arange(wavelength_start, wavelength_end, wavelength_delta)
-		self.model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
+		#self.model_spectrum.wavelengths = np.arange(wavelength_start, wavelength_end, wavelength_delta)
+		self.model_spectrum.wavelengths = None
+		self.model_spectrum.flux = None # np.zeros(len(self.model_spectrum.wavelengths))
+		
+		# Flag to allow Model to interpolate components' wavelength grid to match data
+		# if component grid is more course than data
+		# TODO - document better!
+		self.downsample_data_if_needed = False
+		self.upsample_components_if_needed = False
+		
+		# debugging
+		self.print_parameters = False
 		
 	@property
 	def mask(self):
@@ -100,14 +110,64 @@ class Model(object):
 	def data_spectrum(self, new_data_spectrum):
 		'''
 		
+		All components of the model must be set before setting the data (this method).
 		'''
 		self._data_spectrum = new_data_spectrum
 
 		if len(self.components) == 0:
 			raise Exception("Components must be added before defining the data spectrum.")
 
+		# the data spectrum defines the model wavelength grid
+		self.model_spectrum.wavelengths = np.array(new_data_spectrum.wavelengths)
+		self.model_spectrum.flux = np.zeros(len(self.model_spectrum.wavelengths))
+
+		# Check that all components are on the same wavelength grid.
+		# If they are not, AND the flag to interpolate them has been set, AND they are not
+		# more course than the data, interpolate. If not, fail.
+		need_to_downsample_data = False
+		components_to_upsample = dict()
+				
+		gs = 0 # grid spacing
+		worst_component = None # holds component with most course wavelength grid spacing
+
 		for component in self.components:
-			component.initialize(data_spectrum=new_data_spectrum)
+			component.initialize(spectrum=new_data_spectrum)
+			
+			if component.grid_spacing > gs:
+				gs = component.grid_spacing
+				worst_component = component
+		
+		if gs > new_data_spectrum.grid_spacing:
+			
+			if self.upsample_components_if_needed:
+				# The code will interpolate to the data anyway,
+				# AND the user has allowed this for coursely sampled components
+				# to be upsampled to the data. This was done above.
+				pass
+			elif self.downsample_data_if_needed:
+				# We will downsample the data, the resulting grid will be different than the
+				# input data, and the user has allowed this.
+				
+				# downsample data to "worst" component; create new Spectrum data object
+				downsampled_spectrum = new_data_spectrum.copy()
+				
+				# downsample
+				downsampled_spectrum.wavelengths = np.arange(new_data_spectrum[0], new_data_spectrum[-1], gs)
+				downsampled_spectrum.flux = scipy.interpolate.interp1d(x=downsampled_spectrum.wavelengths,
+																	   y=new_data_spectrum.flux,
+																	   kind='linear')
+																	   
+				self.model_spectrum.wavelengths = np.array(downsampled_spectrum.wavelengths)
+				
+				# now need to reinitialize all components with new data
+				for component in self.components:
+					component.initialize(data_spectrum=downsampled_spectrum)
+			else:
+				assert True, ("The component '{0}' has courser wavelength grid spacing \n".format(worst_component) +
+							  "than the data. Either increase the spacing of the component or use one of " +
+							  "the flags on the Model class ('upsample_components_if_needed', " +
+							  "'downsample_data_if_needed') to override this.")
+
 
 	def run_mcmc(self, n_walkers=100, n_iterations=100):
 		'''
@@ -118,7 +178,7 @@ class Model(object):
 		'''
 		
 		# initialize walker matrix with initial parameters
-		walkers_matrix = list()
+		walkers_matrix = list() # must be a list, not an np.array
 		for walker in xrange(n_walkers):
 			walker_params = list()
 			for component in self.components:
@@ -166,7 +226,8 @@ class Model(object):
 		# Combine all components into a single spectrum
 		# Build param vector to pass to MCMC
 		
-		print "params = {0}".format(params)
+		if self.print_parameters:
+			print "params = {0}".format(params)
 
 		# make a copy as we'll delete elements
 		params2 = np.copy(params)
@@ -192,9 +253,15 @@ class Model(object):
 		on the model_spectrum's wavelength grid.
 		'''
 		# get the component's flux
-		component_flux = component.flux(wavelengths=self.model_spectrum.wavelengths,
-									    parameters=parameters)
+		component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
 		self.model_spectrum.flux += component_flux
+
+	def model_parameter_names(self):
+		''' Returns a list of all component parameter names. '''
+		labels = list()
+		for c in self.components:
+			labels = labels + [x for x in c.model_parameter_names]
+		return labels
 
 	def likelihood(self, model_spectrum_flux=None):
 		'''
@@ -232,5 +299,3 @@ class Model(object):
 		for component in self.components:
 			ln_p += sum(component.ln_priors(params=params))
 		return ln_p
-		
-			

@@ -7,6 +7,7 @@ import matplotlib.pyplot as pl
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
+from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 
 # TODO: astropy units for spectrum
 
@@ -28,58 +29,83 @@ def info(type, value, tb):
 sys.excepthook = info
 # -----------------------------------------------------------------
 
+n_walkers = 30
+n_iterations = 1000
+show_plots = False
+
 # ----------------
 # Read in spectrum
 # ----------------
-datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
-wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
-
-spectrum = Spectrum()
-spectrum.flux = flux
-spectrum.flux_error = flux_err
-spectrum.wavelengths = wavelengths
-
-# -----------------
-# Initialize components
-# -----------------
-nuclear_comp = NuclearContinuumComponent()
 
 # ------------
 # Initialize model
 # ------------
 model = Model()
-model.components.append(nuclear_comp)
+model.print_parameters = False
+
+# -----------------
+# Initialize components
+# -----------------
+if False:
+	nuclear_comp = NuclearContinuumComponent()
+
+	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
+	#datafile = "../Data/FakeData/PLcompOnly/fakepowlaw2_werr.dat"
+	wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
+	spectrum = Spectrum()
+	spectrum.wavelengths = wavelengths
+	spectrum.flux = flux
+	spectrum.flux_error = flux_err
+	
+	model.components.append(nuclear_comp)
+
+if True:
+	host_galaxy_comp = HostGalaxyComponent()
+	
+	datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
+	wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
+	spectrum = Spectrum()
+	spectrum.wavelengths = wavelengths
+	spectrum.flux = flux
+	spectrum.flux_error = flux_err
+	
+	model.components.append(host_galaxy_comp)
+
 model.data_spectrum = spectrum # add data
 
 # ------------
 # Run MCMC
 # ------------
-model.run_mcmc(n_walkers=100, n_iterations=500)
+model.run_mcmc(n_walkers=n_walkers, n_iterations=n_iterations)
 print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
 
 # ------------
 # Analyze & Plot results
 # ------------
-#discard the first 100 steps (burn in)
+#discard the first 50 steps (burn in) - keep at 50!!
 #Flattens the chain to have a flat list of samples
-samples = model.sampler.chain[:, 100:, :].reshape((-1, model.total_parameter_count))
+samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
 
 # Save the samples into a text file to be read by other codes
 np.savetxt("samples.text",samples)
 
 # Plot the chains to check for convergence
-labels=["$\\rm norm$","$\\rm slope$"]
-if np.size(labels) != np.size(samples[0,:]):
-	print("Caution: The number of label names is not correct!")
-for i in xrange(0,np.size(labels)):
-	pl.clf()
-	pl.plot(samples[:,0],'-b')
-	pl.xlabel("$\\rm Chain$")
-	pl.ylabel(labels[i])
-	pl.show()
+#labels=["$\\rm norm$","$\\rm slope$"]
+#if np.size(labels) != np.size(samples[0,:]):
+#	print "size labels: {0} / size samples {1}".format(labels, np.size(samples[0,:]))
+#	print("Caution: The number of label names is not correct!")
+labels = model.model_parameter_names()
+if show_plots:
+	for i in xrange(np.size(labels)):
+		pl.clf()
+		pl.plot(samples[:,0],'-b')
+		pl.xlabel("$\\rm Chain$")
+		pl.ylabel(labels[i])
+		pl.show()
 
 ## add plot distributions with histograms instead of triangle
-fig = triangle.corner(samples,labels=["$norm$","$slope$"])
+#fig = triangle.corner(samples,labels=["$norm$","$slope$"])
+fig = triangle.corner(samples, labels=labels)
 fig.savefig("triangle.png")
 
 #add analysis of the samples -- producing numbers to quote!

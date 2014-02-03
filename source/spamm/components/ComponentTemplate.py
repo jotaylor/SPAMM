@@ -25,6 +25,7 @@ class TemplateComponent(Component):
 		super(TemplateComponent, self).__init__()
 
 		# [replace] give the parameters names (spaces are ok), one line for each parameter
+		self.model_parameter_names = list() # this may need to be defined as a method
 		self.model_parameter_names.append("parameter n")
 		
 		self._norm_wavelength =  None
@@ -34,11 +35,22 @@ class TemplateComponent(Component):
 		self.max_parameter1 = None
 		# etc.
 		
+	@property
+	def is_analytic(self):
+		return True/False # choose the appropriate value.
+	
+	# This must be defined if the component is NOT analytical.
+	def native_wavelength_grid(self):
+		''' Returns the wavelength grid native to this component. '''
+
 	def initial_values(self, spectrum=None):
 		'''
 		
 		Needs to sample from prior distribution.
 		'''
+
+		# call super() implementation
+		super(NuclearContinuumComponent, self).initialize()
 
 		# [replace] calculate/define minimum and maximum values for each parameter.
 		self.min_parameter1 = ...
