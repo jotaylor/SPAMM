@@ -20,8 +20,8 @@ def ln_posterior(new_params, *args):
 	'''
 	The logarithm of the posterior function -- to be passed to the emcee sampler.
 	
-	@param new_params A 1D numpy array in the parameter space used as input into sampler.
-	@param args Additional arguments passed to this function (i.e. the Model object).
+	:param new_params: A 1D numpy array in the parameter space used as input into sampler.
+	:param args: Additional arguments passed to this function (i.e. the Model object).
 	'''
 	global iteration_count
 	iteration_count = iteration_count + 1
@@ -52,6 +52,12 @@ class Model(object):
 	
 	'''
 	def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05):
+		'''
+		
+		:param wavelength_start: document me!
+		:param wavelength_end: document me!
+		:param wavelength_delta: document me!
+		'''
 		self.z = None
 		self.components = list()
 		#self.reddening = None
@@ -85,6 +91,9 @@ class Model(object):
 		
 	@property
 	def mask(self):
+		'''
+		
+		'''
 		if self.data_spectrum is None:
 			print "Attempting to read the bad pixel mask before a spectrum was defined."
 			sys.exit(1)
@@ -98,7 +107,7 @@ class Model(object):
 		'''
 		Document me.
 		
-		@params mask A numpy array representing the mask.
+		:params mask: A numpy array representing the mask.
 		'''
 		self._mask = new_mask
 
@@ -111,6 +120,8 @@ class Model(object):
 		'''
 		
 		All components of the model must be set before setting the data (this method).
+
+		:param new_data_spectrum: document me!
 		'''
 		self._data_spectrum = new_data_spectrum
 
@@ -173,8 +184,8 @@ class Model(object):
 		'''
 		Method that actually calls the MCMC.
 		
-		@param n_walkers Number of walkers to pass to the MCMC.
-		@param n_iterations Number of iterations to pass to the MCMC.
+		:param n_walkers: Number of walkers to pass to the MCMC.
+		:param n_iterations: Number of iterations to pass to the MCMC.
 		'''
 		
 		# initialize walker matrix with initial parameters
@@ -210,6 +221,7 @@ class Model(object):
 	def parameter_vector(self):
 		'''
 		
+		:rtype: document me!
 		'''
 		param_vector = list()
 		for component in self.components:
@@ -223,8 +235,8 @@ class Model(object):
 		DO NOT modify anything in this class from this method as
 		it will be called by multiple MCMC walkers at the same time.
 		
-		@param params 1D numpy array of all parameters of all components of model.
-		@returns Numpy array of flux values; use self.data_spectrum.wavelengths for the wavelengths.
+		:param params: 1D numpy array of all parameters of all components of model.
+		:rtype: Numpy array of flux values; use self.data_spectrum.wavelengths for the wavelengths.
 		'''
 		
 		# Combine all components into a single spectrum
@@ -255,26 +267,36 @@ class Model(object):
 		'''
 		Add the specified component to the model's 'model_spectrum'
 		on the model_spectrum's wavelength grid.
+		
+		:param component: fill in doc
+		:param parameters: fill in doc
+		
 		'''
 		# get the component's flux
 		component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
 		self.model_spectrum.flux += component_flux
 
 	def model_parameter_names(self):
-		''' Returns a list of all component parameter names. '''
+		'''
+		Returns a list of all component parameter names.
+		
+		:rtype: list of strings
+		'''
 		labels = list()
 		for c in self.components:
 			labels = labels + [x for x in c.model_parameter_names]
 		return labels
 
 	def likelihood(self, model_spectrum_flux=None):
-		'''
+		r'''
 		Calculate the ln likelihood of the given model spectrum 
 
-		\f$ ln(L) = -0.5 \Sum_n {\left[ \fract{(flux_{Obs}-flux_{model})^2}{\sigma^2} + ln(2 \pi \sigma^2) \right]}\f$
+		.. math:: ln(L) = -0.5 \sum_n {\left[ \frac{(flux_{Obs}-flux_{model})^2}{\sigma^2} + ln(2 \pi \sigma^2) \right]}
 
-		@params model_spectrum The model spectrum, a numpy array of flux value.
 		The model is interpolated over the data wavelength grid.
+
+		:param model_spectrum_flux: The model spectrum, a numpy array of flux value.
+		:rtype: float likelihood value
 		'''
 		
 		assert model_spectrum_flux is not None, "'model_spectrum.flux' should not be None."
@@ -297,7 +319,8 @@ class Model(object):
 		'''
 		Calculate the ln priors for all components in the model.
 		
-		@param params
+		:param params: describe me!
+		:rtype: describe me
 		'''
 		ln_p = 0
 		for component in self.components:
