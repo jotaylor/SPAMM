@@ -188,8 +188,12 @@ class Model(object):
 		global iteration_count
 		iteration_count = 0
 
-		# create MCMC sampler
-		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers,dim=len(walkers_matrix[0]),lnpostfn=ln_posterior,args=[self])
+		# Create MCMC sampler
+		# - to enable multiproccessing, set threads > 1.
+		# - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
+		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
+											 lnpostfn=ln_posterior, args=[self],
+											 threads=1)
 		
 		# run!
 		#self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
