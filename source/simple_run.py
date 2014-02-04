@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
 import sys
-import triangle
+import gzip
+import cPickle as pickle
+
 import numpy as np
 import matplotlib.pyplot as pl
+
+import triangle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
@@ -30,7 +34,7 @@ sys.excepthook = info
 # -----------------------------------------------------------------
 
 n_walkers = 30
-n_iterations = 1000
+n_iterations = 800
 show_plots = False
 
 # ----------------
@@ -85,6 +89,14 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 #discard the first 50 steps (burn in) - keep at 50!!
 #Flattens the chain to have a flat list of samples
 samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
+
+# save chains + model
+with gzip.open('model.pickle.gz', 'wb') as model_output:
+	model_output.write(pickle.dumps(model))
+
+# TODO: move code below to another file that reads the pickled output, 
+# e.g. one that plots the chains, one that generates the triangle plot,
+# some combination, etc.
 
 # Save the samples into a text file to be read by other codes
 np.savetxt("samples.text",samples)
