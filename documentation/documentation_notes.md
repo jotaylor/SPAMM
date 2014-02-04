@@ -28,3 +28,5 @@ More themes here:
 <http://www.reddit.com/r/Python/comments/18b6v0/any_freeopensource_modern_sphinx_theme_out_there/>
 <http://stackoverflow.com/questions/2075691/sphinx-some-good-customization-examples>
 <http://pythonhosted.org/cloud_sptheme/install.html>
+
+Bootstrap: <http://loose-bits.com/2011/12/09/sphinx-twitter-bootstrap-theme.html>
