@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import gzip
 import cPickle as pickle
@@ -8,6 +9,9 @@ import numpy as np
 import matplotlib.pyplot as pl
 
 import triangle
+
+sys.path.append(os.path.abspath("../source"))
+
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent

@@ -14,6 +14,7 @@ Usage:
 % read_model_run.py model.pickle.gz
 '''
 
+import os
 import sys
 import gzip
 import optparse
@@ -21,6 +22,9 @@ import inspect
 import cPickle as pickle
 
 import triangle
+
+sys.path.append(os.path.abspath("../source"))
+
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent

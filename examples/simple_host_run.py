@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import triangle
 import numpy as np
 import matplotlib.pyplot as pl
+
+sys.path.append(os.path.abspath("../source"))
+
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
