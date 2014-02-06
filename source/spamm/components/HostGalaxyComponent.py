@@ -166,7 +166,10 @@ class HostGalaxyComponent(Component):
 
 		self.norm_min = np.zeros(len(self.templates))
 		self.norm_max = np.zeros(len(self.templates)) + flux_max
-		norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max)
+		
+		# the size parameter will force the result to be a numpy array - not the case
+		# if the inputs are single-valued (even if in the form of an array)
+		norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=self.norm_min.size)
 
 		self.stellar_dispersion_min = 30.0
 		self.stellar_dispersion_max = 600.0
@@ -219,7 +222,7 @@ class HostGalaxyComponent(Component):
 
 
 	def native_wavelength_grid(self):
-		assert True, "finish this code"
+		assert False, "finish this code"
 	
 	def normalization_wavelength(self, data_spectrum_wavelength=None):
 		'''
