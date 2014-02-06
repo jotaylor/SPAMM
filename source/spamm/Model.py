@@ -322,7 +322,15 @@ class Model(object):
 		:param params: describe me!
 		:rtype: describe me
 		'''
+		
+		# make a copy as we'll delete elements
+		p = np.copy(params)
+
 		ln_p = 0
 		for component in self.components:
-			ln_p += sum(component.ln_priors(params=params))
+			ln_p += sum(component.ln_priors(params=p[0:component.parameter_count]))
+
+			# remove the parameters for this component from the list
+			p = p[component.parameter_count:]
+
 		return ln_p
