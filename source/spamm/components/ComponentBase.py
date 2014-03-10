@@ -88,7 +88,6 @@ class Component(object):
 
 	def initialize(self, data_spectrum=None):
 		''' '''
-
 		# Check that the component wavelength grid is not more coarse than the data wavelength grid
 		if self.is_analytic:
 			pass

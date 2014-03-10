@@ -142,7 +142,7 @@ class Model(object):
 		worst_component = None # holds component with most course wavelength grid spacing
 
 		for component in self.components:
-			component.initialize(spectrum=new_data_spectrum)
+			component.initialize(data_spectrum=new_data_spectrum)
 			
 			if component.grid_spacing > gs:
 				gs = component.grid_spacing

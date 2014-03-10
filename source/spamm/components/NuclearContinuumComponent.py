@@ -62,6 +62,7 @@ class NuclearContinuumComponent(Component):
 
 		return [normalization_init, slope_init]
 
+
 	def normalization_wavelength(self, data_spectrum_wavelength=None):
 		'''
 		

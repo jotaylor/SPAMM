@@ -54,7 +54,7 @@ model.print_parameters = False
 # -----------------
 # Initialize components
 # -----------------
-if False:
+if True:
 	nuclear_comp = NuclearContinuumComponent()
 
 	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
@@ -67,7 +67,7 @@ if False:
 	
 	model.components.append(nuclear_comp)
 
-if True:
+if False:
 	host_galaxy_comp = HostGalaxyComponent()
 	
 	datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"

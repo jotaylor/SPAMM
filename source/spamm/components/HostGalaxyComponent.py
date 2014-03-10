@@ -187,7 +187,7 @@ class HostGalaxyComponent(Component):
 #		return host_params_init
 
 
-	def initialize(self, spectrum=None):
+	def initialize(self, data_spectrum=None):
 		'''
 		Perform any initializations where the data is optional.
 		'''
