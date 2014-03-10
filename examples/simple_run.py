@@ -38,7 +38,7 @@ sys.excepthook = info
 # -----------------------------------------------------------------
 
 n_walkers = 30
-n_iterations = 800
+n_iterations = 2000
 show_plots = False
 
 # ----------------

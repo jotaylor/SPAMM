@@ -23,6 +23,7 @@ import gzip
 import optparse
 import inspect
 import cPickle as pickle
+import numpy as np
 
 import triangle
 
@@ -49,6 +50,9 @@ model = pickle.loads(gzip.open(opts.model_filename).read())
 
 samples = model.sampler.chain[:, 1000:, :].reshape((-1, model.total_parameter_count))
 
+if np.size(samples) == 0:
+	print "WARNING, size of samples is 0! Exiting analysis code now..."
+	exit()
 
 #fig = triangle.corner(samples, labels=model.model_parameter_names())
 #fig.savefig("triangle_from_pickle.png")
