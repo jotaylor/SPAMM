@@ -1,6 +1,34 @@
 Documenation Notes
 ------------------
 
+#### Building the Documentation
+
+The documentation is built from comments embedded within the source code. To build the documentation, you run a script wuich creates a folder called `_build`. To view the documentation, open the file `_build/html/index.html` in your browser. Since the documentation can be easily built and will change frequently, do not check in the `_build` folder into the git repository, but rather build it yourself when you want to view/update it.
+
+**Prerequsite:** The documenation uses the [Sphinx](http://sphinx-doc.org) Python package which you must have installed to build the pages. To check to see if you have it installed, start Python and try to import the package:
+
+    % python 
+    Python 2.7.6 |Anaconda 1.8.0 (x86_64)| (default, Jan 10 2014, 11:23:15) 
+    [GCC 4.0.1 (Apple Inc. build 5493)] on darwin
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import sphinx
+    >>> 
+
+If you get an `ImportError`, install it using:
+
+    % pip install sphinx
+    
+or
+
+    % easy_install sphinx
+    
+
+
+Command to build the documentation, enter the `documentation` directory and run:
+
+    % make html
+
+
 ##### LaTeX inside documentation
 
 Plain LaTeX equations may be placed inside te documentation. Since LaTeX uses backslash characters liberally which Python interprets as an escape character, you can either double the backslashes (i.e. `\\alpha`), or preferably mark the string as "raw":
