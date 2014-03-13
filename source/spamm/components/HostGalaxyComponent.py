@@ -191,20 +191,20 @@ class HostGalaxyComponent(Component):
 		'''
 		Perform any initializations where the data is optional.
 		'''
-		if spectrum is None:
+		if data_spectrum is None:
 			raise Exception("The data spectrum must be specified to initialize" + 
 					"{0}.".format(self.__class__.__name__))
 
-		self._flux_arrays = np.zeros(len(spectrum.wavelengths)) # calculate flux on this array
+		self._flux_arrays = np.zeros(len(data_spectrum.wavelengths)) # calculate flux on this array
 
 		self.interpolated_templates = list()
 		self.interpolated_normalization_flux = list()
 		
 		for template in self.templates:
 			f = scipy.interpolate.interp1d(template.wavelengths, template.flux) # returns function
-			self.interpolated_templates.append(f(spectrum.wavelengths))
+			self.interpolated_templates.append(f(data_spectrum.wavelengths))
 			# fnw = flux at normalized wavelength
-			fnw = self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
+			fnw = self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
 			self.interpolated_normalization_flux.append(f(fnw))
 		
 #         #Check if we have created the interpolated versions of
