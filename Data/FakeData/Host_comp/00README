@@ -1,0 +1,197 @@
+Notes for making host galaxy fake data
+
+templates/ contains the data that Kevin gave me = STARLIGHT fits to host galaxies he got from Marianne (I don't remember which).
+
+the templates/*template.mod files are where I started.  with C1 = wavelength, C2=original galaxy spectrum, C3=model fit.  I clipped out C1 and C3 and copied them to the current directory *true.mod.
+
+I will have 6 "fake" versions for each template galaxy, corresponding to the 6 cases I used for the powerlaw and emission line spectra.  The 6th case extends to 12000A, which the STARLIGHT models do not, so I can't go to these wavelengths, so it will be end at 9800, and similarly, the 1st case cannot extend to 1159 because the starlight models do not go below 1350, so it will start at 1350 but otherwise be the same.
+
+Now, resample "true" models with IRAF dispcor to the 6 different dispersions I used.  Here, I'll begin each spectrum at the start wavelength listed in the excel file, but I don't yet want to truncate them at the end wavelength because I'm lazy and don't want to look up S/N measurement regions specific to each one, so I'll truncate the ends after I degrade the S/N to something similar to the other data.
+
+--> dispcor @truefits.lst @disp1.lst
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp1.mod.fits: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+s0_true.fits: Resampling using current coordinate system
+s0_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sa_true.fits: Resampling using current coordinate system
+sa_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sb_true.fits: Resampling using current coordinate system
+sb_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+
+--> dispcor @truefits.lst @disp2.lst
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp2.mod: ap = 1, w1 =    4300., w2 =    7500., dw =     1.25, nw = 2561
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+s0_true.fits: Resampling using current coordinate system
+s0_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sa_true.fits: Resampling using current coordinate system
+sa_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sb_true.fits: Resampling using current coordinate system
+sb_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sc_true.fits: Resampling using current coordinate system
+sc_dsp2.mod: ap = 1, w1 =    4300., w2 =    7500., dw =     1.25, nw = 2561
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+
+--> dispcor @truefits.lst @disp3.lst
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp3.mod: ap = 1, w1 =    3600., w2 =    7500., dw =       2., nw = 1951
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+s0_true.fits: Resampling using current coordinate system
+s0_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sa_true.fits: Resampling using current coordinate system
+sa_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sb_true.fits: Resampling using current coordinate system
+sb_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sc_true.fits: Resampling using current coordinate system
+sc_dsp3.mod: ap = 1, w1 =    3600., w2 =    7500., dw =       2., nw = 1951
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+
+--> dispcor @truefits.lst @disp4.lst
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp4.mod: ap = 1, w1 = 1750.386, w2 = 7499.993, dw =  0.12448, nw = 46190
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+s0_true.fits: Resampling using current coordinate system
+s0_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+sa_true.fits: Resampling using current coordinate system
+sa_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+sb_true.fits: Resampling using current coordinate system
+sb_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+sc_true.fits: Resampling using current coordinate system
+sc_dsp4.mod: ap = 1, w1 = 1750.386, w2 = 7499.993, dw =  0.12448, nw = 46190
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+
+--> dispcor @truefits.lst @disp5.lst
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp5.mod: ap = 1, w1 =    2300., w2 =    7500., dw =     0.25, nw = 20801
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+s0_true.fits: Resampling using current coordinate system
+s0_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+sa_true.fits: Resampling using current coordinate system
+sa_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+sb_true.fits: Resampling using current coordinate system
+sb_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+sc_true.fits: Resampling using current coordinate system
+sc_dsp5.mod: ap = 1, w1 =    2300., w2 =    7500., dw =     0.25, nw = 20801
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+
+--> dispcor @truefits.lst @disp6.lst
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp6.mod: ap = 1, w1 =    1400., w2 =    7499., dw =       3., nw = 2034
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+s0_true.fits: Resampling using current coordinate system
+s0_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+sa_true.fits: Resampling using current coordinate system
+sa_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+sb_true.fits: Resampling using current coordinate system
+sb_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+sc_true.fits: Resampling using current coordinate system
+sc_dsp6.mod: ap = 1, w1 =    1400., w2 =    7499., dw =       3., nw = 2034
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+
+
+Now write to ascii:
+--> wspectext @disp1.lst @disp1_txt.lst
+--> wspectext @disp2.lst @disp2_txt.lst
+--> wspectext @disp3.lst @disp3_txt.lst
+--> wspectext @disp4.lst @disp4_txt.lst
+--> wspectext @disp5.lst @disp5_txt.lst
+--> wspectext @disp6.lst @disp6_txt.lst
+
+
+Now degrade S/N:
+Disp1: 50
+Disp1: 30
+Disp3: 65
+Disp4: 100
+Disp5: 80
+Disp6: 40
+
+Before and after S/N in snr_deg_disp*.out
+
+Now Truncate ends of spectra to necessary ranges:
+Disp1  - truncate at 2003
+Disp2 - 5800
+Disp3 - 8200 (7500 for bulge and sc)
+Disp4 - 2932.94592
+Disp5 - 3875
+Disp6 - 9800  **Don't need to truncate, but to keep naming convention similar, copy to *tr.dat (7500 for bulge and sc)
+
+Now I need to create an error spectrum based on listed fractional uncertainties I applied.  Use the same fractional error spectrum I created from the SDSS error spectrum for the powerlaw and emission lines and use here.  I believe adderrspec.sm should do this.  I just need to copy it here and modify it based on the length of spectra here and the S/N values, etc.  I made one for each type of galaxy that makes all 6 templates for each galaxy type.  
+
+Final "fake data" spectra are all *_werr.dat.
+
+Now update all numbers in ../fakedata_properties_v2.xlsx.
+
+Include here all the contributions for each fake galaxy from the Bruzual and Charlot models that went into making each template.  Taken from templates/*.starlight

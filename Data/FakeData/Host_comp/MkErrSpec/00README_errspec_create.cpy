@@ -1,0 +1,64 @@
+***Copy of 00README_errspec_create from EmissionLineComp/ because I basically copied this procedure here except that I started from the fracerrspec_dsp* files and then made and used an adderrspec*.sm macro for each template.***
+
+OK, I created the error spectra in a somewhat random way.  They were
+actually created and added with the SM macro adderrspec.sm.
+
+I started with an actual data and error spectrum of an SDSS object
+(SDSS0245 from my SDSSvMODSCIVmasses/SDSSspectra/ directory), and
+divided the two to get a fractional uncertainty spectrum. The mean for
+this particular fractional error spectrum is 0.223, which is kind of
+high for the S/N in a lot of our spectra that we have.  I will therefore
+modify this based on the S/N I imposed in the spectra, such that the
+mean fractional error for any given degraded spectrum is ~1/(S/N).
+
+This won't be entirely realistic, since it will matter what the actual
+wavelength range of any given spectrum is (i.e., noise spikes due to
+imperfect sky subtraction won't be at real locations of sky lines...),
+compared to this one, but at least it'll give realistic type bumps and
+wiggles.
+
+Next to get it to cover the respective ranges of my fake data, I
+resampled it to the different dispersions I selected for the fake data,
+also making it the correct length as each of the fake spectra, and then
+multiplied it by first the factor to make the mean fractional
+uncertainty match the S/N and then by the spectrum itself.
+
+For the one spectral range that was longer than the SDSS spectrum, I
+just repeated it backwards, which is totally dodgey, I know...  But it
+at least gives us something right now.
+
+Here's me making the various resampled spectra in pyraf:
+--> rspectext sdss_frac_errorspec.dat sdss_frac_errorspec.fits
+--> epar dispcor
+--> dispcor sdss_frac_errorspec.fits fracerrspec_dsp1p0.fits
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp1p0.fits: ap = 1, w1 = 3788., w2 = 9202., dw = 1., nw = 5415
+--> epar dispcor
+--> dispcor sdss_frac_errorspec.fits fracerrspec_dsp1p25.fits
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp1p25.fits: ap = 1, w1 = 3800., w2 = 9202.5, dw = 1.25, nw = 4323
+--> epar dispcor
+--> dispcor sdss_frac_errorspec.fits fracerrspec_dsp2p0.fits
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp2p0.fits: ap = 1, w1 = 3788., w2 = 9202., dw = 2., nw = 2708
+--> epar dispcor
+
+Task dispcor is running...
+
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp0p12448.fits: ap = 1, w1 = 3790.386, w2 = 9202.403, dw = 0.12448, nw = 43478
+--> epar dispcor
+
+Task dispcor is running...
+
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp0p25.fits: ap = 1, w1 = 3800., w2 = 9202.5, dw = 0.25, nw = 21611
+--> epar dispcor
+
+Task dispcor is running...
+
+sdss_frac_errorspec.fits: Resampling using current coordinate system
+fracerrspec_dsp3p0.fits: ap = 1, w1 = 3800., w2 = 9203., dw = 3., nw = 1802
+
+
+Everything else was done in the SM macro using these pyraf output as input.
