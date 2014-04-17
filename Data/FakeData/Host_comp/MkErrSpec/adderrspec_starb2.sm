@@ -1,0 +1,148 @@
+adderrspec_starb2
+#macro adderrspec
+	erase
+	define print_noheader 1
+	expand 0.9
+	#
+	# Set S/N values for all 6 templates
+	define sn1 50.7
+	define sn2 28.4
+	define sn3 58.3
+	define sn4 99.4
+	define sn5 81.8
+	define sn6 44.0
+  #Make error spectrum for template 1
+	data starb2_dsp1degtr.mod.txt read {x1 1 y1 2}
+	set err1 = y1
+	define length1 dimen(y1)
+	data fracerrspec_dsp1p0.dat read {errini1 2}
+	do i = 1, $length1, 1 {
+	   set err1[$i-1] = errini1[$i-1]
+	}
+	stats err1 mn1 sig1 k1
+	define scale1 ((1./$sn1)/$mn1)
+	set err1frac = err1*$scale1
+	set err1real = err1frac*y1
+	stats err1frac mntest1 sigtest1 ktest1
+        echo Mean Fractional Error for Template 1 is $mntest1
+	location 3000 15500 25340 31000
+	lim x1 y1 box 0 2 0 0
+	connect x1 y1 
+	location 3000 15500 22840 25340
+	lim x1 err1real box
+	connect x1 err1real
+	print starb2_1_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x1 y1 err1real}
+	#
+  #Template 2 error spectrum
+	data starb2_dsp2degtr.mod.txt read {x2 1 y2 2}
+	set err2 = y2
+	define length2 dimen(y2)
+	data fracerrspec_dsp1p25.dat read {errini2 2}
+	do i = 1, $length2, 1 {
+	   set err2[$i-1] = errini2[$i-1]
+	}
+	stats err2 mn2 sig2 k2
+	define scale2 ((1./$sn2)/$mn2)
+	set err2frac = err2*$scale2
+	set err2real = err2frac*y2
+	stats err2frac mntest2 sigtest2 ktest2
+        echo Mean Fractional Error for Template 2 is $mntest2
+	location 3000 15500 15760 21330
+	lim x2 y2 box 0 2 0 0
+	connect x2 y2 
+	location 3000 15500 13170 15760
+	lim x2 err2real box
+	connect x2 err2real
+	print starb2_2_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x2 y2 err2real}
+	#
+  #Template 3 error spectrum
+	data starb2_dsp3degtr.mod.txt read {x3 1 y3 2}
+	set err3 = y3
+	define length3 dimen(y3)
+	data fracerrspec_dsp2p0.dat read {errini3 2}
+	do i = 1, $length3, 1 {
+	   set err3[$i-1] = errini3[$i-1]
+	}
+	stats err3 mn3 sig3 k3
+	define scale3 ((1./$sn3)/$mn3)
+	set err3frac = err3*$scale3
+	set err3real = err3frac*y3
+	stats err3frac mntest3 sigtest3 ktest3
+        echo Mean Fractional Error for Template 3 is $mntest3
+	location 3000 15500 6000 11660
+	lim x3 y3 box 0 2 0 0
+	connect x3 y3 
+	location 3000 15500 3500 6000
+	lim x3 err3real box
+	connect x3 err3real
+	print starb2_3_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x3 y3 err3real}
+	#
+  #Template 4 error spectrum
+	data starb2_dsp4degtr.mod.txt read {x4 1 y4 2}
+	set err4 = y4
+	define length4 dimen(y4)
+	data fracerrspec_dsp0p12448.dat read {errini4 2}
+	do i = 1, $length4, 1 {
+	   set err4[$i-1] = errini4[$i-1]
+	}
+	stats err4 mn4 sig4 k4
+	define scale4 ((1./$sn4)/$mn4)
+	set err4frac = err4*$scale4
+	set err4real = err4frac*y4
+	stats err4frac mntest4 sigtest4 ktest4
+        echo Mean Fractional Error for Template 4 is $mntest4
+	location 18500 31000 25340 31000
+	lim x4 y4 box 0 2 0 0
+	connect x4 y4 
+	location 18500 31000 22840 25340
+	lim x4 err4real box
+	connect x4 err4real
+	print starb2_4_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x4 y4 err4real}
+	#
+  #Template 5 error spectrum
+	data starb2_dsp5degtr.mod.txt read {x5 1 y5 2}
+	set err5 = y5
+	define length5 dimen(y5)
+	data fracerrspec_dsp0p25.dat read {errini5 2}
+	do i = 1, $length5, 1 {
+	   set err5[$i-1] = errini5[$i-1]
+	}
+	stats err5 mn5 sig5 k5
+	define scale5 ((1./$sn5)/$mn5)
+	set err5frac = err5*$scale5
+	set err5real = err5frac*y5
+	stats err5frac mntest5 sigtest5 ktest5
+        echo Mean Fractional Error for Template 5 is $mntest5
+	location 18500 31000 15760 21330
+	lim x5 y5 box 0 2 0 0
+	connect x5 y5 
+	location 18500 31000 13170 15760
+	lim x5 err5real box
+	connect x5 err5real
+	print starb2_5_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x5 y5 err5real}
+	#
+  #Template 6 error spectrum
+	data starb2_dsp6degtr.mod.txt read {x6 1 y6 2}
+	set err6 = y6
+	define length6 dimen(y6)
+	data fracerrspec_dsp0p25.dat read {errini6 2}
+	do i = 1, 1802, 1 {
+	   set err6[$i-1] = errini6[$i-1]
+	}
+	do i = 1803, $length6, 1 {
+	   set err6[$i-1] = errini6[-$i+3606]
+	}
+	stats err6 mn6 sig6 k6
+	define scale6 ((1./$sn6)/$mn6)
+	set err6frac = err6*$scale6
+	set err6real = err6frac*y6
+	stats err6frac mntest6 sigtest6 ktest6
+        echo Mean Fractional Error for Template 6 is $mntest6
+	location 18500 31000 6000 11660
+	lim x6 y6 box 0 2 0 0
+	connect x6 y6 
+	location 18500 31000 3500 6000
+	lim x6 -1.e-15 1e-14 box
+	connect x6 err6real
+	print starb2_6_werr.dat ' %11.5f   %12.4e   %12.4e \n' {x6 y6 err6real}
+	#

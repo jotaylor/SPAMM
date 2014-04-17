@@ -1,0 +1,202 @@
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_true.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+s0_true.fits: Resampling using current coordinate system
+s0_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sa_true.fits: Resampling using current coordinate system
+sa_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sb_true.fits: Resampling using current coordinate system
+sb_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp1.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_true.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+s0_true.fits: Resampling using current coordinate system
+s0_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sa_true.fits: Resampling using current coordinate system
+sa_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+sb_true.fits: Resampling using current coordinate system
+sb_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp2.mod: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_true.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+s0_true.fits: Resampling using current coordinate system
+s0_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sa_true.fits: Resampling using current coordinate system
+sa_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sb_true.fits: Resampling using current coordinate system
+sb_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp1.mod.fits: ap = 1, w1 =    1350., w2 =    9800., dw =       1., nw = 8451
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+s0_true.fits: Resampling using current coordinate system
+s0_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sa_true.fits: Resampling using current coordinate system
+sa_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+sb_true.fits: Resampling using current coordinate system
+sb_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp2.mod: ap = 1, w1 =    4300., w2 =    9800., dw =     1.25, nw = 4401
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+s0_true.fits: Resampling using current coordinate system
+s0_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sa_true.fits: Resampling using current coordinate system
+sa_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sb_true.fits: Resampling using current coordinate system
+sb_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+s0_true.fits: Resampling using current coordinate system
+s0_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sa_true.fits: Resampling using current coordinate system
+sa_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+sb_true.fits: Resampling using current coordinate system
+sb_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp3.mod: ap = 1, w1 =    3600., w2 =    9800., dw =       2., nw = 3101
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+s0_true.fits: Resampling using current coordinate system
+s0_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+sa_true.fits: Resampling using current coordinate system
+sa_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+sb_true.fits: Resampling using current coordinate system
+sb_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp4.mod: ap = 1, w1 = 1750.386, w2 =  9800.01, dw =  0.12448, nw = 64667
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+s0_true.fits: Resampling using current coordinate system
+s0_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+sa_true.fits: Resampling using current coordinate system
+sa_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+sb_true.fits: Resampling using current coordinate system
+sb_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp5.mod: ap = 1, w1 =    2300., w2 =    9800., dw =     0.25, nw = 30001
+elliptical_true.fits: Resampling using current coordinate system
+elliptical_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+s0_true.fits: Resampling using current coordinate system
+s0_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+sa_true.fits: Resampling using current coordinate system
+sa_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+sb_true.fits: Resampling using current coordinate system
+sb_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb1_true.fits: Resampling using current coordinate system
+starb1_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb2_true.fits: Resampling using current coordinate system
+starb2_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb3_true.fits: Resampling using current coordinate system
+starb3_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb4_true.fits: Resampling using current coordinate system
+starb4_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb5_true.fits: Resampling using current coordinate system
+starb5_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+starb6_true.fits: Resampling using current coordinate system
+starb6_dsp6.mod: ap = 1, w1 =    1400., w2 =    9800., dw =       3., nw = 2801
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp2.mod: ap = 1, w1 =    4300., w2 =    7500., dw =     1.25, nw = 2561
+sc_true.fits: Resampling using current coordinate system
+sc_dsp2.mod: ap = 1, w1 =    4300., w2 =    7500., dw =     1.25, nw = 2561
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp3.mod: ap = 1, w1 =    3600., w2 =    7500., dw =       2., nw = 1951
+sc_true.fits: Resampling using current coordinate system
+sc_dsp3.mod: ap = 1, w1 =    3600., w2 =    7500., dw =       2., nw = 1951
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp4.mod: ap = 1, w1 = 1750.386, w2 = 7499.993, dw =  0.12448, nw = 46190
+sc_true.fits: Resampling using current coordinate system
+sc_dsp4.mod: ap = 1, w1 = 1750.386, w2 = 7499.993, dw =  0.12448, nw = 46190
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp5.mod: ap = 1, w1 =    2300., w2 =    7500., dw =     0.25, nw = 20801
+sc_true.fits: Resampling using current coordinate system
+sc_dsp5.mod: ap = 1, w1 =    2300., w2 =    7500., dw =     0.25, nw = 20801
+bulge_true.fits: Resampling using current coordinate system
+bulge_dsp6.mod: ap = 1, w1 =    1400., w2 =    7499., dw =       3., nw = 2034
+sc_true.fits: Resampling using current coordinate system
+sc_dsp6.mod: ap = 1, w1 =    1400., w2 =    7499., dw =       3., nw = 2034
