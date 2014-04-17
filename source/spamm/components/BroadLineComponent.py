@@ -143,7 +143,7 @@ class BroadLineComponent(Component):
 		GH_amplitude_init = np.random.uniform(low=self.min_amplitude,high=self.max_amplitude)
 		
 		self.min_h = -0.3
-		self.min_h = 0.3
+		self.max_h = 0.3
 		
 		GH_h3_init=np.random.uniform(low=self.min_h,high=self.max_h)
 		GH_h4_init=np.random.uniform(low=self.min_h,high=self.max_h)
