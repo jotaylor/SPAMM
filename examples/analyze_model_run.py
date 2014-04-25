@@ -33,6 +33,7 @@ from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
+from spamm.components.FeComponent import FeComponent
 
 from spamm.Analysis import *
 
@@ -57,6 +58,7 @@ if np.size(samples) == 0:
 #fig = triangle.corner(samples, labels=model.model_parameter_names())
 #fig.savefig("triangle_from_pickle.png")
 
+
 # First, calculate the median and confidence intervals
 #	where frac is the fraction of samples within the
 #	quoted uncertainties.  frac = 0.68 is the default.
@@ -77,6 +79,9 @@ fig.savefig("chain.png")
 #	boxes = 20 is the default.
 fig = plot_posteriors(samples, labels=model.model_parameter_names(), boxes=20)
 fig.savefig("posterior.png")
+
+# Fifth, plot the spectrum fits from the posterior PDF.
+plot_spectra(model, samples)
 
 
 sys.exit(0)

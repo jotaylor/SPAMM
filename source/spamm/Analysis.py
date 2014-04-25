@@ -104,6 +104,39 @@ def plot_posteriors(samples, labels, boxes=20):
 		ax.set_ylabel("Posterior PDF")
 	print "Plotting the model posterior PDFs."
 	return fig
+	
+	
+def plot_spectra(model, samples):
+	data_spectrum = model.data_spectrum   # lambda, flux, flux_error
+	num_samples = 110  #np.size(samples[:,0])
+
+	plt.clf()
+	plt.ion()
+	for i in xrange(0, num_samples):
+		plt.hold(True)
+		# plot the data
+		plt.errorbar(data_spectrum.wavelengths, data_spectrum.flux, 
+			yerr=data_spectrum.flux_error, mfc='blue', mec='blue', ecolor='b',
+			fmt='.')
+
+		# plot each of the model components individually
+		k = 0
+    	for component in model.components:
+    		component_flux = component.flux(spectrum=model.data_spectrum,
+    			parameters=samples[i,k:len(component.model_parameter_names)])  # flux
+    		k = len(component.model_parameter_names)
+    		plt.hold(True)
+    		plt.plot(data_spectrum.wavelengths, component_flux, '-r')
+    		
+    	# plot the sum of the model components
+		model_spectrum = model.model_flux(params=samples[i,:])  # flux
+		plt.hold(True)
+		plt.plot(data_spectrum.wavelengths, model_spectrum)
+		
+    	plt.hold(False)
+    	plt.draw()
+	plt.ioff()
+	plt.show()
 
 	
 
