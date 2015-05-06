@@ -1,0 +1,8 @@
+## FakeData	contains folders with fake data (one folder per component)
+		properties of the fake data are listed in the excel file fakedata_properties.xlsx 
+		(fakedata_properties_old.xlsx is the old version)
+		All the fake data SHOULD be on the same wavelength grids (multiple available) to allow easy creation of multicomponent spectra
+			
+## HostModels	Host galaxie models - Bruzual and Charlot libraries (2003); not implemented in current version of the code
+
+## QSO_templates	QSO tcomposites 
