@@ -41,15 +41,22 @@ sys.excepthook = info
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 2000
+n_iterations = 5000
 
-#options
+#Select your component options
+# PL = nuclear continuum
+# HOST = host galaxy
+# FE = Fe forest
+
+#For the moment we have only implemented individual components
+#Fe and host galaxy components need more work - see tickets
+#To do: implement combined - Gisella - see tickets
+
 PL = True
 HOST = False
 FE = False
 
 show_plots = False
-
 
 # ----------------
 # Read in spectrum
@@ -59,7 +66,7 @@ if PL:
 	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"	
 
 if HOST:
-	datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
+	datafile = "../Data/FakeData/fake_host_spectrum.dat"
 
 if FE:
 	#datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
@@ -105,7 +112,6 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 # -------------
 # save chains & model
 # ------------
-
 with gzip.open('model.pickle.gz', 'wb') as model_output:
 	model_output.write(pickle.dumps(model))
 

@@ -55,8 +55,8 @@ if np.size(samples) == 0:
 	print "WARNING, size of samples is 0! Exiting analysis code now..."
 	exit()
 
-#fig = triangle.corner(samples, labels=model.model_parameter_names())
-#fig.savefig("triangle_from_pickle.png")
+fig = triangle.corner(samples, labels=model.model_parameter_names())
+fig.savefig("plots/triangle.png")
 
 
 # First, calculate the median and confidence intervals
@@ -72,13 +72,13 @@ print mean_values(samples)
 #	no longer tell where the individual particle chains are sliced together.
 #	For testing, I saved 2000 iterations and ignored the first 1000.
 fig = plot_chains(samples, labels=model.model_parameter_names())
-fig.savefig("chain.png")
+fig.savefig("plots/chain.png")
 # Fourth, plot the posterior PDFs for each parameter.  
 #	These are histograms of the MCMC chains.  We should add
 #	parameter names to this and the previous plots at some point.
 #	boxes = 20 is the default.
 fig = plot_posteriors(samples, labels=model.model_parameter_names(), boxes=20)
-fig.savefig("posterior.png")
+fig.savefig("plots/posterior.png")
 
 # Fifth, plot the spectrum fits from the posterior PDF.
 plot_spectra(model, samples)
