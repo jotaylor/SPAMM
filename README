@@ -4,13 +4,13 @@ Below is a brief explanation of the directories.
 Each important directory contains a 00README file.
 For info about the repository, how to use SPAMM, publication policy et al. please refer to the Wiki.
 
-# Data				Bruzual & Charlot libraries, QSO composites and fake datasets for testing (00README)
+# Data			Bruzual & Charlot libraries, QSO composites and fake datasets for testing (00README)
 # Fe_templates		multiple FeII & FeIII templates
 # Host_templates	temporary base of 4 templates used to test host galaxy component, list of templates for component
 # documentation 	documentation files for SPAMM users - work in progress
-# documents			python, mcmc et al. presentations, description of the components. YOU CAN BROWSE DOCUMENTS DIRECTLY FROM THE WIKI.
-# examples			run SPAMM and analyze resulsts from here (00README)
-# source			SPAMM source code (00README)
+# documents		python, mcmc et al. presentations, description of the components. YOU CAN BROWSE DOCUMENTS DIRECTLY FROM THE WIKI.
+# examples		run SPAMM and analyze resulsts from here (00README)
+# source		SPAMM source code (00README)
 
 
 
