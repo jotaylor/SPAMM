@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import scipy.interpolate
 import numpy as np
+import scipy.integrate
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
@@ -286,8 +287,16 @@ class HostGalaxyComponent(Component):
 		assert len(parameters) == self.parameter_count, \
 				"The wrong number of indices were provided: {0}".format(parameters)
 
-		# calculate flux of the component
-		stellar_dispersion = parameters[-1] #Not implemented yet.
+                #Convolve to increase the velocity dispersion. Need to
+                #consider it as an excess dispersion above that which
+                #is intrinsic to the template. For the moment, the
+                #implicit assumption is that each template has an
+                #intrinsic velocity dispersion = 0 km/s.
+		stellar_dispersion = parameters[-1]
+		#Create the dispersion-convolution matrix.
+                #Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
+                Kmat = np.identity(len(spectrum.wavelengths))
+
 		#flux = np.zeros(wavelengths.shape)
 		#print "******* {0}".format(parameters)
 		norm = list() # parameter normalization
@@ -296,6 +305,53 @@ class HostGalaxyComponent(Component):
 #		norm = parameters[0:-1] / self.interpolated_normalization_flux
 		self._flux_arrays[:] = 0.0
 		for i in range(len(self.templates)):
-			self._flux_arrays += norm[i] * self.interpolated_templates[i]
+			convolved_template = Kmat.dot(self.interpolated_templates[i])
+			self._flux_arrays += norm[i] * convolved_template
+			#self._flux_arrays += norm[i] * self.interpolated_templates[i]
 
 		return self._flux_arrays
+
+        def stellar_dispersion_matrix(self, stellar_dispersion, spectrum=None):
+
+		Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
+                lam = spectrum.wavelengths
+		for k,lamk in enumerate(spectrum.wavelengths):
+			sig = stellar_dispersion * lamk/3.e5 #Assume the dispersion is provided in km/s.
+
+                        #To speed things up, we'll only consider bins with central
+                        #wavelengths within 5 sigma of the current spectral bin.
+
+                        #Get the bin indices that are closest to +/- 5 sigma.
+                        lmin = np.argmin(abs((lamk-lam)/sig - 5.))
+                        lmax = np.argmin(abs((lamk-lam)/sig + 5.))
+
+                        #See if we are near the bounds and determine
+                        #the kernel normalization accordingly.
+                        if lmin>0 and lmax<len(lam):
+                                norm = sig*(2.*np.pi)**0.5
+                        else:
+                                if lmin==0:
+                                        a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
+                                        b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
+                                else:
+                                        a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
+                                        b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
+                                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
+
+                        for l in range(lmin,lmax+1):
+				if l==0:
+					a = lam[l]-0.5*(lam[l+1]-lam[l])
+					b = lam[l]+0.5*(lam[l+1]-lam[l])
+				elif l==len(lam)-1:
+					a = lam[l]-0.5*(lam[l]-lam[l-1])
+					b = lam[l]+0.5*(lam[l]-lam[l-1])
+				else:
+					a = lam[l]-0.5*(lam[l]-lam[l-1])
+					b = lam[l]+0.5*(lam[l+1]-lam[l])
+				Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
+                
+                return Kmat
+
+        def gaussian_kernel(self,x,mu,sig):
+                return np.exp(-0.5*((x-mu)/sig)**2)
+

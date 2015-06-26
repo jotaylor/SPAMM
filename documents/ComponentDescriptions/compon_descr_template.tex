@@ -241,7 +241,45 @@ Linear combination of N smoothed galaxy templates:
 \begin{equation}
 F_{\lambda {\rm{,Host}}} = \sum_{\rm i=1,..N} F_{\rm{Host,0,i}} \  {\rm HostTempl}_{\rm{\lambda,i}}(\sigma_*) 
 \end{equation}
-where ${\rm HostTempl}_{\rm{\lambda,i}}$ is the host galaxy template, $\sigma_*$ is the stellar dispersion and$F_{\rm Host,0,i}$ is the template normalization.\\
+where ${\rm HostTempl}_{\rm{\lambda,i}}$ is the host galaxy template,
+$\sigma_*$ is the stellar dispersion and $F_{\rm Host,0,i}$ is the
+template normalization.\\
+
+The stellar dispersion is currently applied according to the following
+method. For a given template, increasing the velocity dispersion
+implies convolving it with a broadening function. For simplicity, we
+assume that this function is a Gaussian of width $\sigma_{*,\rm use} =
+(\sigma_*^2 - \sigma_{*,\rm int}^2)^{1/2}$. For the moment we will
+assume that $\sigma_{*,\rm int} = 0$, as we do not know the intrinsic
+values for the current templates. Now, since we need to apply it in
+wavelength space we can note that $P(v)\ dv = P(\lambda)\ d\lambda$
+and that
+\begin{equation}
+  P(v;\sigma_*)\ =\ \frac{1}{\sqrt{2\pi}\sigma_*}\ \exp{\frac{-1}{2}\left(\frac{v}{\sigma_*}\right)^2},
+\end{equation}
+\noindent which implies that our convolution function in wavelength
+space will be
+\begin{equation}
+  P(\lambda;\sigma_{\lambda},\lambda_0)\ =\ \frac{1}{\sqrt{2\pi}\sigma_{\lambda}}\ \exp{\frac{-1}{2}\left(\frac{\lambda-\lambda_0}{\sigma_{\lambda}}\right)^2},
+\end{equation}
+\noindent where $\sigma_{\lambda} = \sigma_* \lambda_0/c$. So, the
+broadened template can be written as
+\begin{equation}
+  \rm HostTempl_{\lambda_0,i}(\sigma_{\lambda})\ =\ \int \rm HostTempl_{\lambda,i}(\sigma_{\lambda}=0)\ P(\lambda;\lambda_0,\sigma_{\lambda}) d\lambda.
+\end{equation}
+Now, since our template is discrete, we can write this equation as
+\begin{equation}
+  \rm HostTempl_{\lambda_0,i}(\sigma_{\lambda}) =  \sum_{\lambda} \rm HostTempl_{\lambda,i}(\sigma_{\lambda}=0) \int_{\lambda_{\rm Min}}^{\lambda_{\rm Max}} P(\lambda;\lambda_0,\sigma_{\lambda}) d\lambda,
+\end{equation}
+\noindent where $\lambda_{\rm Min}$ and $\lambda_{\rm Max}$ are the minimum and maximum wavelength of the bin. This can also be written as 
+\begin{equation}
+   \vec{\rm HostTempl_{i}(\sigma_{\lambda})} = \mathbf{K}\ \cdot\ \vec{\rm HostTempl_{i}(\sigma_{\lambda}=0)},
+\end{equation}
+\noindent where the matrix $\mathbf{K}$ is independent of the template
+and holds all the terms of the convolution. For the moment the
+convolution kernel is assumed to be a Gaussian, and the matrix
+$\mathbf{K}$ only considers terms within 5$\sigma$ of $\lambda_0$ to
+speed up the calculations.
 
 \subsubsection*{Code Parameters}
 \begin{itemize}
@@ -386,7 +424,7 @@ both narrow and broad emission lines.
        \end{equation} 
        \begin{equation} w\equiv (\lambda - \mu)/\sigma,
        \end{equation}
-       \begin{equation} \alpha(w) = \frac{1}{\sqrt{2\pi}} e^{-\frac{1}{2}w^2}. \end{equation}
+       \begin{equation} \alpha(w) = \frac{1}{2\sqrt{\pi}} e^{-\frac{1}{2}w^2}. \end{equation}
        where this follows the normalization of van der Marel \& Franx (1993, ApJ, 407, 525; first equation).  The $H_j$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578, 787):
        \begin{equation} H_3(w) = \frac{w(2w^2-3)}{\sqrt{3}}, \end{equation}
        \begin{equation} H_4(w) = \frac{w^2(4w^2-12)+3}{2\sqrt{6}}, \end{equation}
