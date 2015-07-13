@@ -294,8 +294,8 @@ class HostGalaxyComponent(Component):
                 #intrinsic velocity dispersion = 0 km/s.
 		stellar_dispersion = parameters[-1]
 		#Create the dispersion-convolution matrix.
-                #Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
-                Kmat = np.identity(len(spectrum.wavelengths))
+		#Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
+		Kmat = np.identity(len(spectrum.wavelengths))
 
 		#flux = np.zeros(wavelengths.shape)
 		#print "******* {0}".format(parameters)
@@ -314,7 +314,7 @@ class HostGalaxyComponent(Component):
         def stellar_dispersion_matrix(self, stellar_dispersion, spectrum=None):
 
 		Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
-                lam = spectrum.wavelengths
+		lam = spectrum.wavelengths
 		for k,lamk in enumerate(spectrum.wavelengths):
 			sig = stellar_dispersion * lamk/3.e5 #Assume the dispersion is provided in km/s.
 
@@ -322,23 +322,23 @@ class HostGalaxyComponent(Component):
                         #wavelengths within 5 sigma of the current spectral bin.
 
                         #Get the bin indices that are closest to +/- 5 sigma.
-                        lmin = np.argmin(abs((lamk-lam)/sig - 5.))
-                        lmax = np.argmin(abs((lamk-lam)/sig + 5.))
+			lmin = np.argmin(abs((lamk-lam)/sig - 5.))
+			lmax = np.argmin(abs((lamk-lam)/sig + 5.))
 
                         #See if we are near the bounds and determine
                         #the kernel normalization accordingly.
-                        if lmin>0 and lmax<len(lam):
-                                norm = sig*(2.*np.pi)**0.5
-                        else:
-                                if lmin==0:
-                                        a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
-                                        b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
-                                else:
-                                        a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
-                                        b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
-                                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
+			if lmin>0 and lmax<len(lam):
+				norm = sig*(2.*np.pi)**0.5
+			else:
+				if lmin==0:
+					a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
+					b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
+				else:
+					a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
+					b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
+				norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
 
-                        for l in range(lmin,lmax+1):
+			for l in range(lmin,lmax+1):
 				if l==0:
 					a = lam[l]-0.5*(lam[l+1]-lam[l])
 					b = lam[l]+0.5*(lam[l+1]-lam[l])
@@ -350,8 +350,8 @@ class HostGalaxyComponent(Component):
 					b = lam[l]+0.5*(lam[l+1]-lam[l])
 				Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
                 
-                return Kmat
+		return Kmat
 
-        def gaussian_kernel(self,x,mu,sig):
-                return np.exp(-0.5*((x-mu)/sig)**2)
+	def gaussian_kernel(self,x,mu,sig):
+		return np.exp(-0.5*((x-mu)/sig)**2)
 
