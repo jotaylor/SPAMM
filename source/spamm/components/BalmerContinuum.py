@@ -61,15 +61,25 @@ class BalmerContinuum(Component):
 		return True
 	
 
+	def get_norm(self):
+		#use redshift? (are we always fitting in the observed frame?)
+		if self.BCmax is None:
+			self._norm_wavelength = np.median(data_spectrum_wavelength)
+		return self._norm_wavelength
+
 	def initial_values(self, spectrum=None):
 		'''
-		
 		Needs to sample from prior distribution.
 		'''
 
 		# [replace] calculate/define minimum and maximum values for each parameter.
+		if spectrum is None:
+			raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
+		m = abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.))
+		BCmax = spectrum.flux[m]
+
 		self.normalization_min = 0
-		self.normalization_max = None
+		self.normalization_max = BCmax
 		normalization_init = np.random.uniform(low=self.normalization_min,
 						       high=self.normalization_max)
 
@@ -78,22 +88,21 @@ class BalmerContinuum(Component):
 		self.Te_max = 20.e3
 		Te_init = np.random.uniform(low=self.Te_min,
 					    high=self.Te_max)
-		self.tauBE_min = None
-		self.tauBE_max = None
+		self.tauBE_min = 0.0
+		self.tauBE_max = 2.0
 		tauBE_init = np.random.uniform(low=self.tauBE_min,
 					       high=self.tauBE_max)
 
-
 		return [normalization_init, Te_init, tauBE_init]
 
-	def initialize(self, data_spectrum=None):
-		'''
-		Perform any initializations where the data is optional.
-		'''
-		if data_spectrum is None:
-			raise Exception("The data spectrum must be specified to initialize" + 
-							"{0}.".format(self.__class__.__name__))
-		self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
+#	def initialize(self, data_spectrum=None):
+#		'''
+#		Perform any initializations where the data is optional.
+#		'''
+#		if data_spectrum is None:
+#			raise Exception("The data spectrum must be specified to initialize" + 
+#							"{0}.".format(self.__class__.__name__))
+#		self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
 
 	def ln_priors(self, params):
 		'''
@@ -135,17 +144,32 @@ class BalmerContinuum(Component):
 		Returns the flux for this component for a given wavelength grid
 		and parameters. Will use the initial parameters if none are specified.
 		'''
+
 		assert len(parameters) == len(self.model_parameter_names), ("The wrong number " +
 									"of indices were provided: {0}".format(parameters))
 		
-		p = planckfunc(spectrum.wavelengths,parameters[1])
-		a = absorbterm(spectrum.wavelengths,parameters[2])
+		p = self.planckfunc(spectrum.wavelengths,parameters[1])
+		a = self.absorbterm(spectrum.wavelengths,parameters[2])
 
-		pnorm = planckfunc(3646.,parameters[1])
-		anorm = absorbterm(3646.,parameters[2])
+		pnorm = self.planckfunc(3646.,parameters[1])
+		anorm = self.absorbterm(3646.,parameters[2])
 
 		flux = parameters[0]*p*a/(pnorm*anorm)
 		
+
+		N = sp.r_[3:250]
+		L =  Balmer(N)
+		lines = self.genlines(spectrum.wavelengths,L)
+		I     = self.Iratio(L,L[4],T_e)
+		lines *= sp.repeat(I.reshape(I.size,1),ploty.shape[1],axis=1)
+		lines  = sp.sum(lines,axis = 0)
+
+		m = abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelegnths - 3646.))
+		norm = parameters[0]/lines[m]
+		lines *= norm
+		
+		flux += lines
+
 		return flux
 
 #	def flux(self, wavelengths=None, parameters=None):
@@ -165,6 +189,7 @@ class BalmerContinuum(Component):
 
 	@staticmethod
 	def planckfunc(wv,T):
+		#assumes angstroms
 		c = 2.998e10
 		h = 6.626e-27
 		k = 1.381e-16
@@ -179,3 +204,21 @@ class BalmerContinuum(Component):
 		#assumes angstroms
 		tau = tau0*(wv/3646.)**3
 		return 1 - np.exp(-tau)
+
+	@staticmethod
+	def Balmerseries(n):
+		#assumes angstroms
+		ilambda = 1./912*(0.25 - 1./n**2)
+		return 1./ilambda
+
+	@staticmethod
+	def genlines(lgrid,lcent):
+		#assumes angstroms
+		LL = lgrid - lcent.reshape(lcent.size,1)
+		return sp.exp(- (LL)**2/50.)/sp.sqrt(2*sp.pi*50)
+	
+	@staticmethod
+	def Iratio(l1,l2,T):
+		#assumes angstroms
+		dE = h*c*1.e8*(1./l1 - 1./l2)
+		return sp.exp(- dE/k/T)
