@@ -54,20 +54,20 @@ def iratio(l1,l2,T):
 	#assumes angstroms
 
 	coef = np.genfromtxt('/home/rrlyrae/fausnaugh/repos/mcmc_deconvol/Data/SH95recomb/temp/BLcoeff.dat',usecols=1)
-#	return coef[::-1]
-	dE = h*c*1.e8*(1./l1 - 1./l2)
-	boltzman = np.exp(-dE/k/T)
-
+	return coef[::-1]
+#	dE = h*c*1.e8*(1./l1 - 1./l2)
+#	boltzman = np.exp(-dE/k/T)
+#
 #	iout = np.r_[coef[::-1],boltzman[48::]*coef[0]]
-	iout = boltzman
-	return iout
+##	iout = boltzman
+#	return iout
 
 
 def makelines(wv,T,shift,width):
 	#Take the helper functions above, and sum the high order balmer lines
 	#H detla is at 6, maybe start higher?
 	N = np.r_[3:51]
-	N = np.r_[3:200]
+#	N = np.r_[3:200]
 	L =  balmerseries(N)
 
 	lines = genlines(wv,L,shift,width)
