@@ -4,11 +4,12 @@ import sys
 import numpy as np
 from .ComponentBase import Component
 from scipy.interpolate import interp1d
+from scipy.integrate import simps
 
 import matplotlib.pyplot as plt
 
 #in cgs.  Code genereally assumes that wavelengths are in angstroms,
-#these are taken care of in my helper functions
+#these are taken care of in helper functions
 c = 2.998e10
 h = 6.626e-27
 k = 1.381e-16
@@ -27,87 +28,29 @@ def absorbterm(wv,tau0):
 	tau = tau0*(wv/3646.)**3
 	return 1 - np.exp(-tau)
 
-def balmerseries(n):
-	#central wavelenths of the balmer series
-	#assumes angstroms
-	ilambda = 1./911.3*(0.25 - 1./n**2)
-	return 1./ilambda
-
-def genlines(lgrid,lcent,shift,width):
-	#cacluates the (gaussian) emission line fluxes
-	#lgrid is the array of wavelengths at which to evaluate the line fluxes
-	#lcent is an array with wavelength centers
-	#lshift, lwidth are the offset and the width of the lines
-
-	#to make it go fast, the idea is to give each line it's own
-	#array, so this returns a 2d grid, whith one axis being the
-	#line and the other axis being the fluxes of that line.
-	lcent -= shift*lcent
-	LL = lgrid - lcent.reshape(lcent.size,1)
-	
-	lwidth =  width*lcent.reshape(lcent.size,1)
-	return np.exp(- LL**2 /lwidth**2)
-	
-
-def iratio(l1,l2,T):
-	#assuming LTE, this cacluates the ratio of the line fluxes.
-	#assumes angstroms
-
-	coef = np.genfromtxt('/home/rrlyrae/fausnaugh/repos/mcmc_deconvol/Data/SH95recomb/temp/BLcoeff.dat',usecols=1)
-	return coef[::-1]
-#	dE = h*c*1.e8*(1./l1 - 1./l2)
-#	boltzman = np.exp(-dE/k/T)
-#
-#	iout = np.r_[coef[::-1],boltzman[48::]*coef[0]]
-##	iout = boltzman
-#	return iout
-
-
-def makelines(wv,T,shift,width):
-	#Take the helper functions above, and sum the high order balmer lines
-	#H detla is at 6, maybe start higher?
-	N = np.r_[3:51]
-#	N = np.r_[3:200]
-	L =  balmerseries(N)
-
-	lines = genlines(wv,L,shift,width)
-	I     = iratio(L,L[47],T)
-
-	scale = np.repeat(I.reshape(I.size,1),lines.shape[1],axis=1)
-	lines *= scale
-
-#	for i in range(lines.shape[0]):
-#		plt.plot(wv,lines[i],'k')
-	lines  = np.sum(lines,axis = 0)
-
-#	plt.plot(wv,lines,'k')
-#	plt.show()
-
-	return lines
 
 def log_conv(x,y,w):
 	lnx  = np.log(x)
-	dlnx = (lnx[-1] - lnx[0])/lnx.size
-	lnxnew = np.r_[lnx[0] : lnx[-1] + dlnx*0.99 : dlnx]
+	lnxnew = np.r_[lnx.min():lnx.max():1j*lnx.size]
+	lnxnew[0]  = lnx[0]
 	lnxnew[-1] = lnx[-1]
 
 	#linear interpolation for now.....
-	interp = interp1d(lnx,y)
-	yrebin = interp(lnxnew)
+	interp = interp1d(np.exp(lnx),y)#this is stupid, but round-off error is affecting things
+	yrebin = interp(np.exp(lnxnew))
 
-	if lnx.size %2 == 0:
-		kx = np.r_[-lnx.size//2 : lnx.size//2 + 1]*dlnx
-	else:
-		kx = np.r_[-lnx.size//2 : lnx.size//2 + 2]*dlnx		
-	k  = np.exp(- (kx)**2/(w)**2)
-	k /= np.sum(k)
+	dpix = w/(lnxnew[1] - lnxnew[0])
+	kw = round(5*dpix)
+	kx = np.r_[-kw:kw+1]
+	k  = np.exp(- (kx)**2/(dpix)**2)
+	k /= abs(np.sum(k))
 
 	ysmooth = np.convolve(yrebin,k,'same')
 
-	interp = interp1d(lnxnew,ysmooth)
-	assert interp(lnx).size == x.size
+	interp = interp1d(np.exp(lnxnew),ysmooth)
+	assert interp(np.exp(lnx)).size == x.size
 
-	return interp(lnx)
+	return interp(np.exp(lnx))
 
 class BalmerContinuum(Component):
 	'''
@@ -150,7 +93,6 @@ class BalmerContinuum(Component):
 		
 		self._norm_wavelength =  None
 		
-		# [replace] define variables for min/max values for each parameter range
 		self.normalization_min = None
 		self.normalization_max = None
 
@@ -204,7 +146,7 @@ class BalmerContinuum(Component):
 
 		self.lwidth_min = 1.0
 		self.lwidth_max = 1000.
-		tauBE_init = np.random.uniform( low=self.lwidth_min,
+		lwidth_init = np.random.uniform( low=self.lwidth_min,
 					       high=self.lwidth_max)
 
 
@@ -225,6 +167,8 @@ class BalmerContinuum(Component):
 		normalization = params[self.parameter_index("normalization")]
 		Te            = params[self.parameter_index("Te")]
 		tauBE         = params[self.parameter_index("tauBE")]
+		loffset       = params[self.parameter_index("loffset")]
+		lwidth        = params[self.parameter_index("lwidth")]
 
 
 		#Flat priors, appended in order
@@ -271,45 +215,16 @@ class BalmerContinuum(Component):
 		a = absorbterm(spectrum.wavelengths,parameters[2])
 		flux = a*p
 		flux[spectrum.wavelengths > newedge] = 0
-		flux = log_conv(spectrum.wavelengths,flux,parameters[4]/c)
 
 		m = abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge))
 		fnorm = flux[m]
 
 		flux = parameters[0]*flux/fnorm
  
-		lflux = makelines(spectrum.wavelengths,parameters[1],parameters[3]/c,parameters[4]/c)
-		lfnorm = lflux[m]
-
-		norm = parameters[0]/lfnorm
-
-		lflux *= norm
-#		lflux[spectrum.wavelengths <= newedge] = 0
-
-#		plt.plot(spectrum.wavelengths,flux,'b')
-#		plt.plot(spectrum.wavelengths,lflux,'r')
-#		plt.show()
+		flux = log_conv(spectrum.wavelengths,flux,parameters[4]/c)
 		
-		flux += lflux
-
 		return flux
 
 
 
 
-
-
-#	def flux(self, wavelengths=None, parameters=None):
-#		'''
-#		Returns the flux for this component for a given wavelength grid
-#		and parameters. Will use the initial parameters if none are specified.
-#		'''
-#		assert len(parameters) == len(self.model_parameter_names), ("The wrong number " +
-#									"of indices were provided: {0}".format(parameters))
-#		
-#		p = planckfunc(wavelengths,parameters[1])
-#		a = asorbterm(wavelengths,parameters[2])
-#
-#		flux = parameters[0]*p*a
-#		
-#		return flux

@@ -117,5 +117,5 @@ for i in range(4):
     ax21.plot(spectrum.wavelengths,BCflux,label=r'T$_{\rm e}$ = %1.1f n$_{\rm e}$ = %1.1f'%(sp.log10(t),sp.log10(en)))
 ax21.set_xlim([min(spectrum.wavelengths), 5500])
 ax21.legend(loc='upper right')
-plt.savefig('BC2.png',fmt='png')
+plt.savefig('BC2.pdf',fmt='pdf')
 plt.show()

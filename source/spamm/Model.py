@@ -25,7 +25,7 @@ def ln_posterior(new_params, *args):
 	'''
 	global iteration_count
 	iteration_count = iteration_count + 1
-	if iteration_count % 2000 == 0:
+	if iteration_count % 20 == 0:
 		print "iteration count: {0}".format(iteration_count)
 
 	# Make sure "model" is passed in - this needs access to the Model object
