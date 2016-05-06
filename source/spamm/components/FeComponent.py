@@ -3,7 +3,8 @@
 import re
 import sys
 import numpy as np
-import scipy.interpolate
+import pyfftw 
+from scipy import signal
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 
@@ -18,6 +19,20 @@ from ..Spectrum import Spectrum
 
 c_km_per_s = 299792.458 # speed of light in km/s
 
+def fftwconvolve_1d(in1, in2):
+    outlen = in1.shape[-1] + in2.shape[-1] - 1 
+    origlen = in1.shape[-1]
+    n = _next_regular(outlen) 
+    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, n) 
+    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, n) 
+    sh = np.broadcast(tr1, tr2).shape 
+    dt = np.common_type(tr1, tr2) 
+    pr = pyfftw.n_byte_align_empty(sh, 16, dt) 
+    np.multiply(tr1, tr2, out=pr) 
+    out = pyfftw.interfaces.numpy_fft.irfft(pr, n) 
+    index_low = int(outlen/2.)-int(np.floor(origlen/2))
+    index_high = int(outlen/2.)+int(np.ceil(origlen/2))
+    return out[..., index_low:index_high].copy() 
 
 def runningMeanFast(x, N):
 	'''
@@ -224,8 +239,8 @@ class FeComponent(Component):
 		
 		fnw = self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths) # flux at normalization wavelength
 		
-		i = 0
-		for template in self.templates:
+		
+		for i,template in enumerate(self.templates):
 			# This method lets you interpolate beyond the wavelength coverage of the template if/when the data covers beyond it.  
 			# Function returns 0 outside the wavelength coverage of the template.
 			# To broaden in constant velocity space, you need to rebin the templates to be in equal bins in log(lambda) space.
@@ -236,13 +251,11 @@ class FeComponent(Component):
 			template_equal_log_rebin_spec.wavelengths, template_equal_log_rebin_spec.flux = equal_log_bins, template_fluxes_rebin_equal_log_fluxes
 			self.rebin_log_templates.append(template_equal_log_rebin_spec)
 			
-			f = scipy.interpolate.interp1d(template.wavelengths, template.flux, bounds_error=False, fill_value= 0.)	# interpolation of template in normal space
-			f_log_lambda_equal_log_bins = scipy.interpolate.interp1d(equal_log_bins, template_fluxes_rebin_equal_log_fluxes, bounds_error = False, fill_value = 0.) # interp in equal log bin space
-			self.interpolated_templates.append(f(data_spectrum.wavelengths))
-			self.interpolated_templates_logspace_rebin.append(f_log_lambda_equal_log_bins(np.log(data_spectrum.wavelengths)))
-			self.interpolated_normalization_flux.append(f(fnw[i]))
-			i = i + 1
-		i = 0	
+		
+			self.interpolated_templates.append(np.interp(data_spectrum.wavelengths,template.wavelengths, template.flux,left=0,right=0))
+			self.interpolated_templates_logspace_rebin.append(np.interp(np.log(data_spectrum.wavelengths),equal_log_bins, template_fluxes_rebin_equal_log_fluxes,left=0,right=0))
+			self.interpolated_normalization_flux.append(np.interp(fnw[i],template.wavelengths, template.flux,left=0,right=0))
+		
 		
 	def native_wavelength_grid(self):
 		'''
@@ -300,11 +313,11 @@ class FeComponent(Component):
 		
 		for i in range(len(self.templates)):
 			if self.norm_min[i] < normalizations[i] < self.norm_max[i]:
-				ln_prior_norms[i] = np.log(1)
+				ln_prior_norms[i] = 0
 			else:
 				ln_prior_norms[i] = -np.inf
 			if self.fwhm_min[i] < fe_fwhm[i] < self.fwhm_max[i]:
-				ln_prior_fwhm[i] = np.log(1)
+				ln_prior_fwhm[i] = 0
 			else:
 				ln_prior_fwhm[i] = -np.inf
 		return ln_prior_norms.tolist() + ln_prior_fwhm.tolist()
@@ -337,7 +350,7 @@ class FeComponent(Component):
 		for i in range(len(self.templates)):	
 			# Parameter len(self.templates) + i gives Gaussian width of that template in this run
 			fwhm = parameters[i + len(self.templates)]
-			fwhm_over_c = parameters[i + len(self.templates)]/(c_km_per_s)
+			fwhm_over_c = fwhm/(c_km_per_s)
 			if fwhm < (self._template_inherent_widths[i]):
 				# Arbitrarily large flux, model will not be a good fit if narrower than template width.  Preferably infinity, but that doesn't play nice with the Model.likelihood method
 				interpolated_convolved_templates.append((np.ones(len(spectrum.wavelengths), dtype = float) * 1.e50))
@@ -348,11 +361,13 @@ class FeComponent(Component):
 				# sigma_conv is the width to broaden over, as given in Eqn 1 of Vestergaard and Wilkes 2001 (essentially the first line below this)
 				sigma_conv = np.sqrt(np.square(fwhm_over_c) - np.square(self._template_inherent_widths[i]/c_km_per_s))/(2.*np.sqrt(2.*np.log(2.)))
 				equal_log_bin_size = self.rebin_log_templates[i].wavelengths[2] - self.rebin_log_templates[i].wavelengths[1]
-				f_gaussian_smoothed = scipy.interpolate.interp1d(self.rebin_log_templates[i].wavelengths,	\
-					convolve(self.rebin_log_templates[i].flux, Gaussian1DKernel(sigma_conv/equal_log_bin_size)), \
-					bounds_error = False, fill_value = 0.)
-				interpolated_template_convolved = f_gaussian_smoothed(np.log(spectrum.wavelengths))
-				interpolated_template_convolved_normalization_flux = f_gaussian_smoothed(log_norm_waves[i])	# since in log space, need log_norm_waves here!
+				sig_norm = sigma_conv/equal_log_bin_size
+				kernel = signal.gaussian(1000,sig_norm)/(np.sqrt(2*math.pi)*sig_norm)
+				fftwconvolved = fftwconvolve_1d(self.rebin_log_templates[i].flux, kernel)
+				interpolated_template_convolved = np.interp(np.log(spectrum_real.wavelengths),self.rebin_log_templates[i].wavelengths,	\
+				fftwconvolved,left=0,right=0)
+				interpolated_template_convolved_normalization_flux = np.interp(log_norm_waves[i],rebin_log_template.wavelengths,	\
+				fftwconvolved,left=0,right=0) # since in log space, need log_norm_waves here!
 				# Find NaN errors early from dividing by zero.
 				assert interpolated_template_convolved_normalization_flux != 0., "Interpolated convolution flux valued at 0 at the location of peak template flux!"
 				interpolated_convolved_templates.append(interpolated_template_convolved)
