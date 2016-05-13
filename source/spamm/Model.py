@@ -32,19 +32,19 @@ def ln_posterior(new_params, *args):
 	# since it contains all of the information about the components.
 	model = args[0] # TODO: return an error if this is not the case
 		
-	# generate model spectrum given model parameters
-	model_spectrum_flux = model.model_flux(params=new_params)
-	
-	# calculate the log likelihood
-	# ----------------------------
-	# - compare the model spectrum to the data
-	ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
-	
 	# calculate the log prior
 	# -----------------------	
 	ln_prior = model.prior(params=new_params)
-	
-	return ln_likelihood + ln_prior # adding two lists
+	if ln_prior < 0:
+		return ln_prior
+	else:	
+		# ----------------------------
+		# - compare the model spectrum to the data
+		# generate model spectrum given model parameters
+		model_spectrum_flux = model.model_flux(params=new_params)
+		# calculate the log likelihood
+		ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
+		return ln_likelihood + ln_prior # adding two lists
 	
 
 class Model(object):
@@ -314,6 +314,8 @@ class Model(object):
 		ln_l *= self.mask
 		ln_l = -0.5*(np.sum(ln_l))
 		return ln_l
+		
+		
 
 	def prior(self, params):
 		'''
