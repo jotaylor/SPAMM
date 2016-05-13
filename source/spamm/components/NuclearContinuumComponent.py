@@ -50,10 +50,10 @@ class NuclearContinuumComponent(Component):
 				
 		boxcar_width = 5 # width of smoothing function
 		
-		self.flux_min = 0
-		self.flux_max = max(runningMeanFast(spectrum.flux, boxcar_width))
+		self.normalization_min = 0
+		self.normalization_max = max(runningMeanFast(spectrum.flux, boxcar_width))
 		
-		normalization_init = np.random.uniform(low=self.flux_min,high=self.flux_max)
+		normalization_init = np.random.uniform(low=self.normalization_min,high=self.normalization_max)
 
 		self.slope_min = -3.0
 		self.slope_max = 3.0
