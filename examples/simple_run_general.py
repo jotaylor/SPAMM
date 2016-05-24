@@ -22,8 +22,7 @@ from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
-
-
+from spamm.components.BalmerContinuumCombined import BalmerCombined
 # TODO: astropy units for spectrum
 
 # -----------------------------------------------------------------
@@ -60,6 +59,8 @@ n_iterations = 5000
 PL = True
 HOST = False
 FE = False
+BC = True#False#
+BpC = True#False#
 
 show_plots = False
 
@@ -67,8 +68,8 @@ show_plots = False
 # Read in spectrum
 # ----------------
 
-if PL:
-	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"	
+#if PL:
+#	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
 
 if HOST:
 	datafile = "../Data/FakeData/fake_host_spectrum.dat"
@@ -77,7 +78,14 @@ if FE:
 	#datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
 	#datafile = "../Data/FakeData/Iron_comp/fakeFe1_deg.dat"
 	datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
+
+if BC:
+	datafile = "../Data/FakeData/BaC_comp/FakeBac01_deg.dat"
+if BC and BpC:
+	datafile = "../Data/FakeData/BaC_comp/FakeBac_lines01_deg.dat"
 	
+
+# do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 spectrum = Spectrum()
 spectrum.wavelengths = wavelengths
@@ -88,7 +96,7 @@ spectrum.flux_error = flux_err
 # Initialize model
 # ------------
 model = Model()
-model.print_parameters = False
+model.print_parameters = False#True#
 
 # -----------------
 # Initialize components
@@ -104,6 +112,10 @@ if FE:
 if HOST:
 	host_galaxy_comp = HostGalaxyComponent()	
 	model.components.append(host_galaxy_comp)
+	
+if BC or BpC:
+	balmer_comp = BalmerCombined(BalmerContinuum=BC, BalmerPseudocContinuum=BpC)
+	model.components.append(balmer_comp)
 
 model.data_spectrum = spectrum # add data
 

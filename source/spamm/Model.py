@@ -36,8 +36,8 @@ def ln_posterior(new_params, *args):
 	# -----------------------	
 	ln_prior = model.prior(params=new_params)
 	if ln_prior < 0:
-		return ln_prior
-	else:	
+		return ln_prior 
+	else:	# only calculate flux and therefore likelihood if parameters lie within bounds of priors to save computation time
 		# ----------------------------
 		# - compare the model spectrum to the data
 		# generate model spectrum given model parameters
