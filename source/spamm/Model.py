@@ -35,8 +35,8 @@ def ln_posterior(new_params, *args):
 	# calculate the log prior
 	# -----------------------	
 	ln_prior = model.prior(params=new_params)
-	if ln_prior < 0:
-		return ln_prior 
+	if not np.isfinite(ln_prior):
+        	return -np.inf
 	else:	# only calculate flux and therefore likelihood if parameters lie within bounds of priors to save computation time
 		# ----------------------------
 		# - compare the model spectrum to the data

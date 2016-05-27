@@ -358,27 +358,27 @@ class BalmerCombined(Component):
 		if self.normalization_min < normalization < self.normalization_max:
 			ln_priors.append(0)
 		else:
-			ln_priors.append(-1.e100)
+			ln_priors.append(-np.inf)
 
 		if self.Te_min < Te < self.Te_max:
 			ln_priors.append(0)
 		else:
-			ln_priors.append(-1.e100)
+			ln_priors.append(-np.inf)
 
 		if self.tauBE_min < tauBE < self.tauBE_max:
 			ln_priors.append(0)
 		else:
-			ln_priors.append(-1.e100)
+			ln_priors.append(-np.inf)
 
 		if self.loffset_min < loffset < self.loffset_max:
 			ln_priors.append(0)
 		else:
-			ln_priors.append(-1.e100)
+			ln_priors.append(-np.inf)
 
 		if self.lwidth_min < lwidth < self.lwidth_max:
 			ln_priors.append(0)
 		else:
-			ln_priors.append(-1.e100)
+			ln_priors.append(-np.inf)
 
 
 		return ln_priors
