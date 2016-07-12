@@ -255,15 +255,15 @@ class HostGalaxyComponent(Component):
 		ln_prior_norms = np.zeros(len(self.templates))
 		for i in range(len(self.templates)):
 			if self.norm_min[i] < normalization[i] < self.norm_max[i]:
-				ln_prior_norms[i] = np.log(1)
+				ln_prior_norms[i] = 0.0
 			else:
-				ln_prior_norms[i] = -1.0e17
+				ln_prior_norms[i] = -np.inf
 
 		# Stellar dispersion parameter
 		if self.stellar_dispersion_min < stellar_dispersion < self.stellar_dispersion_max:
-			ln_prior_stellar_dispersion = np.log(1)
+			ln_prior_stellar_dispersion = 0.0
 		else:
-			ln_prior_stellar_dispersion = -1.0e17
+			ln_prior_stellar_dispersion = -np.inf
 		
 		# ln_prior_norms is an array, need to return a 1D array of parameters to emcee
 		return ln_prior_norms.tolist() + [ln_prior_stellar_dispersion]
