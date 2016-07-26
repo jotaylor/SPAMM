@@ -47,6 +47,9 @@ sys.excepthook = info
 n_walkers = 30
 n_iterations = 5000
 
+# Use MPI to distribute the computations
+MPI = True 
+
 #Select your component options
 # PL = nuclear continuum
 # HOST = host galaxy

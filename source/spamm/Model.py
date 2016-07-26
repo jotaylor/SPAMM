@@ -13,6 +13,11 @@ from Spectrum import Spectrum
 
 iteration_count = 0
 
+def sort_on_runtime(pos):
+    p = np.atleast_2d(p)
+    idx = np.argsort(p[:, 0])[::-1]
+    return p[idx], idx
+
 class MCMCDidNotConverge(Exception):
 	pass
 
@@ -51,7 +56,7 @@ class Model(object):
 	'''
 	
 	'''
-	def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05):
+	def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05,mpi=False):
 		'''
 		
 		:param wavelength_start: document me!
@@ -199,16 +204,30 @@ class Model(object):
 		global iteration_count
 		iteration_count = 0
 
-		# Create MCMC sampler
-		# - to enable multiproccessing, set threads > 1.
-		# - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
-		self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
+		if mpi:
+			from emcee.utils import MPIPool
+			# initializing the pool object
+			pool = MPIPool(loadbalance=True)
+			if not pool.is_master():
+    				pool.wait()
+    				sys.exit(0)
+			# Create MCMC sampler
+			self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
+											     lnpostfn=ln_posterior, args=[self], pool=pool,
+											     runtime_sortingfn=sort_on_runtime)
+			self.sampler.run_mcmc(walkers_matrix, n_iterations)
+			pool.close()
+		else:
+			# Create MCMC sampler
+			# - to enable multiproccessing, set threads > 1.
+			# - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
+			self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
 											 lnpostfn=ln_posterior, args=[self],
 											 threads=1)
 		
-		# run!
-		#self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
-		self.sampler.run_mcmc(walkers_matrix, n_iterations)
+			# run!
+			#self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
+			self.sampler.run_mcmc(walkers_matrix, n_iterations)
 		
 	@property
 	def total_parameter_count(self):
