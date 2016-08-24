@@ -59,10 +59,10 @@ MPI = True
 #Fe and host galaxy components need more work - see tickets
 #To do: implement combined - Gisella - see tickets
 
-PL = True
+PL = False#True
 HOST = False
-FE = False
-BC = True#False#
+FE = False#True#
+BC =  True#False#
 BpC = True#False#
 
 show_plots = False
@@ -79,8 +79,8 @@ if HOST:
 
 if FE:
 	#datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
-	#datafile = "../Data/FakeData/Iron_comp/fakeFe1_deg.dat"
-	datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
+	datafile = "../Data/FakeData/Iron_comp/fakeFe1_deg.dat"
+	#datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
 
 if BC:
 	datafile = "../Data/FakeData/BaC_comp/FakeBac01_deg.dat"
@@ -90,7 +90,7 @@ if BC and BpC:
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
-spectrum = Spectrum()
+spectrum = Spectrum(maskType="Cont+Fe")#"Emission lines")#
 spectrum.wavelengths = wavelengths
 spectrum.flux = flux
 spectrum.flux_error = flux_err	

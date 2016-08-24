@@ -65,6 +65,7 @@ class Model(object):
 		'''
 		self.z = None
 		self.components = list()
+		self.mpi = mpi
 		#self.reddening = None
 		#self.model_parameters = dict()
 		#self.mcmc_param_vector = None
@@ -204,7 +205,7 @@ class Model(object):
 		global iteration_count
 		iteration_count = 0
 
-		if mpi:
+		if self.mpi:
 			from emcee.utils import MPIPool
 			# initializing the pool object
 			pool = MPIPool(loadbalance=True)

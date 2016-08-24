@@ -299,10 +299,12 @@ class BalmerCombined(Component):
 			raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
 		
 		if self.normalization_min == None or self.normalization_max == None:
+			import matplotlib.pyplot as pl
+			pl.plot(spectrum.wavelengths,spectrum.flux)
+			pl.show()
 			m = np.nonzero(abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.)))
 			print('m',m)
 			BCmax = np.max(spectrum.flux[m[0]-10:m[0]+10])
-			print('BCmax',BCmax)
 			self.normalization_min = 0
 			self.normalization_max = BCmax
 		normalization_init = np.random.uniform(low=self.normalization_min,
