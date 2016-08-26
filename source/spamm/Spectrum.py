@@ -52,7 +52,7 @@ class Spectrum(object):
 					select = np.nonzero((wavelength >= wavebound[k][0]) & (wavelength <= wavebound[k][1]))
 					for x in select[0]:
 						self._mask[x] = True 
-				if self.maskType != "Emission lines":
+				if "Emission" not in self.maskType:
 					self._mask = list(np.invert(self._mask))
 		return self._mask
 	
@@ -82,16 +82,23 @@ class Spectrum(object):
 		cont = [[1275,1295],[1315,1330],[1351,1362],[1452,1520],[1680,1735],[1786,1834],[1940,2040],[2148,2243],[4770,4800],[5100,5130],[2190,2210],[3007,3027],[2190,2210],[3600,3700]]
 		pureFe = [[1350,1365],[1427,1480],[1490,1505],[1705,1730],[1780,1800],[1942,2115],[2250,2300],[2333,2445],[2470,2625],[2675,2755],[2855,3010],[4500,4700]]
 		#broadlines = [1215.68,1215.23,1218,1239,1243,1256,1263,1304,1307,1335,1394,1403,1402,1406,1486,1488,1531,1548,1551,1549,1640,1661,1666,1670.79,1720,1750,1786,1814,1855,1863,1883,1889,1909,2141,2321,2326,2335,2665,2796,2803,3203,3646,3835,3888.6,3934,3969,3970,4101.76,4340.5,4471.5,4686,4861,5875,5891,6562.9,7676,8446,8498,8542,8662]
-		broadlines = [1215.68,1215.23,1218,1239,1243,1256,1263,1304,1307,1335,1394,1403,1402,1406,1486,1488,1531,1548,1551,1549,1640,1661,1666,1670.79,1720,1750,1786,1814,1855,1863,1883,1889,1909,2141,2321,2326,2335,2665,2796,2803,3203,4101.76,4340.5,4471.5,4686,4861,5875,5891,6562.9,7676,8446,8498,8542,8662]
-		narrowlines = [3426,3727,3869,4559,5007,6087,6300,6374,6548,6583,6716,6731,9069,9532]
+		broadlines_complete = [1215.68,1215.23,1218,1239,1243,1256,1263,1304,1307,1335,1394,1403,1402,1406,1486,1488,1531,1548,1551,1640,1661,1666,1670.79,1720,1750,1786,1814,1855,1863,1883,1889,1909,2141,2321,2326,2335,2665,2796,2803,3203,4101.76,4340.5,4471.5,4686,4861,5875,5891,6562.9,7676,8446,8498,8542,8662]
+		narrowlines_complete = [3426,3727,3869,4959,5007,6087,6300,6374,6548,6583,6716,6731,9069,9532]
+		broadlines_reduced = [1215.68,1239,1243,1256,1263,1394,1403,1402,1406,1548,1551,1855,1863,1883,1889,1909,2796,2803,4101.76,4340.5,4861,5875,5891,6562.9]
+		narrowlines_reduced = [3727,3869,4959,5007,6300,6548,6583,6716,6731]
 		c = 3.e5 #km/s
 		v_c_broad = self.maskFWHM_broad/c
 		v_c_narrow = self.maskFWHM_narrow/c
-		lineregions = []
-		for x in broadlines:
-			lineregions.append([x-x*3*v_c_broad,x+x*3*v_c_broad]) # avoid lines by 3 FWHMs
-		for i in narrowlines:
-			lineregions.append([x-x*3*v_c_narrow,x+x*3*v_c_narrow])
+		lineregions_complete = []
+		for x in broadlines_complete:
+			lineregions_complete.append([x-x*2*v_c_broad,x+x*2*v_c_broad]) # avoid lines by 3 FWHMs
+		for i in narrowlines_complete:
+			lineregions_complete.append([x-x*2*v_c_narrow,x+x*2*v_c_narrow])
+		lineregions_reduced = []
+		for x in broadlines_reduced:
+			lineregions_reduced.append([x-x*2*v_c_broad,x+x*2*v_c_broad]) # avoid lines by 3 FWHMs
+		for i in narrowlines_reduced:
+			lineregions_reduced.append([x-x*2*v_c_narrow,x+x*2*v_c_narrow])
 		if self.maskType == "Continuum":
 			return cont
 		if self.maskType == "FeRegions":
@@ -99,9 +106,10 @@ class Spectrum(object):
 		if self.maskType == "Cont+Fe":
 			cont.extend(pureFe)
 			return cont
-		if self.maskType == "Emission lines":
-			print('lineregions',lineregions)
-			return lineregions
+		if self.maskType == "Emission lines complete":
+			return lineregions_complete
+		if self.maskType == "Emission lines reduced":
+			return lineregions_reduced
 		
 		
 		
