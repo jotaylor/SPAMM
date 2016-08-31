@@ -275,8 +275,11 @@ class Model(object):
 			# extract parameters from full vector for each component
 			p = params2[0:component.parameter_count]
 
-			# add the flux of the component to the model spectrum
-			self.add_component(component=component, parameters=p)
+			# add the flux of the component to the model spectrum except for extinction
+			if component.name != "Extinction":
+				self.add_component(component=component, parameters=p)
+			else:
+				self.reddening(component=component, parameters=p)
 			
 			# remove the parameters for this component from the list
 			params2 = params2[component.parameter_count:]
@@ -295,6 +298,15 @@ class Model(object):
 		# get the component's flux
 		component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
 		self.model_spectrum.flux += component_flux
+		
+	def reddening(self, component=None, parameters=None):
+		'''
+		Include extinction
+		'''
+		# get the component's flux
+		extinction = component.extinction(spectrum=self.data_spectrum, parameters=parameters)
+		for j in range(len(self.data_spectrum.wavelengths)):
+			self.model_spectrum.flux[j] *= extinction[j]
 
 	def model_parameter_names(self):
 		'''
