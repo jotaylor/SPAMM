@@ -10,6 +10,7 @@ import pyfftw
 import pickle
 from pysynphot import observation
 from pysynphot import spectrum as pysynphot_spec
+import matplotlib.pyplot as plt
 
 #in cgs.  Code genereally assumes that wavelengths are in angstroms,
 #these are taken care of in helper functions
@@ -33,7 +34,7 @@ def rebin_spec(wave, specin, wavnew):
 def balmerseries(n):
 	#central wavelenths of the balmer series
 	#assumes angstroms
-	ilambda = 1./911.3*(0.25 - 1./n**2)
+	ilambda = 1./911.3*(0.25 - 1./(n)**2)
 	return 1./ilambda
 
 def genlines(lgrid,lcent,shift,width):
@@ -49,43 +50,54 @@ def genlines(lgrid,lcent,shift,width):
 	LL = lgrid - lcent.reshape(lcent.size,1) #(is this simply x-x0)
 	
 	lwidth =  width*lcent.reshape(lcent.size,1)
-	return np.exp(- LL**2 /lwidth**2)
+	#return np.exp(- LL**2 /lwidth**2) #gaussian
+	return lwidth / (LL**2 + lwidth**2) #lorenztian
 	
 coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
-def iratio_SH(n,T): # 
+def iratio_SH(n_e,maxN,T): # 
 	"""Grabs intensity values from Storey and Hammer 1995 results""" 
-	coef_use = [ coef_interp(n,T) for coef_interp in coeff ] 
+	coef_use = [ coef_interp(n_e,T) for coef_interp in coeff ] 
 	#returns Htheta (E = 10 to E = 2) first
-	return np.array(coef_use[-1::-1])
+	return np.array(coef_use[-1:-maxN+1:-1])
 	
 def iratio_50_400(N,init_iratio,T): # 
-	"""Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014""" 
+	"""Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014 using electron temperature as excitation temperature""" 
 	I50 = init_iratio
 	maxline = N.max()
 	iratios = np.zeros(N.max()-49)
 	iratios[0] = I50
-	n = np.arange(50,maxline)
-	#print('n',n)
-	#print('iratios[0]',iratios[0])
-	for i in n:
+	nn = np.arange(50,maxline)
+	for i in nn:
 		iratios[i-49] = iratios[i-50]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T))
 	return iratios[1:]
+	
+def iratio_50_400_noT(N,init_i): # 
+	"""Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014, where we estimate excitation temperature from last 2 Storey and Hummer intensities""" 
+	init_ratio = init_i[1]/init_i[0]
+	T_ext = E0*(1./50.**2-1./49.**2)/(k*np.log(init_ratio))
+	maxline = N.max()
+	iratios = np.zeros(N.max()-49)
+	iratios[0] = init_i[1]
+	nn = np.arange(50,maxline)
+	for i in nn:
+		iratios[i-49] = iratios[i-50]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T_ext))
+	return iratios[1:]
 
-def makelines(wv,T,n,shift,width):
+def makelines(wv,T,n_e,shift,width):
 	#Take the helper functions above, and sum the high order balmer lines
 	#H-zeta is at 8, maybe start higher?
-	N = np.r_[3:51]
-#	N = np.r_[3:120]
+#	N = np.r_[3:51]
+	N = np.r_[3:401]
 	L =  balmerseries(N)
 
 	lines = genlines(wv,L,shift,width)
 	
-	if N.max() == 51:
-		I = iratio_SH(n,T)
+	if N.max() <= 51:
+		I = iratio_SH(n_e,N.max(),T)
 	else:
-		sh_iratio =iratio_SH(n,T)
+		sh_iratio =iratio_SH(n_e,51,T)
 		I51 = sh_iratio.reshape(sh_iratio.size)
-		I51beyond = iratio_50_400(N,I51[-1],T)
+		I51beyond = iratio_50_400_noT(N,I51[-2:])#40
 		I = np.append(I51,I51beyond)
 
 	scale = np.repeat(I.reshape(I.size,1),lines.shape[1],axis=1)
@@ -101,14 +113,14 @@ pyfftw.interfaces.cache.set_keepalive_time(1.0)
 def fftwconvolve_1d(in1, in2):
     outlen = in1.shape[-1] + in2.shape[-1] - 1 
     origlen = in1.shape[-1]
-    n = _next_regular(outlen) 
-    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, n) 
-    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, n) 
+    num = _next_regular(outlen) 
+    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, num) 
+    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, num) 
     sh = np.broadcast(tr1, tr2).shape 
     dt = np.common_type(tr1, tr2) 
     pr = pyfftw.n_byte_align_empty(sh, 16, dt) 
     np.multiply(tr1, tr2, out=pr) 
-    out = pyfftw.interfaces.numpy_fft.irfft(pr, n) 
+    out = pyfftw.interfaces.numpy_fft.irfft(pr, num) 
     index_low = int(outlen/2.)-int(np.floor(origlen/2))
     index_high = int(outlen/2.)+int(np.ceil(origlen/2))
     return out[..., index_low:index_high].copy() 
@@ -182,15 +194,18 @@ def BC_flux(spectrum=None, parameters=None):
 		'''
 		
 		newedge = 3646*(1 - parameters[3]/c)
+		newedge_scale = 3646*(1 - parameters[3]/c)
 
 		p = planckfunc(spectrum.wavelengths,parameters[1])
 		a = absorbterm(spectrum.wavelengths,parameters[2])
 		flux = a*p
 
-		m = abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge))
+		m = np.nonzero(abs(spectrum.wavelengths - newedge_scale) == np.min(abs(spectrum.wavelengths - newedge_scale)))
 		fnorm = flux[m]
+		#print('m',m[0][0])
+		#fnorm = np.max(flux[m[0][0]-5:m[0][0]+5])
 		
-		flux[spectrum.wavelengths > newedge] = 0
+		flux[spectrum.wavelengths > newedge-0.5] = 0
 
 		flux = parameters[0]*flux/fnorm
  
@@ -220,19 +235,22 @@ def BpC_flux(spectrum=None, parameters=None):
 			
 		'''
 		ckms = 2.998e5
-		newedge = 3666*(1 - parameters[3]/ckms)
+		newedge = 3646*(1 - parameters[3]/ckms)
 
+		n_e =1.e8
+		TT= parameters[1]#
 		flux = makelines(spectrum.wavelengths,
-				 parameters[1],parameters[2],
+				 TT,n_e,
 				 parameters[3]/ckms,parameters[4]/ckms)
 
-		m = abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge))
+		m = np.nonzero(abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge)))
 		fnorm = flux[m]
+		#print('m',m[0][0])
+		#fnorm = np.max(flux[m[0][0]-5:m[0][0]+5])
 		
 		newedge = 3646*(1 - parameters[3]/ckms)
 		flux[spectrum.wavelengths < newedge] = 0
-
-		flux = parameters[0]*flux/fnorm 
+		flux = parameters[0]*flux/fnorm/7.*5
 
 		return flux
 
@@ -251,6 +269,7 @@ class BalmerCombined(Component):
 		super(BalmerCombined, self).__init__()
 
 		self.model_parameter_names = list()
+		self.name = "Balmer"
 
 		# parameters for the continuum
 		self.model_parameter_names.append("normalization")
