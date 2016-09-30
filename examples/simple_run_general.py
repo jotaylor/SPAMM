@@ -8,7 +8,10 @@ from __future__ import absolute_import
 import os
 import sys
 import gzip
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 import numpy as np
 import matplotlib.pyplot as pl
