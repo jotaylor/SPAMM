@@ -2,6 +2,7 @@
 *aux
 *pyc
 .DS_Store
+*bak
 
 documentation/tmp
 documentation/_build
