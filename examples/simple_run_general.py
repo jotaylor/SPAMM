@@ -59,8 +59,8 @@ n_iterations = 5000
 PL = True
 HOST = False
 FE = False
-BC = True#False#
-BpC = True#False#
+BC = False
+BpC = False
 
 show_plots = False
 
@@ -68,8 +68,8 @@ show_plots = False
 # Read in spectrum
 # ----------------
 
-#if PL:
-#	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
+if PL:
+	datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
 
 if HOST:
 	datafile = "../Data/FakeData/fake_host_spectrum.dat"
