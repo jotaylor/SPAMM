@@ -44,16 +44,16 @@ parser.add_option("-m", help="SPAMM model pickle file", dest="model_filename", a
 (opts, args) = parser.parse_args()
 
 if opts.model_filename is None:
-	print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
-	sys.exit(1)
+    print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
+    sys.exit(1)
 
 model = pickle.loads(gzip.open(opts.model_filename).read())
 
 samples = model.sampler.chain[:, 1000:, :].reshape((-1, model.total_parameter_count))
 
 if np.size(samples) == 0:
-	print("WARNING, size of samples is 0! Exiting analysis code now...")
-	exit()
+    print("WARNING, size of samples is 0! Exiting analysis code now...")
+    exit()
 
 fig = triangle.corner(samples, labels=model.model_parameter_names())
 fig.savefig("plots/triangle.png")

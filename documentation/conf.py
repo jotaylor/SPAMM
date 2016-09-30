@@ -185,7 +185,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'SPAMM.tex', 'SPAMM Documentation',
+    ('index', 'SPAMM.tex', 'SPAMM Documentation',
    'SPAMM', 'manual'),
 ]
 
@@ -229,7 +229,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'SPAMM', 'SPAMM Documentation',
+    ('index', 'SPAMM', 'SPAMM Documentation',
    'SPAMM', 'SPAMM', 'One line description of project.',
    'Miscellaneous'),
 ]

@@ -25,12 +25,12 @@ model.components.append(fe_emission_component)
 model.run_mcmc(n_walkers=200)
 
 try:
-	cf.run_mcmc_analysis(plot=False)
+    cf.run_mcmc_analysis(plot=False)
 except MCMCDidNotConverge:
-	...
+    ...
 
 cf.plot_results(directory="/a/b/c")
 
 cf.mc_chain(parameter=x)	
 
-	
+

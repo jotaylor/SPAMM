@@ -18,17 +18,17 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 # This block of code tells Python to drop into the debugger
 # if there is an uncaught exception when run from the command line.
 def info(type, value, tb):
-   if hasattr(sys, 'ps1') or not sys.stderr.isatty():
-      # we are in interactive mode or we don't have a tty-like
-      # device, so we call the default hook
-      sys.__excepthook__(type, value, tb)
-   else:
-      import traceback, pdb
-      # we are NOT in interactive mode, print the exception...
-      traceback.print_exception(type, value, tb)
-      print()
-      # ...then start the debugger in post-mortem mode.
-      pdb.pm()
+    if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+        # we are in interactive mode or we don't have a tty-like
+        # device, so we call the default hook
+        sys.__excepthook__(type, value, tb)
+    else:
+        import traceback, pdb
+        # we are NOT in interactive mode, print the exception...
+        traceback.print_exception(type, value, tb)
+        print()
+        # ...then start the debugger in post-mortem mode.
+        pdb.pm()
 sys.excepthook = info
 # -----------------------------------------------------------------
 
@@ -77,13 +77,13 @@ np.savetxt("host_samples.text",samples)
 # Plot the chains to check for convergence
 labels=["$\\rm E$","$\\rm Im$","$\\rm sigma$"]
 if np.size(labels) != np.size(samples[0,:]):
-	print("Caution: The number of label names is not correct!")
+    print("Caution: The number of label names is not correct!")
 for i in range(0,np.size(labels)):
-	pl.clf()
-	pl.plot(samples[:,0],'-b')
-	pl.xlabel("$\\rm Chain$")
-	pl.ylabel(labels[i])
-	pl.show()
+    pl.clf()
+    pl.plot(samples[:,0],'-b')
+    pl.xlabel("$\\rm Chain$")
+    pl.ylabel(labels[i])
+    pl.show()
 
 ## add plot distributions with histograms instead of triangle
 fig = triangle.corner(samples[0:],labels=["$E$","$Im$"])

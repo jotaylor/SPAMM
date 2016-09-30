@@ -37,8 +37,8 @@ parser.add_option("-m", help="SPAMM model pickle file", dest="model_filename", a
 (opts, args) = parser.parse_args()
 
 if opts.model_filename is None:
-	print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
-	sys.exit(1)
+    print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
+    sys.exit(1)
 
 model = pickle.loads(gzip.open(opts.model_filename).read())
 
