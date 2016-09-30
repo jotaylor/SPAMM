@@ -57,19 +57,3 @@ class Spectrum(object):
 		''' Return the spacing of the wavelength grid in Ångstroms. Does not support variable grid spacing. '''
 		return self.wavelengths[1] - self.wavelengths[0]
 	
-
-class SDSSSpectrum(Spectrum):
-	'''
-	A Spectrum class that can process SDSS spectrum FITS files.
-	
-	To be implemented...
-	'''	
-	def __init__(self, filepath=None):
-		'''
-		SDSS initialization.
-		
-		@param filepath The full file path to the SDSS spectrum file.
-		'''
-		datafile = open(filepath)
-		#<... read  wavelenths, spectrum >
-		#self.flux = ...
