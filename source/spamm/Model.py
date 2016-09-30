@@ -9,7 +9,7 @@ from scipy import interpolate
 
 import emcee
 
-from Spectrum import Spectrum
+from .Spectrum import Spectrum
 
 iteration_count = 0
 
@@ -26,7 +26,7 @@ def ln_posterior(new_params, *args):
 	global iteration_count
 	iteration_count = iteration_count + 1
 	if iteration_count % 20 == 0:
-		print "iteration count: {0}".format(iteration_count)
+		print("iteration count: {0}".format(iteration_count))
 
 	# Make sure "model" is passed in - this needs access to the Model object
 	# since it contains all of the information about the components.
@@ -95,7 +95,7 @@ class Model(object):
 		
 		'''
 		if self.data_spectrum is None:
-			print "Attempting to read the bad pixel mask before a spectrum was defined."
+			print("Attempting to read the bad pixel mask before a spectrum was defined.")
 			sys.exit(1)
 		if self._mask is None:
 			self._mask = np.ones(len(self.data_spectrum.wavelengths))
@@ -190,7 +190,7 @@ class Model(object):
 		
 		# initialize walker matrix with initial parameters
 		walkers_matrix = list() # must be a list, not an np.array
-		for walker in xrange(n_walkers):
+		for walker in range(n_walkers):
 			walker_params = list()
 			for component in self.components:
 				walker_params = walker_params + component.initial_values(self.data_spectrum)
@@ -243,7 +243,7 @@ class Model(object):
 		# Build param vector to pass to MCMC
 		
 		if self.print_parameters:
-			print "params = {0}".format(params)
+			print("params = {0}".format(params))
 
 		# make a copy as we'll delete elements
 		params2 = np.copy(params)

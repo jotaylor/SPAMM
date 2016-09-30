@@ -7,14 +7,13 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 import sys
 
-class Component(object):
+class Component(object, metaclass=ABCMeta):
 	'''
 	Description of Component class here.
 	
 	This class is abstract; use (or create) subclasses of this class.
 	Functionality that is common to all subclasses should be implemented here.
 	'''
-	__metaclass__ = ABCMeta
 
 	def __init__(self):
 		self.z = None # redshift

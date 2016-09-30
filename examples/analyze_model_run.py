@@ -44,7 +44,7 @@ parser.add_option("-m", help="SPAMM model pickle file", dest="model_filename", a
 (opts, args) = parser.parse_args()
 
 if opts.model_filename is None:
-	print "\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0])
+	print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
 	sys.exit(1)
 
 model = pickle.loads(gzip.open(opts.model_filename).read())
@@ -52,7 +52,7 @@ model = pickle.loads(gzip.open(opts.model_filename).read())
 samples = model.sampler.chain[:, 1000:, :].reshape((-1, model.total_parameter_count))
 
 if np.size(samples) == 0:
-	print "WARNING, size of samples is 0! Exiting analysis code now..."
+	print("WARNING, size of samples is 0! Exiting analysis code now...")
 	exit()
 
 fig = triangle.corner(samples, labels=model.model_parameter_names())
@@ -63,10 +63,10 @@ fig.savefig("plots/triangle.png")
 #	where frac is the fraction of samples within the
 #	quoted uncertainties.  frac = 0.68 is the default.
 #	Columns are median, -error1, +error2.
-print median_values(samples, frac=0.68)
+print(median_values(samples, frac=0.68))
 # Second, calculate the mean and standard deviation.
 #	Columns are mean, standard deviation.
-print mean_values(samples)
+print(mean_values(samples))
 # Third, plot the MCMC chains as a function of iteration.
 #	You can easily tell if the chains are converged because you can
 #	no longer tell where the individual particle chains are sliced together.

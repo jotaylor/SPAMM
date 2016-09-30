@@ -33,7 +33,7 @@ def info(type, value, tb):
       import traceback, pdb
       # we are NOT in interactive mode, print the exception...
       traceback.print_exception(type, value, tb)
-      print
+      print()
       # ...then start the debugger in post-mortem mode.
       pdb.pm()
 sys.excepthook = info
@@ -100,7 +100,7 @@ model.data_spectrum = spectrum # add data
 # Run MCMC
 # ------------
 model.run_mcmc(n_walkers=n_walkers, n_iterations=n_iterations)
-print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
+print(("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction))))
 
 # ------------
 # Analyze & Plot results
@@ -127,7 +127,7 @@ np.savetxt("samples.text",samples)
 #	print("Caution: The number of label names is not correct!")
 labels = model.model_parameter_names()
 if show_plots:
-	for i in xrange(np.size(labels)):
+	for i in range(np.size(labels)):
 		pl.clf()
 		pl.plot(samples[:,0],'-b')
 		pl.xlabel("$\\rm Chain$")

@@ -300,9 +300,9 @@ class BalmerCombined(Component):
 		
 		if self.normalization_min == None or self.normalization_max == None:
 			m = np.nonzero(abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.)))
-			print('m',m)
+			print(('m',m))
 			BCmax = np.max(spectrum.flux[m[0]-10:m[0]+10])
-			print('BCmax',BCmax)
+			print(('BCmax',BCmax))
 			self.normalization_min = 0
 			self.normalization_max = BCmax
 		normalization_init = np.random.uniform(low=self.normalization_min,
@@ -393,7 +393,7 @@ class BalmerCombined(Component):
 		if self.BC and self.BpC:
 			flux_BC = BC_flux(spectrum=spectrum, parameters=parameters)
 			flux_BpC = BpC_flux(spectrum=spectrum, parameters=parameters)
-			flux_est=[flux_BC[i]+flux_BpC[i] for i in xrange(len(flux_BpC))]
+			flux_est=[flux_BC[i]+flux_BpC[i] for i in range(len(flux_BpC))]
 
 		else:
 			if self.BC:

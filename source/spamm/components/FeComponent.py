@@ -183,12 +183,12 @@ class FeComponent(Component):
 			try:
 				template_filename, template_inherent_width = line.split()[0], line.split()[1] # split on space to get inherent width as well
 			except:
-				print "Template list should be formatted in two columns, the first being the path to the template and the second being the width of the template in km/s!  Exiting now.\n"
+				print("Template list should be formatted in two columns, the first being the path to the template and the second being the width of the template in km/s!  Exiting now.\n")
 				sys.exit()
 			template.wavelengths, template.flux = np.loadtxt(template_filename, unpack=True)
 			self._templates.append(template)
 			self._template_inherent_widths.append(float(template_inherent_width)) 
-			print "\n\nAssuming width of " + str(template_inherent_width) + " km/s for template " + str(template_filename) + ".\n" # sanity check
+			print("\n\nAssuming width of " + str(template_inherent_width) + " km/s for template " + str(template_filename) + ".\n") # sanity check
 	
 	def initial_values(self, spectrum=None):
 		'''

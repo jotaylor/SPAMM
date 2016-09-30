@@ -39,7 +39,7 @@ def info(type, value, tb):
       import traceback, pdb
       # we are NOT in interactive mode, print the exception...
       traceback.print_exception(type, value, tb)
-      print
+      print()
       # ...then start the debugger in post-mortem mode.
       pdb.pm()
 sys.excepthook = info
@@ -114,7 +114,7 @@ if True:
 		global iteration_count
 		iteration_count = iteration_count + 1
 		if iteration_count % 2000 == 0:
-			print "iteration count: {0} model id: {1}".format(iteration_count, hex(id(args[0])))
+			print("iteration count: {0} model id: {1}".format(iteration_count, hex(id(args[0]))))
 
 		# Make sure "model" is passed in - this needs access to the Model object
 		# since it contains all of the information about the components.
@@ -137,7 +137,7 @@ if True:
 
 	# initialize walker matrix with initial parameters
 	walkers_matrix = list() # must be a list, not an np.array
-	for walker in xrange(n_walkers):
+	for walker in range(n_walkers):
 		walker_params = list()
 		for component in model.components:
 			walker_params = walker_params + component.initial_values(model.data_spectrum)
@@ -153,7 +153,7 @@ if True:
 
 
 
-print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+print(("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction))))
 
 
 # ------------
@@ -181,7 +181,7 @@ np.savetxt("samples.text",samples)
 #	print("Caution: The number of label names is not correct!")
 labels = model.model_parameter_names()
 if show_plots:
-	for i in xrange(np.size(labels)):
+	for i in range(np.size(labels)):
 		pl.clf()
 		pl.plot(samples[:,0],'-b')
 		pl.xlabel("$\\rm Chain$")
