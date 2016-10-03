@@ -3,6 +3,7 @@
 *pyc
 .DS_Store
 *bak
+*swp 
 
 documentation/tmp
 documentation/_build
