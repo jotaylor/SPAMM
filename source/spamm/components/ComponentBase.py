@@ -3,11 +3,15 @@
 
 from __future__ import print_function
 
+from six import with_metaclass
+from future.utils import with_metaclass
+
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import sys
 
-class Component(object, metaclass=ABCMeta):
+# Compatible with python 2 & 3.
+class Component(with_metaclass(ABCMeta, object)):
     '''
     Description of Component class here.
 
