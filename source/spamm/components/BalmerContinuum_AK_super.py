@@ -36,8 +36,12 @@ def genlines(lgrid,lcent,shift,width):
     lwidth =  width*lcent.reshape(lcent.size,1)
     return np.exp(- LL**2 /lwidth**2)
 
-coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
 def iratio(n,T): # what does this function do? guessing finds normalisation given tau and optical thickness from Blamer continuum calculation
+    try:
+        coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
+    except UnicodeDecodeError:
+        coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'),
+                            encoding="latin1")
     coef_use = [ coef_interp(n,T) for coef_interp in coeff ] 
     #returns Htheta (E = 10 to E = 2) first
     return np.array(coef_use[-8::-1])

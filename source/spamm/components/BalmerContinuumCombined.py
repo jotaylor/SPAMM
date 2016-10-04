@@ -51,9 +51,15 @@ def genlines(lgrid,lcent,shift,width):
     lwidth =  width*lcent.reshape(lcent.size,1)
     return np.exp(- LL**2 /lwidth**2)
 
-coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
 def iratio_SH(n,T): # 
     """Grabs intensity values from Storey and Hammer 1995 results""" 
+    try:
+        coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
+        # works in python 2
+    except UnicodeDecodeError:
+        coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'),
+                            encoding="latin1")
+        # works in python 3
     coef_use = [ coef_interp(n,T) for coef_interp in coeff ] 
     #returns Htheta (E = 10 to E = 2) first
     return np.array(coef_use[-1::-1])
