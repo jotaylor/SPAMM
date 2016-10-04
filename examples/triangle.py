@@ -207,11 +207,17 @@ def hist2d(x, y, *args, **kwargs):
     if plot_datapoints:
         ax.plot(x, y, "o", color=color, ms=1.5, zorder=-1, alpha=0.1,
                 rasterized=True)
-        ax.contourf(X1, Y1, H.T, [V[-1], H.max()],
+        V2 = np.array(list(set([V[-1], H.max()])))
+        V2.sort()
+        ax.contourf(X1, Y1, H.T, V2,
             cmap=LinearSegmentedColormap.from_list("cmap", ([1] * 3, [1] * 3),
                 N=2), antialiased=False)
 
     ax.pcolor(X, Y, H.max() - H.T, cmap=cmap)
+    # Contour levels must be sorted for countour to work.
+    # There cannot be repeats in contour levels.
+    V = np.array(list(set(V)))
+    V.sort()
     ax.contour(X1, Y1, H.T, V, colors=color)
 
     data = np.vstack([x, y])
