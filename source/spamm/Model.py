@@ -141,12 +141,12 @@ class Model(object):
 
         for component in self.components:
             component.initialize(data_spectrum=new_data_spectrum)
-
-            if component.grid_spacing > gs:
-                gs = component.grid_spacing
+             
+            if component.grid_spacing() and component.grid_spacing() > gs:
+                gs = component.grid_spacing()
                 worst_component = component
 
-        if gs > new_data_spectrum.grid_spacing:
+        if gs > new_data_spectrum.grid_spacing():
 
             if self.upsample_components_if_needed:
                 # The code will interpolate to the data anyway,
@@ -163,8 +163,8 @@ class Model(object):
                 # downsample
                 downsampled_spectrum.dispersion = np.arange(new_data_spectrum[0], new_data_spectrum[-1], gs)
                 downsampled_spectrum.flux = scipy.interpolate.interp1d(x=downsampled_spectrum.dispersion,
-                                                                                                                           y=new_data_spectrum.flux,
-                                                                                                                           kind='linear')
+                                                                       y=new_data_spectrum.flux,
+                                                                       kind='linear')
 
                 self.model_spectrum.dispersion = np.array(downsampled_spectrum.dispersion)
 
