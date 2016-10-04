@@ -22,6 +22,7 @@ class Spectrum(Spectrum1DRef):
         self._norm_wavelength = None
         self._flux_at_norm_wavelength = None
         super(Spectrum, self).__init__(data, wcs=wcs, *args, **kwargs)
+        self.wavelengths = None
 
     @property
     def normalization_wavelength(self):
@@ -42,8 +43,6 @@ class Spectrum(Spectrum1DRef):
 
     @property
     def dispersion(self):
-        """Dispersion quantity with mask applied. Returns a masked array
-        containing a Quantity object."""
         self._dispersion = super(Spectrum, self).dispersion
 
         dispersion = np.array(
@@ -54,4 +53,28 @@ class Spectrum(Spectrum1DRef):
     @dispersion.setter
     def dispersion(self, new_d):
         self._dispersion = new_d
+        self._wavelengths = new_d
 
+    @property
+    def wavelengths(self):
+        wavelengths = self._dispersion
+        
+        return wavelengths
+
+    @wavelengths.setter
+    def wavelengths(self, new_wl):
+        self._wavelengths = new_wl
+        self._dispersion = new_wl
+
+    @property
+    def flux(self):
+        self._flux = super(Spectrum, self).flux
+        flux = np.array(Quantity(self._flux, unit=self.unit))
+        
+        return flux
+
+    @flux.setter
+    def flux(self, new_flux):
+#        self._flux = new_flux
+        self._data = new_flux
+        self._flux_at_norm_wavelength = None
