@@ -22,7 +22,10 @@ import sys
 import gzip
 import optparse
 import inspect
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import numpy as np
 
 import triangle

@@ -19,8 +19,10 @@ import sys
 import gzip
 import optparse
 import inspect
-import cPickle as pickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import triangle
 
 sys.path.append(os.path.abspath("../source"))

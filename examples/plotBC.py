@@ -12,7 +12,10 @@ import scipy as sp
 import os
 import sys
 import gzip
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import numpy as np
 import matplotlib.pyplot as pl
