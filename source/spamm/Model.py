@@ -74,8 +74,9 @@ class Model(object):
         # the output of the emcee object
         #self.sampler_output = None
 
-        self.model_spectrum = Spectrum.from_array(np.arange(1), 
-                                                  dispersion= np.random.randn(1))
+        wl_init = np.arange(wavelength_start, wavelength_end, wavelength_delta)
+        self.model_spectrum = Spectrum.from_array(np.zeros(len(wl_init)),
+                                                  dispersion=wl_init)
 
         # Flag to allow Model to interpolate components' wavelength grid to match data
         # if component grid is more course than data
