@@ -90,9 +90,8 @@ if BC and BpC:
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
-spectrum = Spectrum()
-spectrum.wavelengths = wavelengths
-spectrum.flux = flux
+spectrum = Spectrum.from_array(flux)
+spectrum.dispersion = wavelengths
 spectrum.flux_error = flux_err	
 
 # ------------
@@ -121,7 +120,6 @@ if BC or BpC:
     model.components.append(balmer_comp)
 
 model.data_spectrum = spectrum # add data
-
 # ------------
 # Run MCMC
 # ------------
