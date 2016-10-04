@@ -42,7 +42,10 @@ if opts.model_filename is None:
     print("\nPlease specify the file to read, e.g. \n\n% {0} -m model.pickle.gz\n\n".format(sys.argv[0]))
     sys.exit(1)
 
-model = pickle.loads(gzip.open(opts.model_filename).read())
+try:
+    model = pickle.loads(gzip.open(opts.model_filename).read())
+except UnicodeDecodeError:
+    model = pickle.loads(gzip.open(opts.model_filename).read(), encoding="latin1")
 
 samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
 
