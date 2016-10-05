@@ -252,7 +252,7 @@ class HostGalaxyComponent(Component):
 		params[self.parameter_index("stellar dispersion")]
 
 		stellar_dispersion = params[self.parameter_index("stellar dispersion")]
-		parameters = normalisation
+		parameters = normalization
 		parameters.append(stellar_dispersion)
 		# Normalization parameter
 
@@ -283,7 +283,7 @@ class HostGalaxyComponent(Component):
 			return no_parameters
 
 
-	def flux(self, spectrum=None, params=None):
+	def flux(self, spectrum=None, parameters=None):
 		'''
 		Returns the flux for this component for a given wavelength grid
 		and parameters. Will use the initial parameters if none are specified.
@@ -291,12 +291,12 @@ class HostGalaxyComponent(Component):
 		
 		normalization = list()
 		for i in range(1, len(self.templates)+1):
-			normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
-		params[self.parameter_index("stellar dispersion")]
+			normalization.append(parameters[self.parameter_index("normalization_{0}".format(i))])
+		parameters[self.parameter_index("stellar dispersion")]
 
-		stellar_dispersion = params[self.parameter_index("stellar dispersion")]
-		parameters = normalisation
-		parameters.append(stellar_dispersion)
+		stellar_dispersion = parameters[self.parameter_index("stellar dispersion")]
+		parameters_host = normalization
+		parameters_host.append(stellar_dispersion)
 
 		assert len(parameters) == self.parameter_count, \
 				"The wrong number of indices were provided: {0}".format(parameters)
@@ -306,7 +306,7 @@ class HostGalaxyComponent(Component):
                 #is intrinsic to the template. For the moment, the
                 #implicit assumption is that each template has an
                 #intrinsic velocity dispersion = 0 km/s.
-		stellar_dispersion = parameters[-1]
+		stellar_dispersion = parameters_host[-1]
 		#Create the dispersion-convolution matrix.
 		#Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
 		Kmat = np.identity(len(spectrum.wavelengths))
@@ -315,7 +315,7 @@ class HostGalaxyComponent(Component):
 		#print "******* {0}".format(parameters)
 		norm = list() # parameter normalization
 		for i in range(len(self.templates)):
-			norm.append(parameters[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
+			norm.append(parameters_host[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
 #		norm = parameters[0:-1] / self.interpolated_normalization_flux
 		self._flux_arrays[:] = 0.0
 		for i in range(len(self.templates)):
