@@ -95,7 +95,7 @@ def SMC_Gordon_ext(spectrum=None, parameters=None): #Gordon 2003
 			C4 =0.0
 		k = C1+Rv+C2*x+C3*x*D+C4*F
 		ext[j] = pow(10,-0.4*parameters[0]*k)
-	return ext
+	return np.array(ext)
 	
 def AGN_Gaskell_ext(spectrum=None, parameters=None): #Gaskell and Benker 2007
 	'''Active galactic nuclei extinction curve defined in Gaskell and Benker 2007.
@@ -110,13 +110,17 @@ def AGN_Gaskell_ext(spectrum=None, parameters=None): #Gaskell and Benker 2007
 	E = 6.83
 	F = -7.92
 	Rv = 5.0
-	for j in range(len(spectrum.wavelengths)):
-		wavelengths_um = spectrum.wavelengths[j]/10000.
-		x = pow(wavelengths_um,-1)
-		if (x>=1.5) & (x<8):
-			k = A*pow(x,5)+B*pow(x,4)+C*pow(x,3)+D*pow(x,2)+E*x+F+Rv
-			ext[j] = pow(10,-0.4*parameters[0]*k)
-	return ext
+	#for j in range(len(spectrum.wavelengths)):
+	#	wavelengths_um = spectrum.wavelengths[j]/10000.
+	#	x = pow(wavelengths_um,-1)
+	#	if (x>=1.5) & (x<8):
+	#		k = A*pow(x,5)+B*pow(x,4)+C*pow(x,3)+D*pow(x,2)+E*x+F+Rv
+	#		ext[j] = pow(10,-0.4*parameters[0]*k)
+	wavelengths_um = np.array(spectrum.wavelengths/10000.)
+	x = pow(wavelengths_um,-1)
+	k = A*x**5+B*x**4+C*x**3+D*x**2+E*x+F+Rv
+	ext = pow(10,-0.4*parameters[0]*k)
+	return ext#np.array(ext)
 		
 
 class Extinction(Component):
@@ -171,7 +175,7 @@ class Extinction(Component):
 		ln_priors = list()
 		
 		#get the parameters
-		EBV = params[0]
+		EBV = params[self.parameter_index("E(B-V)")]
 		
 		#Flat priors, appended in order
 		if self.EBV_min < EBV < self.EBV_max:
@@ -190,7 +194,9 @@ class Extinction(Component):
 		return flux
 		
 	
-	def extinction(self, spectrum=None, parameters=None):
+	def extinction(self, spectrum=None, params=None):
+		EBV = params[self.parameter_index("E(B-V)")]
+		parameters = [EBV]
 		if spectrum is None:
 			raise Exception("Need a data spectrum")
 			sys.exit()

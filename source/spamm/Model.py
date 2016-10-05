@@ -6,6 +6,7 @@ import pdb
 import sys
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 import emcee
 
@@ -283,7 +284,7 @@ class Model(object):
 			
 			# remove the parameters for this component from the list
 			params2 = params2[component.parameter_count:]
-			
+		#plt.show()	
 		return self.model_spectrum.flux
 
 	def add_component(self, component=None, parameters=None):
@@ -297,6 +298,7 @@ class Model(object):
 		'''
 		# get the component's flux
 		component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
+		#plt.plot(self.model_spectrum.wavelengths,component_flux)
 		self.model_spectrum.flux += component_flux
 		
 	def reddening(self, component=None, parameters=None):
@@ -305,8 +307,10 @@ class Model(object):
 		'''
 		# get the component's flux
 		extinction = component.extinction(spectrum=self.data_spectrum, parameters=parameters)
-		for j in range(len(self.data_spectrum.wavelengths)):
-			self.model_spectrum.flux[j] *= extinction[j]
+		extinct_spectra= np.array(self.model_spectrum.flux)*extinction
+		self.model_spectrum.flux = extinct_spectra
+		#for j in range(len(self.data_spectrum.wavelengths)):
+		#	self.model_spectrum.flux[j] *= extinction[j]
 
 	def model_parameter_names(self):
 		'''

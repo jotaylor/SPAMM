@@ -26,8 +26,9 @@ class NuclearContinuumComponent(Component):
 		super(NuclearContinuumComponent, self).__init__()
 
 		self.model_parameter_names = list()
-		self.model_parameter_names.append("normalization")
+		self.model_parameter_names.append("normalization_PL")
 		self.model_parameter_names.append("slope")
+		self.name = "Nuclear"
 		
 		self._norm_wavelength =  None
 		
@@ -84,17 +85,17 @@ class NuclearContinuumComponent(Component):
 		# need to return parameters as a list in the correct order
 		ln_priors = list()
 		
-		normalization = params[self.parameter_index("normalization")]
+		normalization = params[self.parameter_index("normalization_PL")]
 		slope = params[self.parameter_index("slope")]
 		
 		if self.normalization_min < normalization < self.normalization_max:
-			ln_priors.append(np.log(1))
+			ln_priors.append(0.)
 		else:
 			#arbitrarily small number
 			ln_priors.append(-np.inf)
 			
 		if self.slope_min < slope < self.slope_max:
-			ln_priors.append(np.log(1))
+			ln_priors.append(0.)
 		else:
 			#arbitrarily small number
 			ln_priors.append(-np.inf)
@@ -109,9 +110,12 @@ class NuclearContinuumComponent(Component):
 		'''
 		assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
 		
+		normalization = parameters[self.parameter_index("normalization_PL")]
+		slope = parameters[self.parameter_index("slope")]
+		
 		# calculate flux of the component
 		normalized_wavelengths = spectrum.wavelengths / \
 			self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
-		flux = parameters[0] * np.power(normalized_wavelengths, parameters[1])
+		flux = normalization * np.power(normalized_wavelengths, slope)
 		
 		return flux

@@ -56,6 +56,7 @@ class HostGalaxyComponent(Component):
 
 		self._templates = None
 		self.interpolated_templates = None # interpolated to data provided
+		self.name = "HostGalaxy"
 		
 		#self.template_wave, self.template_flux, self.n_templates = self._load_host_templates()
 #		self.template_flux_model_grid = None
@@ -245,10 +246,14 @@ class HostGalaxyComponent(Component):
 		# need to return parameters as a list in the correct order
 		ln_priors = list()
 		
-		# get each parameter
-		normalization = params[0:-1] # this is a numpy array
-		stellar_dispersion = params[-1]
+		normalization = list()
+		for i in range(1, len(self.templates)+1):
+			normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
+		params[self.parameter_index("stellar dispersion")]
 
+		stellar_dispersion = params[self.parameter_index("stellar dispersion")]
+		parameters = normalisation
+		parameters.append(stellar_dispersion)
 		# Normalization parameter
 
 		# Flat prior within the expected ranges.
@@ -278,11 +283,20 @@ class HostGalaxyComponent(Component):
 			return no_parameters
 
 
-	def flux(self, spectrum=None, parameters=None):
+	def flux(self, spectrum=None, params=None):
 		'''
 		Returns the flux for this component for a given wavelength grid
 		and parameters. Will use the initial parameters if none are specified.
 		'''
+		
+		normalization = list()
+		for i in range(1, len(self.templates)+1):
+			normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
+		params[self.parameter_index("stellar dispersion")]
+
+		stellar_dispersion = params[self.parameter_index("stellar dispersion")]
+		parameters = normalisation
+		parameters.append(stellar_dispersion)
 
 		assert len(parameters) == self.parameter_count, \
 				"The wrong number of indices were provided: {0}".format(parameters)
