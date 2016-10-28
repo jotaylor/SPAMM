@@ -4,7 +4,7 @@ SPAMM
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org/
 
-SPAMM (Spectral Properties of AGN Modeled through MCMC) is an AGN spectral decomposition package that utilizes Bayesian methods, specifically the MCMC algorithm `emcee`_.
+**SPAMM** (**S**pectral **P**roperties of **A**GN **M**odeled through **M**CMC) is an AGN spectral decomposition package that utilizes Bayesian methods, specifically the MCMC algorithm `emcee`_.
 
 Documentation
 -------------
