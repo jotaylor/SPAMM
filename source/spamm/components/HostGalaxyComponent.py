@@ -56,6 +56,7 @@ class HostGalaxyComponent(Component):
 
         self._templates = None
         self.interpolated_templates = None # interpolated to data provided
+        self.name = "HostGalaxy"
 
         #self.template_wave, self.template_flux, self.n_templates = self._load_host_templates()
 #		self.template_flux_model_grid = None
@@ -222,86 +223,99 @@ class HostGalaxyComponent(Component):
 # 	        self.template_flux_model_grid = np.array(self.template_flux_model_grid)
 
 
-    def native_wavelength_grid(self):
-        assert False, "finish this code"
+	def native_wavelength_grid(self):
+		assert False, "finish this code"
+	
+	def normalization_wavelength(self, data_spectrum_wavelength=None):
+		'''
+		Returns a single value.
+		'''
+		if self._norm_wavelength is None:
+			if data_spectrum_wavelength is None:
+				raise Exception("The wavelength array of the data spectrum must be specified.")
+			self._norm_wavelength = np.median(data_spectrum_wavelength)
+		return self._norm_wavelength
 
-    def normalization_wavelength(self, data_spectrum_wavelength=None):
-        '''
-        Returns a single value.
-        '''
-        if self._norm_wavelength is None:
-            if data_spectrum_wavelength is None:
-                raise Exception("The wavelength array of the data spectrum must be specified.")
-            self._norm_wavelength = np.median(data_spectrum_wavelength)
-        return self._norm_wavelength
+	def ln_priors(self, params):
+		'''
+		Return a list of the ln of all of the priors.
+		
+		@param params
+		'''
 
-    def ln_priors(self, params):
-        '''
-        Return a list of the ln of all of the priors.
+		# need to return parameters as a list in the correct order
+		ln_priors = list()
+		
+		normalization = list()
+		for i in range(1, len(self.templates)+1):
+			normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
+		params[self.parameter_index("stellar dispersion")]
 
-        @param params
-        '''
+		stellar_dispersion = params[self.parameter_index("stellar dispersion")]
+		parameters = normalization
+		parameters.append(stellar_dispersion)
+		# Normalization parameter
 
-        # need to return parameters as a list in the correct order
-        ln_priors = list()
+		# Flat prior within the expected ranges.
+		ln_prior_norms = np.zeros(len(self.templates))
+		for i in range(len(self.templates)):
+			if self.norm_min[i] < normalization[i] < self.norm_max[i]:
+				ln_prior_norms[i] = 0.0
+			else:
+				ln_prior_norms[i] = -np.inf
 
-        # get each parameter
-        normalization = params[0:-1] # this is a numpy array
-        stellar_dispersion = params[-1]
+		# Stellar dispersion parameter
+		if self.stellar_dispersion_min < stellar_dispersion < self.stellar_dispersion_max:
+			ln_prior_stellar_dispersion = 0.0
+		else:
+			ln_prior_stellar_dispersion = -np.inf
+		
+		# ln_prior_norms is an array, need to return a 1D array of parameters to emcee
+		return ln_prior_norms.tolist() + [ln_prior_stellar_dispersion]
 
-        # Normalization parameter
-
-        # Flat prior within the expected ranges.
-        ln_prior_norms = np.zeros(len(self.templates))
-        for i in range(len(self.templates)):
-            if self.norm_min[i] < normalization[i] < self.norm_max[i]:
-                ln_prior_norms[i] = np.log(1)
-            else:
-                ln_prior_norms[i] = -1.0e17
-
-        # Stellar dispersion parameter
-        if self.stellar_dispersion_min < stellar_dispersion < self.stellar_dispersion_max:
-            ln_prior_stellar_dispersion = np.log(1)
-        else:
-            ln_prior_stellar_dispersion = -1.0e17
-
-        # ln_prior_norms is an array, need to return a 1D array of parameters to emcee
-        return ln_prior_norms.tolist() + [ln_prior_stellar_dispersion]
-
-    @property
-    def parameter_count(self):
-        ''' Returns the number of parameters of this component. '''
-        no_parameters = len(self.templates) + 1
-        if self.z:
-            return no_parameters + 1
-        else:
-            return no_parameters
+	@property
+	def parameter_count(self):
+		''' Returns the number of parameters of this component. '''
+		no_parameters = len(self.templates) + 1
+		if self.z:
+			return no_parameters + 1
+		else:
+			return no_parameters
 
 
-    def flux(self, spectrum=None, parameters=None):
-        '''
-        Returns the flux for this component for a given wavelength grid
-        and parameters. Will use the initial parameters if none are specified.
-        '''
+	def flux(self, spectrum=None, parameters=None):
+		'''
+		Returns the flux for this component for a given wavelength grid
+		and parameters. Will use the initial parameters if none are specified.
+		'''
+		
+		normalization = list()
+		for i in range(1, len(self.templates)+1):
+			normalization.append(parameters[self.parameter_index("normalization_{0}".format(i))])
+		parameters[self.parameter_index("stellar dispersion")]
 
-        assert len(parameters) == self.parameter_count, \
-                        "The wrong number of indices were provided: {0}".format(parameters)
+		stellar_dispersion = parameters[self.parameter_index("stellar dispersion")]
+		parameters_host = normalization
+		parameters_host.append(stellar_dispersion)
 
-        #Convolve to increase the velocity dispersion. Need to
-        #consider it as an excess dispersion above that which
-        #is intrinsic to the template. For the moment, the
-        #implicit assumption is that each template has an
-        #intrinsic velocity dispersion = 0 km/s.
-        stellar_dispersion = parameters[-1]
-        #Create the dispersion-convolution matrix.
-        #Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
-        Kmat = np.identity(len(spectrum.wavelengths))
+		assert len(parameters) == self.parameter_count, \
+				"The wrong number of indices were provided: {0}".format(parameters)
 
-        #flux = np.zeros(wavelengths.shape)
-        #print "******* {0}".format(parameters)
-        norm = list() # parameter normalization
-        for i in range(len(self.templates)):
-            norm.append(parameters[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
+                #Convolve to increase the velocity dispersion. Need to
+                #consider it as an excess dispersion above that which
+                #is intrinsic to the template. For the moment, the
+                #implicit assumption is that each template has an
+                #intrinsic velocity dispersion = 0 km/s.
+		stellar_dispersion = parameters_host[-1]
+		#Create the dispersion-convolution matrix.
+		#Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
+		Kmat = np.identity(len(spectrum.wavelengths))
+
+		#flux = np.zeros(wavelengths.shape)
+		#print "******* {0}".format(parameters)
+		norm = list() # parameter normalization
+		for i in range(len(self.templates)):
+			norm.append(parameters_host[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
 #		norm = parameters[0:-1] / self.interpolated_normalization_flux
         self._flux_arrays[:] = 0.0
         for i in range(len(self.templates)):

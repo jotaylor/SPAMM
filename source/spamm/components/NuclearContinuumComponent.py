@@ -13,6 +13,7 @@ def runningMeanFast(x, N):
     return np.convolve(x, np.ones((N,))/N)[(N-1):]
 
 class NuclearContinuumComponent(Component):
+<<<<<<< HEAD
     '''
     AGN Continuum Component
     \f$ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} \f$ 
@@ -28,6 +29,7 @@ class NuclearContinuumComponent(Component):
         self.model_parameter_names = list()
         self.model_parameter_names.append("normalization")
         self.model_parameter_names.append("slope")
+        self.name = "Nuclear"
 
         self._norm_wavelength =  None
 
@@ -38,7 +40,7 @@ class NuclearContinuumComponent(Component):
 
     @property
     def is_analytic(self):
-        return True	
+        return True    
 
     def initial_values(self, spectrum=None):
         '''
@@ -84,20 +86,19 @@ class NuclearContinuumComponent(Component):
         # need to return parameters as a list in the correct order
         ln_priors = list()
 
-        normalization = params[self.parameter_index("normalization")]
+        normalization = params[self.parameter_index("normalization_PL")]
         slope = params[self.parameter_index("slope")]
-
         if self.normalization_min < normalization < self.normalization_max:
-            ln_priors.append(np.log(1))
+            ln_priors.append(0.)
         else:
             #arbitrarily small number
-            ln_priors.append(-1.e100)
-
+            ln_priors.append(-np.inf)
+            
         if self.slope_min < slope < self.slope_max:
-            ln_priors.append(np.log(1))
+            ln_priors.append(0.)
         else:
             #arbitrarily small number
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
             # TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
 
         return ln_priors
@@ -108,10 +109,13 @@ class NuclearContinuumComponent(Component):
         and parameters. Will use the initial parameters if none are specified.
         '''
         assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
-
+        
+        normalization = parameters[self.parameter_index("normalization_PL")]
+        slope = parameters[self.parameter_index("slope")]
+        
         # calculate flux of the component
         normalized_wavelengths = spectrum.wavelengths / \
-                self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
-        flux = parameters[0] * np.power(normalized_wavelengths, parameters[1])
-
+            self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
+        flux = normalization * np.power(normalized_wavelengths, slope)
+        
         return flux

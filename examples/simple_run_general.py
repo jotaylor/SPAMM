@@ -26,6 +26,7 @@ from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
+from spamm.components.ReddeningLaw import Extinction
 # TODO: astropy units for spectrum
 
 # -----------------------------------------------------------------
@@ -50,6 +51,9 @@ sys.excepthook = info
 n_walkers = 30
 n_iterations = 5000
 
+# Use MPI to distribute the computations
+MPI = True 
+
 #Select your component options
 # PL = nuclear continuum
 # HOST = host galaxy
@@ -59,11 +63,16 @@ n_iterations = 5000
 #Fe and host galaxy components need more work - see tickets
 #To do: implement combined - Gisella - see tickets
 
-PL = True
+PL = False#True
 HOST = False
-FE = False
-BC = False
-BpC = False
+FE = False#True#
+BC =  False#True#
+BpC = False#True#
+Calzetti_ext = True#False#
+SMC_ext = False
+MW_ext = False
+AGN_ext = False
+LMC_ext = False
 
 show_plots = False
 
@@ -79,8 +88,8 @@ if HOST:
 
 if FE:
     #datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
-    #datafile = "../Data/FakeData/Iron_comp/fakeFe1_deg.dat"
-    datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
+    datafile = "../Data/FakeData/Iron_comp/fakeFe1_deg.dat"
+    #datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
 
 if BC:
     datafile = "../Data/FakeData/BaC_comp/FakeBac01_deg.dat"
@@ -90,15 +99,17 @@ if BC and BpC:
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
+# need to resolve
 spectrum = Spectrum.from_array(flux)
+#spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
 spectrum.dispersion = wavelengths
-spectrum.flux_error = flux_err	
+spectrum.flux_error = flux_err    
 
 # ------------
 # Initialize model
 # ------------
 model = Model()
-model.print_parameters = False#True#
+model.print_parameters = False#True#False#
 
 # -----------------
 # Initialize components
@@ -112,12 +123,16 @@ if FE:
     model.components.append(fe_comp)
 
 if HOST:
-    host_galaxy_comp = HostGalaxyComponent()	
+    host_galaxy_comp = HostGalaxyComponent()    
     model.components.append(host_galaxy_comp)
 
 if BC or BpC:
     balmer_comp = BalmerCombined(BalmerContinuum=BC, BalmerPseudocContinuum=BpC)
     model.components.append(balmer_comp)
+    
+if Calzetti_ext or SMC_ext or MW_ext or AGN_ext or LMC_ext:
+    ext_comp = Extinction(MW=MW_ext,AGN=AGN_ext,LMC=LMC_ext,SMC=SMC_ext, Calzetti=Calzetti_ext)
+    model.components.append(ext_comp)
 
 model.data_spectrum = spectrum # add data
 # ------------

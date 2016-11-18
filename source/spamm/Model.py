@@ -6,6 +6,7 @@ import pdb
 import sys
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 import emcee
 
@@ -13,10 +14,16 @@ from .Spectrum import Spectrum
 
 iteration_count = 0
 
+def sort_on_runtime(pos):
+    p = np.atleast_2d(p)
+    idx = np.argsort(p[:, 0])[::-1]
+    return p[idx], idx
+
 class MCMCDidNotConverge(Exception):
     pass
 
 def ln_posterior(new_params, *args):
+<<<<<<< HEAD
     '''
     The logarithm of the posterior function -- to be passed to the emcee sampler.
 
@@ -33,11 +40,11 @@ def ln_posterior(new_params, *args):
     model = args[0] # TODO: return an error if this is not the case
 
     # calculate the log prior
-    # -----------------------	
+    # -----------------------
     ln_prior = model.prior(params=new_params)
-    if ln_prior < 0:
-        return ln_prior 
-    else:	# only calculate flux and therefore likelihood if parameters lie within bounds of priors to save computation time
+    if not np.isfinite(ln_prior):
+        return -np.inf
+    else:    # only calculate flux and therefore likelihood if parameters lie within bounds of priors to save computation time
         # ----------------------------
         # - compare the model spectrum to the data
         # generate model spectrum given model parameters
@@ -51,7 +58,7 @@ class Model(object):
     '''
 
     '''
-    def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05):
+    def __init__(self, wavelength_start=1000, wavelength_end=10000, wavelength_delta=0.05, mpi=False):
         '''
 
         :param wavelength_start: document me!
@@ -60,6 +67,7 @@ class Model(object):
         '''
         self.z = None
         self.components = list()
+        self.mpi = mpi
         #self.reddening = None
         #self.model_parameters = dict()
         #self.mcmc_param_vector = None
@@ -197,13 +205,27 @@ class Model(object):
         global iteration_count
         iteration_count = 0
 
+        if self.mpi:
+            from emcee.utils import MPIPool
+            # initializing the pool object
+            pool = MPIPool(loadbalance=True)
+            if not pool.is_master():
+                    pool.wait()
+                    sys.exit(0)
+            # Create MCMC sampler
+            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
+                                                 lnpostfn=ln_posterior, args=[self], pool=pool,
+                                                 runtime_sortingfn=sort_on_runtime)
+            self.sampler.run_mcmc(walkers_matrix, n_iterations)
+            pool.close()
+        else:
         # Create MCMC sampler
         # - to enable multiproccessing, set threads > 1.
         # - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
-        self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, dim=len(walkers_matrix[0]),
-                                                                                 lnpostfn=ln_posterior, args=[self],
-                                                                                 threads=1)
-
+        self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                             dim=len(walkers_matrix[0]),
+                                             lnpostfn=ln_posterior, args=[self],
+                                             threads=1)
         # run!
         #self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
         self.sampler.run_mcmc(walkers_matrix, n_iterations)
@@ -253,8 +275,11 @@ class Model(object):
             # extract parameters from full vector for each component
             p = params2[0:component.parameter_count]
 
-            # add the flux of the component to the model spectrum
-            self.add_component(component=component, parameters=p)
+            # add the flux of the component to the model spectrum except for extinction
+            if component.name != "Extinction":
+                self.add_component(component=component, parameters=p)
+            else:
+                self.reddening(component=component, parameters=p)
 
             # remove the parameters for this component from the list
             params2 = params2[component.parameter_count:]
@@ -273,6 +298,17 @@ class Model(object):
         # get the component's flux
         component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
         self.model_spectrum.flux += component_flux
+
+    def reddening(self, component=None, parameters=None):
+        '''
+        Include extinction
+        '''
+        # get the component's flux
+        extinction = component.extinction(spectrum=self.data_spectrum, parameters=parameters)
+        extinct_spectra= np.array(self.model_spectrum.flux)*extinction
+        self.model_spectrum.flux = extinct_spectra
+        #for j in range(len(self.data_spectrum.wavelengths)):
+        #    self.model_spectrum.flux[j] *= extinction[j]
 
     def model_parameter_names(self):
         '''

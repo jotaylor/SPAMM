@@ -10,6 +10,7 @@ import pyfftw
 import pickle
 from pysynphot import observation
 from pysynphot import spectrum as pysynphot_spec
+import matplotlib.pyplot as plt
 
 #in cgs.  Code genereally assumes that wavelengths are in angstroms,
 #these are taken care of in helper functions
@@ -28,12 +29,12 @@ def rebin_spec(wave, specin, wavnew):
     filt = pysynphot_spec.ArraySpectralElement(wave, f, waveunits='angstrom')
     obs = observation.Observation(spec, filt, binset=wavnew, force='taper')
 
-    return obs.binflux	
+    return obs.binflux    
 
 def balmerseries(n):
     #central wavelenths of the balmer series
     #assumes angstroms
-    ilambda = 1./911.3*(0.25 - 1./n**2)
+    ilambda = 1./911.3*(0.25 - 1./(n)**2)
     return 1./ilambda
 
 def genlines(lgrid,lcent,shift,width):
@@ -49,7 +50,8 @@ def genlines(lgrid,lcent,shift,width):
     LL = lgrid - lcent.reshape(lcent.size,1) #(is this simply x-x0)
 
     lwidth =  width*lcent.reshape(lcent.size,1)
-    return np.exp(- LL**2 /lwidth**2)
+    return np.exp(- LL**2 /lwidth**2) #gaussian
+    return lwidth / (LL**2 + lwidth**2) #lorenztian
 
 def iratio_SH(n,T): # 
     """Grabs intensity values from Storey and Hammer 1995 results""" 
@@ -66,7 +68,8 @@ def iratio_SH(n,T): #
 
 def iratio_50_400(N,init_iratio,T): # 
     """Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014""" 
-    I50 = init_iratio
+    #T=15000.
+    I50 = init_iratio[1]
     maxline = N.max()
     iratios = np.zeros(N.max()-49)
     iratios[0] = I50
@@ -77,28 +80,42 @@ def iratio_50_400(N,init_iratio,T): #
         iratios[i-49] = iratios[i-50]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T))
     return iratios[1:]
 
+def iratio_50_400_noT(N,init_i): # 
+    """Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014, where we estimate excitation temperature from last 2 Storey and Hummer intensities""" 
+    init_ratio = init_i[1]/init_i[0]
+    T_ext = E0*(1./50.**2-1./49.**2)/(k*np.log(init_ratio))
+    #print('T_ext',T_ext)
+    #T_ext=15000.
+    maxline = N.max()
+    iratios = np.zeros(N.max()-49)
+    iratios[0] = init_i[1]
+    nn = np.arange(50,maxline)
+    for i in nn:
+        iratios[i-49] = iratios[i-50]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T_ext))
+    return iratios[1:]
+
 def makelines(wv,T,n,shift,width):
     #Take the helper functions above, and sum the high order balmer lines
     #H-zeta is at 8, maybe start higher?
     N = np.r_[3:51]
-#	N = np.r_[3:120]
+#    N = np.r_[3:120]
     L =  balmerseries(N)
 
     lines = genlines(wv,L,shift,width)
-
-    if N.max() == 51:
-        I = iratio_SH(n,T)
+    
+    if N.max() <= 51:
+        I = iratio_SH(n_e,N.max(),T)
     else:
-        sh_iratio =iratio_SH(n,T)
+        sh_iratio =iratio_SH(n_e,51,T)
         I51 = sh_iratio.reshape(sh_iratio.size)
-        I51beyond = iratio_50_400(N,I51[-1],T)
+        I51beyond = iratio_50_400_noT(N,I51[-2:])
+        #I51beyond = iratio_50_400(N,I51[-2:],T)
         I = np.append(I51,I51beyond)
 
     scale = np.repeat(I.reshape(I.size,1),lines.shape[1],axis=1)
     lines *= scale
 
     lines  = np.sum(lines,axis = 0)
-
 
     return lines
 
@@ -107,14 +124,14 @@ pyfftw.interfaces.cache.set_keepalive_time(1.0)
 def fftwconvolve_1d(in1, in2):
     outlen = in1.shape[-1] + in2.shape[-1] - 1 
     origlen = in1.shape[-1]
-    n = _next_regular(outlen) 
-    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, n) 
-    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, n) 
+    num = _next_regular(outlen) 
+    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, num) 
+    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, num) 
     sh = np.broadcast(tr1, tr2).shape 
     dt = np.common_type(tr1, tr2) 
     pr = pyfftw.n_byte_align_empty(sh, 16, dt) 
     np.multiply(tr1, tr2, out=pr) 
-    out = pyfftw.interfaces.numpy_fft.irfft(pr, n) 
+    out = pyfftw.interfaces.numpy_fft.irfft(pr, num) 
     index_low = int(outlen/2.)-int(np.floor(origlen/2))
     index_high = int(outlen/2.)+int(np.ceil(origlen/2))
     return out[..., index_low:index_high].copy() 
@@ -150,6 +167,7 @@ def log_conv(x,y,w):
     k  = np.exp(- (kx)**2/(dpix)**2)
     k /= abs(np.sum(k))
 
+<<<<<<< HEAD
     ysmooth = fftwconvolve_1d(yrebin, k)
     ysmooth -=np.min(ysmooth)
     assert ysmooth.size == x.size
@@ -184,22 +202,23 @@ def BC_flux(spectrum=None, parameters=None):
     p2 :  Flat between 5 000 and 20 000 Kelvin
     p3 :  Flat between 0.1 and 2.0
     p4 :  Determined from Hbeta, if applicable.
-    p5 :  Determined from Hbeta, if applicable.			
+    p5 :  Determined from Hbeta, if applicable.            
     '''
-
     newedge = 3646*(1 - parameters[3]/c)
-
+    newedge_scale = 3646*(1 - parameters[3]/c)
+    
     p = planckfunc(spectrum.wavelengths,parameters[1])
     a = absorbterm(spectrum.wavelengths,parameters[2])
     flux = a*p
-
-    m = abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge))
+    
+    m = np.nonzero(abs(spectrum.wavelengths - newedge_scale) == np.min(abs(spectrum.wavelengths - newedge_scale)))
     fnorm = flux[m]
-
-    flux[spectrum.wavelengths > newedge] = 0
-
+    #print('m',m[0][0])
+    #fnorm = np.max(flux[m[0][0]-5:m[0][0]+5])
+    flux[spectrum.wavelengths > newedge-0.5] = 0
+    
     flux = parameters[0]*flux/fnorm
-
+    
     flux = log_conv(spectrum.wavelengths,flux,parameters[4]/c)
 
     return flux
@@ -209,36 +228,43 @@ def BpC_flux(spectrum=None, parameters=None):
     Analytic model of the high-order Balmer lines, making up the Pseudo continuum near 3666 A.
 
     Line profiles are Gaussians (for now).  The line ratios are fixed to Storey &^ Hummer 1995, case B, n_e = 10^10 cm^-3.
-
     This component has 3 parameters:
-
+    
     parameter1 : The flux normalization near the Balmer Edge lambda = 3666 A, F(3666)
     parameter4 : A shift of the line centroids
     parameter5 : The width of the Gaussians
-
+    parameter6 : The log of the electron density
+    
     note that all constants, and the units, are absorbed in the
     parameter F(3656 A).  
-
+    
     priors:
     p1 :  Flat, between 0 and the observed flux F(3656).
     p4 :  Determined from Hbeta, if applicable.
     p5 :  Determined from Hbeta, if applicable.
-
+    p6 :  Flat between 2 and 14.
+            
+    note that all constants, and the units, are absorbed in the
+    parameter F(3656 A).  
     '''
+
     ckms = 2.998e5
     newedge = 3666*(1 - parameters[3]/ckms)
-
+    
+    n_e =10.**parameters[5]
+    TT= parameters[1]#
     flux = makelines(spectrum.wavelengths,
-                     parameters[1],parameters[2],
-                     parameters[3]/ckms,parameters[4]/ckms)
-
-    m = abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge))
+             TT,n_e,
+             parameters[3]/ckms,parameters[4]/ckms)
+    
+    m = np.nonzero(abs(spectrum.wavelengths - newedge) == np.min(abs(spectrum.wavelengths - newedge)))
     fnorm = flux[m]
-
+    #print('m',m[0][0])
+    #fnorm = np.max(flux[m[0][0]-5:m[0][0]+5])
+    
     newedge = 3646*(1 - parameters[3]/ckms)
     flux[spectrum.wavelengths < newedge] = 0
-
-    flux = parameters[0]*flux/fnorm 
+    flux = parameters[0]*flux/fnorm
 
     return flux
 
@@ -257,6 +283,7 @@ class BalmerCombined(Component):
         super(BalmerCombined, self).__init__()
 
         self.model_parameter_names = list()
+        self.name = "Balmer"
 
         # parameters for the continuum
         self.model_parameter_names.append("normalization")
@@ -266,9 +293,11 @@ class BalmerCombined(Component):
         # paramters for the lines
         self.model_parameter_names.append("loffset")
         self.model_parameter_names.append("lwidth")
-
+        
+        self.model_parameter_names.append("logNe")
+        
         self._norm_wavelength =  None
-
+        
         self.normalization_min = None
         self.normalization_max = None
 
@@ -283,16 +312,19 @@ class BalmerCombined(Component):
 
         self.lwidth_min = None
         self.lwidth_max = None
-
+        
+        self.logNe_min = None
+        self.logNe_max = None
+        
         self.BC = BalmerContinuum
         self.BpC = BalmerPseudocContinuum
-
+        
         # etc.
-
+        
     @property
     def is_analytic(self):
         return True
-
+    
 
     def initial_values(self, spectrum=None):
         '''
@@ -303,111 +335,133 @@ class BalmerCombined(Component):
         #  calculate/define minimum and maximum values for each parameter.
         if spectrum is None:
             raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
-
+        
         if self.normalization_min == None or self.normalization_max == None:
             m = np.nonzero(abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.)))
-            print(('m',m))
+            print('m',m)
             BCmax = np.max(spectrum.flux[m[0]-10:m[0]+10])
-            print(('BCmax',BCmax))
             self.normalization_min = 0
             self.normalization_max = BCmax
         normalization_init = np.random.uniform(low=self.normalization_min,
-                                               high=self.normalization_max)
-
+                               high=self.normalization_max)
+                               
         if self.Te_min == None or self.Te_max == None:
             self.Te_min = 5.e3
             self.Te_max = 20.e3
         Te_init = np.random.uniform(low=self.Te_min,
-                                    high=self.Te_max)
-
+                        high=self.Te_max)
+                        
         if self.tauBE_min == None or self.tauBE_max == None:
             self.tauBE_min = 0.0
             self.tauBE_max = 2.0
         tauBE_init = np.random.uniform(low=self.tauBE_min,
-                                       high=self.tauBE_max)
+                           high=self.tauBE_max)
 
         if self.loffset_min == None or self.loffset_max == None:
             self.loffset_min = -10.0
             self.loffset_max =  10.0
         loffset_init = np.random.uniform( low=self.loffset_min,
-                                         high=self.loffset_max)
+                         high=self.loffset_max)
 
         if self.lwidth_min == None or self.lwidth_max == None:
-            self.lwidth_min = 1.0
+            self.lwidth_min = 100.
             self.lwidth_max = 10000.
         lwidth_init = np.random.uniform( low=self.lwidth_min,
-                                       high=self.lwidth_max)
+                           high=self.lwidth_max)
+                           
+        if self.logNe_min == None or self.logNe_max == None:
+            self.logNe_min = 2
+            self.logNe_max = 14
+        logNe_init = np.random.uniform(low=self.logNe_min,
+                        high=self.logNe_max)
 
 
-        return [normalization_init, Te_init, tauBE_init,loffset_init,lwidth_init]
+        return [normalization_init, Te_init, tauBE_init,loffset_init,lwidth_init,logNe_init]
 
 
     def ln_priors(self, params):
         '''
         Return a list of the ln of all of the priors.
-
+        
         @param params
         '''
-
+        
         # need to return parameters as a list in the correct order
         ln_priors = list()
-
+        
+        
+        
         #get the parameters
-        normalization = params[0]#[self.parameter_index("normalization")]
-        Te            = params[1]#[self.parameter_index("Te")]
-        tauBE         = params[2]#[self.parameter_index("tauBE")]
-        loffset       = params[3]#[self.parameter_index("loffset")] # determined in blamer pseudo continuum, right?
-        lwidth        = params[4]#[self.parameter_index("lwidth")]
+        normalization = params[self.parameter_index("normalization")]#params[0]#[self.parameter_index("normalization")]
+        Te            = params[self.parameter_index("Te")]#params[1]#[self.parameter_index("Te")]
+        tauBE         = params[self.parameter_index("tauBE")]#params[2]#
+        loffset       = params[self.parameter_index("loffset")]#params[3]# # determined in blamer pseudo continuum, right?
+        lwidth        = params[self.parameter_index("lwidth")]#params[4]#
+        logNe         = params[self.parameter_index("logNe")]#params[5]#
+        
 
-
+        
         #Flat priors, appended in order
         if self.normalization_min < normalization < self.normalization_max:
             ln_priors.append(0)
         else:
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
 
         if self.Te_min < Te < self.Te_max:
             ln_priors.append(0)
         else:
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
 
         if self.tauBE_min < tauBE < self.tauBE_max:
             ln_priors.append(0)
         else:
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
 
         if self.loffset_min < loffset < self.loffset_max:
             ln_priors.append(0)
         else:
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
 
         if self.lwidth_min < lwidth < self.lwidth_max:
             ln_priors.append(0)
         else:
-            ln_priors.append(-1.e100)
+            ln_priors.append(-np.inf)
+            
+        if self.logNe_min < logNe < self.logNe_max:
+            ln_priors.append(0)
+        else:
+            ln_priors.append(-np.inf)
 
 
         return ln_priors
-
-
-
+        
+        
+        
     def flux(self, spectrum=None, parameters=None):
         '''
         Returns the flux for this component for a given wavelength grid
         and parameters. 
         '''
+        #get the parameters
+        normalization = parameters[self.parameter_index("normalization")]#params[0]#[self.parameter_index("normalization")]
+        Te            = parameters[self.parameter_index("Te")]#params[1]#[self.parameter_index("Te")]
+        tauBE         = parameters[self.parameter_index("tauBE")]#params[2]#
+        loffset       = parameters[self.parameter_index("loffset")]#params[3]# # determined in blamer pseudo continuum, right?
+        lwidth        = parameters[self.parameter_index("lwidth")]#params[4]#
+        logNe         = parameters[self.parameter_index("logNe")]#params[5]#
+        
+        Bparameters = [normalization,Te,tauBE,loffset,lwidth,logNe]
+        #print('balmerpameters',balmerparameters)
+        #print('pameters',parameters)
+        
         if self.BC and self.BpC:
-            flux_BC = BC_flux(spectrum=spectrum, parameters=parameters)
-            flux_BpC = BpC_flux(spectrum=spectrum, parameters=parameters)
-            flux_est=[flux_BC[i]+flux_BpC[i] for i in range(len(flux_BpC))]
+            flux_BC = BC_flux(spectrum=spectrum, parameters=Bparameters)
+            flux_BpC = BpC_flux(spectrum=spectrum, parameters=Bparameters)
+            flux_est=[flux_BC[i]+flux_BpC[i] for i in xrange(len(flux_BpC))]
 
         else:
             if self.BC:
-                flux_est = BC_flux(spectrum=spectrum, parameters=parameters)
+                flux_est = BC_flux(spectrum=spectrum, parameters=Bparameters)
             if self.BpC:
-                flux_est = BpC_flux(spectrum=spectrum, parameters=parameters)
+                flux_est = BpC_flux(spectrum=spectrum, parameters=Bparameters)
         return flux_est
-
-
-
-
