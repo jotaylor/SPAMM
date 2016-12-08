@@ -23,7 +23,6 @@ class MCMCDidNotConverge(Exception):
     pass
 
 def ln_posterior(new_params, *args):
-<<<<<<< HEAD
     '''
     The logarithm of the posterior function -- to be passed to the emcee sampler.
 
