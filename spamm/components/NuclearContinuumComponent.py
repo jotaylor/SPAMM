@@ -13,7 +13,6 @@ def runningMeanFast(x, N):
     return np.convolve(x, np.ones((N,))/N)[(N-1):]
 
 class NuclearContinuumComponent(Component):
-<<<<<<< HEAD
     '''
     AGN Continuum Component
     \f$ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} \f$ 

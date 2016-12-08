@@ -167,7 +167,6 @@ def log_conv(x,y,w):
     k  = np.exp(- (kx)**2/(dpix)**2)
     k /= abs(np.sum(k))
 
-<<<<<<< HEAD
     ysmooth = fftwconvolve_1d(yrebin, k)
     ysmooth -=np.min(ysmooth)
     assert ysmooth.size == x.size
