@@ -53,7 +53,7 @@ def genlines(lgrid,lcent,shift,width):
     return np.exp(- LL**2 /lwidth**2) #gaussian
     return lwidth / (LL**2 + lwidth**2) #lorenztian
 
-def iratio_SH(n,T): # 
+def iratio_SH(n_e,maxN,T): # 
     """Grabs intensity values from Storey and Hammer 1995 results""" 
     try:
         coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'))
@@ -62,9 +62,9 @@ def iratio_SH(n,T): #
         coeff = pickle.load(open('../SH95recombcoeff/coeff.interpers.pickle','rb'),
                             encoding="latin1")
         # works in python 3
-    coef_use = [ coef_interp(n,T) for coef_interp in coeff ] 
+    coef_use = [ coef_interp(n_e,T) for coef_interp in coeff ] 
     #returns Htheta (E = 10 to E = 2) first
-    return np.array(coef_use[-1::-1])
+    return np.array(coef_use[-1:-maxN+1:-1])
 
 def iratio_50_400(N,init_iratio,T): # 
     """Estimates relative intensity values for lines 50-400 using from Kovacevic et al 2014""" 
@@ -94,11 +94,11 @@ def iratio_50_400_noT(N,init_i): #
         iratios[i-49] = iratios[i-50]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T_ext))
     return iratios[1:]
 
-def makelines(wv,T,n,shift,width):
+def makelines(wv,T,n_e,shift,width):
     #Take the helper functions above, and sum the high order balmer lines
     #H-zeta is at 8, maybe start higher?
-    N = np.r_[3:51]
-#    N = np.r_[3:120]
+#    N = np.r_[3:51]
+    N = np.r_[3:400]
     L =  balmerseries(N)
 
     lines = genlines(wv,L,shift,width)
@@ -285,7 +285,7 @@ class BalmerCombined(Component):
         self.name = "Balmer"
 
         # parameters for the continuum
-        self.model_parameter_names.append("normalization")
+        self.model_parameter_names.append("normalization_BC")
         self.model_parameter_names.append("Te")
         self.model_parameter_names.append("tauBE")
 
@@ -391,12 +391,12 @@ class BalmerCombined(Component):
         
         
         #get the parameters
-        normalization = params[self.parameter_index("normalization")]#params[0]#[self.parameter_index("normalization")]
-        Te            = params[self.parameter_index("Te")]#params[1]#[self.parameter_index("Te")]
-        tauBE         = params[self.parameter_index("tauBE")]#params[2]#
-        loffset       = params[self.parameter_index("loffset")]#params[3]# # determined in blamer pseudo continuum, right?
-        lwidth        = params[self.parameter_index("lwidth")]#params[4]#
-        logNe         = params[self.parameter_index("logNe")]#params[5]#
+        normalization = params[self.parameter_index("normalization_BC")]
+        Te            = params[self.parameter_index("Te")]
+        tauBE         = params[self.parameter_index("tauBE")]
+        loffset       = params[self.parameter_index("loffset")]
+        lwidth        = params[self.parameter_index("lwidth")]
+        logNe         = params[self.parameter_index("logNe")]
         
 
         
@@ -442,12 +442,12 @@ class BalmerCombined(Component):
         and parameters. 
         '''
         #get the parameters
-        normalization = parameters[self.parameter_index("normalization")]#params[0]#[self.parameter_index("normalization")]
-        Te            = parameters[self.parameter_index("Te")]#params[1]#[self.parameter_index("Te")]
-        tauBE         = parameters[self.parameter_index("tauBE")]#params[2]#
-        loffset       = parameters[self.parameter_index("loffset")]#params[3]# # determined in blamer pseudo continuum, right?
-        lwidth        = parameters[self.parameter_index("lwidth")]#params[4]#
-        logNe         = parameters[self.parameter_index("logNe")]#params[5]#
+        normalization = parameters[self.parameter_index("normalization_BC")]
+        Te            = parameters[self.parameter_index("Te")]
+        tauBE         = parameters[self.parameter_index("tauBE")]
+        loffset       = parameters[self.parameter_index("loffset")]
+        lwidth        = parameters[self.parameter_index("lwidth")]
+        logNe         = parameters[self.parameter_index("logNe")]
         
         Bparameters = [normalization,Te,tauBE,loffset,lwidth,logNe]
         #print('balmerpameters',balmerparameters)
