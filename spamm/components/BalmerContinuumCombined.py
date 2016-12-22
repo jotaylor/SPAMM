@@ -338,7 +338,7 @@ class BalmerCombined(Component):
         if self.normalization_min == None or self.normalization_max == None:
             m = np.nonzero(abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.)))
             print('m',m)
-            BCmax = np.max(spectrum.flux[m[0]-10:m[0]+10])
+            BCmax = np.max(spectrum.flux[m[0][0]-10:m[0][0]+10])
             self.normalization_min = 0
             self.normalization_max = BCmax
         normalization_init = np.random.uniform(low=self.normalization_min,

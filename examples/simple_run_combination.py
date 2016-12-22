@@ -15,7 +15,7 @@ import matplotlib.pyplot as pl
 
 import triangle
 
-sys.path.append(os.path.abspath("../source"))
+sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -24,6 +24,7 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
+from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
 
 # -----------------------------------------------------------------
@@ -46,7 +47,7 @@ sys.excepthook = info
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 1000
+n_iterations = 500
 
 # Use MPI to distribute the computations
 MPI = True 
@@ -70,6 +71,7 @@ SMC_ext = False#True#
 MW_ext = False#True#
 AGN_ext = False#True#
 LMC_ext = False#True#
+maskType=None#"Continuum"#"Emission lines reduced"#
 max_wave =[]
 min_wave =[]
 fluxes = []
@@ -179,16 +181,21 @@ flux_err = np.sqrt(var)
 
 print('sizes',np.shape(flux),np.shape(wavelengths))
 
-spectrum = Spectrum()#maskType="Emission lines reduced")#"Cont+Fe")#
-spectrum.wavelengths = wavelengths
-spectrum.flux = flux
-spectrum.flux_error = flux_err
+#spectrum = Spectrum()#maskType="Emission lines reduced")#"Cont+Fe")#
+#spectrum.wavelengths = wavelengths
+#spectrum.flux = flux
+#spectrum.flux_error = flux_err
+mask = Mask(wavelengths=wavelengths,maskType=maskType)
+spectrum = Spectrum(flux)
+spectrum.mask=mask
+spectrum.dispersion = wavelengths
+spectrum.flux_error = flux_err    
 
 # ------------
 # Initialize model
 # ------------
 model = Model()
-model.print_parameters = False#True#False#
+model.print_parameters = False#True#
 
 # -----------------
 # Initialize components
