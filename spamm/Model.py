@@ -303,7 +303,7 @@ class Model(object):
         Include extinction
         '''
         # get the component's flux
-        extinction = component.extinction(spectrum=self.data_spectrum, parameters=parameters)
+        extinction = component.extinction(spectrum=self.data_spectrum, params=parameters)
         extinct_spectra= np.array(self.model_spectrum.flux)*extinction
         self.model_spectrum.flux = extinct_spectra
         #for j in range(len(self.data_spectrum.wavelengths)):
