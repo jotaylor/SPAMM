@@ -26,7 +26,7 @@ class NuclearContinuumComponent(Component):
         super(NuclearContinuumComponent, self).__init__()
 
         self.model_parameter_names = list()
-        self.model_parameter_names.append("normalization")
+        self.model_parameter_names.append("normalization_PL")
         self.model_parameter_names.append("slope")
         self.name = "Nuclear"
 

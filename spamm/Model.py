@@ -94,27 +94,27 @@ class Model(object):
         # debugging
         self.print_parameters = False
 
-    @property
-    def mask(self):
-        '''
-
-        '''
-        if self.data_spectrum is None:
-            print("Attempting to read the bad pixel mask before a spectrum was defined.")
-            sys.exit(1)
-        if self._mask is None:
-            self._mask = np.ones(len(self.data_spectrum.dispersion))
-
-        return self._mask
-
-    @mask.setter
-    def mask(self, new_mask):
-        '''
-        Document me.
-
-        :params mask: A numpy array representing the mask.
-        '''
-        self._mask = new_mask
+#    @property
+#    def mask(self):
+#        '''
+#
+#        '''
+#        if self.data_spectrum is None:
+#            print("Attempting to read the bad pixel mask before a spectrum was defined.")
+#            sys.exit(1)
+#        if self._mask is None:
+#            self._mask = np.ones(len(self.data_spectrum.dispersion))
+#
+#        return self._mask
+#
+#    @mask.setter
+#    def mask(self, new_mask):
+#        '''
+#        Document me.
+#
+#        :params mask: A numpy array representing the mask.
+#        '''
+#        self._mask = new_mask
 
     @property
     def data_spectrum(self):
@@ -218,13 +218,13 @@ class Model(object):
             self.sampler.run_mcmc(walkers_matrix, n_iterations)
             pool.close()
         else:
-        # Create MCMC sampler
-        # - to enable multiproccessing, set threads > 1.
-        # - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
-        self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                             dim=len(walkers_matrix[0]),
-                                             lnpostfn=ln_posterior, args=[self],
-                                             threads=1)
+        	# Create MCMC sampler
+        	# - to enable multiproccessing, set threads > 1.
+        	# - if using multiprocessing, the "lnpostfn" and "args" parameters must be pickleable.
+        	self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+        	                                     dim=len(walkers_matrix[0]),
+        	                                     lnpostfn=ln_posterior, args=[self],
+        	                                     threads=1)
         # run!
         #self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
         self.sampler.run_mcmc(walkers_matrix, n_iterations)
@@ -344,7 +344,7 @@ class Model(object):
         interp_model_flux = f(self.data_spectrum.dispersion)
 
         ln_l = np.power(((self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2)+np.log(2*np.pi*np.power(self.data_spectrum.flux_error,2))
-        ln_l *= self.mask
+        #ln_l *= self.mask
         ln_l = -0.5*(np.sum(ln_l))
         return ln_l
 
