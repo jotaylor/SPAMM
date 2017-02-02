@@ -79,5 +79,4 @@ class Spectrum(Spectrum1DRef):
         self._data = new_flux
         self._flux_at_norm_wavelength = None
         
-	
     

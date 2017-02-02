@@ -65,6 +65,7 @@ class Component(with_metaclass(ABCMeta, object)):
 
         @param params
         '''
+        pass
 
     def native_wavelength_grid(self):
         '''
@@ -95,8 +96,7 @@ class Component(with_metaclass(ABCMeta, object)):
         if self.is_analytic:
             pass
         else:
-
-            assert True, "The 'initialize' method of the component '{0}' must be defined.".format(self.__class__.__name__)
+            assert False, "The 'initialize' method of the component '{0}' must be defined.".format(self.__class__.__name__)
 
 
             #self.data_wavelength_grid = np.array(data_spectrum.wavelengths)

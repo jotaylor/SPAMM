@@ -1,0 +1,5 @@
+#../Templates/Fe_templates/Veron_optical_Fe2_templ1000kms.asc 1000
+#../Templates/Fe_Templates/Vestergaard_2001/Fe_UVtemplt_A.asc 900
+../Templates/Fe_Templates/Vestergaard_2001/Fe_UVtemplt_B.asc 900
+../Templates/Fe_Templates/Vestergaard_2001/Fe2_UV191.asc 900
+../Templates/Fe_Templates/Vestergaard_2001/Fe3_UV47.asc 900

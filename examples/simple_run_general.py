@@ -29,6 +29,20 @@ from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
 from spamm.components.MaskingComponent import Mask
+import warnings
+import matplotlib.pyplot as plt
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from pysynphot import observation
+    from pysynphot import spectrum as pysynspec
+    
+def pysnblueshift(z,spectrum):
+    z_blue = 1.0/(1.+z)-1.
+    sp = pysynspec.ArraySourceSpectrum(wave=spectrum.wavelengths, flux=spectrum.flux)
+    sp_rest = sp.redshift(z_blue)
+    return sp_rest.wave,sp_rest.flux
+
 # TODO: astropy units for spectrum
 
 # -----------------------------------------------------------------
@@ -50,7 +64,7 @@ sys.excepthook = info
 # -----------------------------------------------------------------
 
 #emcee parameters
-n_walkers = 30
+n_walkers = 50
 n_iterations = 500
 
 # Use MPI to distribute the computations
@@ -66,16 +80,16 @@ MPI = True
 #To do: implement combined - Gisella - see tickets
 
 PL = True#False#
-HOST = False
-FE = False#True#
-BC =  False#True#
-BpC = False#True#
+HOST = False#True#
+FE = True#False#
+BC =  True#False#
+BpC = True#False#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
 AGN_ext = False
 LMC_ext = False
-maskType="Continuum"#"Emission lines reduced"#None#
+maskType="Emission lines reduced"#None#"Emission lines reduced"#"Continuum"#
 
 show_plots = False
 
@@ -99,16 +113,22 @@ if BC:
 if BC and BpC:
     datafile = "../Data/FakeData/BaC_comp/FakeBac_lines01_deg.dat"
 
+#datafile= "../Data/SVA1_COADD-2925657995_42.dat"
+object="2939318691"
+image_num = "2"
+datafile = "../Data/SVA1_COADD-"+object+"_"+image_num+".dat"
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 # need to resolve
+z= 0
+print('redshift =',z, 'in this case')
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum(flux)#Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
-#spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
-spectrum.mask=mask
 spectrum.dispersion = wavelengths#*units.angstrom
-spectrum.flux_error = flux_err    
+spectrum.flux_error = flux_err   
+spectrum.wavelengths,spectrum.flux= pysnblueshift(z,spectrum)
+spectrum.mask=mask
 pl.plot(spectrum.wavelengths,spectrum.flux)
 pl.show()
 #exit()
@@ -152,7 +172,7 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 # -------------
 # save chains & model
 # ------------
-with gzip.open('model.pickle.gz', 'wb') as model_output:
+with gzip.open('model.pickle.'+object+'.'+image_num+'.gz', 'wb') as model_output:
     model_output.write(pickle.dumps(model))
 
 

@@ -335,6 +335,12 @@ class BalmerCombined(Component):
         if spectrum is None:
             raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
         
+        if np.max(spectrum.wavelengths) < 3646.:
+            self.BpC = False
+            
+        if np.min(spectrum.wavelengths) > 3646.:
+            self.BC = False
+        
         if self.normalization_min == None or self.normalization_max == None:
             m = np.nonzero(abs(spectrum.wavelengths - 3646.) == np.min(abs(spectrum.wavelengths - 3646.)))
             print('m',m)

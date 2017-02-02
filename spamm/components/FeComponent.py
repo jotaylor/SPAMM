@@ -7,12 +7,15 @@ import pyfftw
 from scipy import signal
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
+import math
+from statsmodels.compat.scipy import _next_regular
+
 
 # Suppress warnings about not having templates for pysynphot
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     from pysynphot import observation
-    from pysynphot import spectrum
+    from pysynphot import spectrum as pysynspec
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
@@ -58,9 +61,9 @@ def rebin_spec(wave, specin, wavnew):
     Rebin spectra to bins used in wavnew.
     Ref: http://www.astrobetter.com/blog/2013/08/12/python-tip-re-sampling-spectra-with-pysynphot/
     '''
-    spec = spectrum.ArraySourceSpectrum(wave=wave, flux=specin)
+    spec = pysynspec.ArraySourceSpectrum(wave=wave, flux=specin)
     f = np.ones(len(wave))
-    filt = spectrum.ArraySpectralElement(wave, f, waveunits='angstrom')
+    filt = pysynspec.ArraySpectralElement(wave, f, waveunits='angstrom')
     obs = observation.Observation(spec, filt, binset=wavnew, force='taper')
 
     return obs.binflux	
@@ -107,6 +110,7 @@ class FeComponent(Component):
     def __init__(self):
         super(FeComponent, self).__init__()
 
+        self.name = "Iron"
         self._templates = None
         self.rebin_log_templates = None # storage for templates where wavelengths are rebinned to be equally distributed in ln() space
         self.interpolated_templates = None # interpolated to data provided (normal spacing)
@@ -160,7 +164,7 @@ class FeComponent(Component):
         # Determine the file name
         # File should be formatted such that each line is /path/to/template.file template_width(in km/s)
         if template_set is None:
-            template_set_file_name = "../Fe_templates/default_list_of_templates.txt"
+            template_set_file_name = "../Templates/Fe_templates/default_list_of_templates.txt"
         else:
             raise Exception("Fe galaxy template set '{0}' not found.".format(template_set))
 
@@ -178,17 +182,32 @@ class FeComponent(Component):
         self._templates = list()
         self._template_inherent_widths = list()
 
+                
         for line in template_filenames:
-            template = Spectrum()
             try:
                 template_filename, template_inherent_width = line.split()[0], line.split()[1] # split on space to get inherent width as well
             except:
                 print("Template list should be formatted in two columns, the first being the path to the template and the second being the width of the template in km/s!  Exiting now.\n")
                 sys.exit()
-            template.wavelengths, template.flux = np.loadtxt(template_filename, unpack=True)
+            wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+            template = Spectrum(flux)
+            template.wavelengths = wavelengths
             self._templates.append(template)
             self._template_inherent_widths.append(float(template_inherent_width)) 
             print("\n\nAssuming width of " + str(template_inherent_width) + " km/s for template " + str(template_filename) + ".\n") # sanity check
+
+
+#        for line in template_filenames:
+#            template = Spectrum()
+#            try:
+#                template_filename, template_inherent_width = line.split()[0], line.split()[1] # split on space to get inherent width as well
+#            except:
+#                print("Template list should be formatted in two columns, the first being the path to the template and the second being the width of the template in km/s!  Exiting now.\n")
+#                sys.exit()
+#            template.wavelengths, template.flux = np.loadtxt(template_filename, unpack=True)
+#            self._templates.append(template)
+#            self._template_inherent_widths.append(float(template_inherent_width)) 
+#            print("\n\nAssuming width of " + str(template_inherent_width) + " km/s for template " + str(template_filename) + ".\n") # sanity check
 
     def initial_values(self, spectrum=None):
         '''
@@ -247,8 +266,10 @@ class FeComponent(Component):
             equal_log_bins = np.linspace(min(np.log(template.wavelengths)), max(np.log(template.wavelengths)), num = len(template.wavelengths))
             template_fluxes_rebin_equal_log_fluxes = rebin_spec(np.log(template.wavelengths), template.flux, equal_log_bins) # do the rebinning
 
-            template_equal_log_rebin_spec = Spectrum()
-            template_equal_log_rebin_spec.wavelengths, template_equal_log_rebin_spec.flux = equal_log_bins, template_fluxes_rebin_equal_log_fluxes
+            
+            rebinwavelengths,rebinflux = equal_log_bins, template_fluxes_rebin_equal_log_fluxes
+            template_equal_log_rebin_spec = Spectrum(rebinflux)
+            template_equal_log_rebin_spec.wavelengths=rebinwavelengths
             self.rebin_log_templates.append(template_equal_log_rebin_spec)
 
 
@@ -256,15 +277,20 @@ class FeComponent(Component):
             self.interpolated_templates_logspace_rebin.append(np.interp(np.log(data_spectrum.wavelengths),equal_log_bins, template_fluxes_rebin_equal_log_fluxes,left=0,right=0))
             self.interpolated_normalization_flux.append(np.interp(fnw[i],template.wavelengths, template.flux,left=0,right=0))
 
-
-    def native_wavelength_grid(self):
-        '''
-        For now, this stitches the wavelengths of all templates together.  Should be fixed later on to handle cases where template wavelengths overlap?
-        '''
-        wavelengths = list()
+    @property
+    def native_wavelength_grid(self):### do we need this (I assume templates may have different spacing)
         for template in self.templates:
-            wavelengths += list(template.wavelengths)
-        return wavelengths
+            template1grid = template.wavelengths
+        return template1grid
+
+#    def native_wavelength_grid(self):
+#        '''
+#        For now, this stitches the wavelengths of all templates together.  Should be fixed later on to handle cases where template wavelengths overlap?
+#        '''
+#        wavelengths = list()
+#        for template in self.templates:
+#            wavelengths += list(template.wavelengths)
+#        return wavelengths
 
 
     def normalization_wavelength(self, data_spectrum_wavelength=None):
@@ -364,9 +390,11 @@ class FeComponent(Component):
                 sig_norm = sigma_conv/equal_log_bin_size
                 kernel = signal.gaussian(1000,sig_norm)/(np.sqrt(2*math.pi)*sig_norm)
                 fftwconvolved = fftwconvolve_1d(self.rebin_log_templates[i].flux, kernel)
-                interpolated_template_convolved = np.interp(np.log(spectrum_real.wavelengths),self.rebin_log_templates[i].wavelengths,	\
+                #print('test',np.size(fftwconvolved),np.size(self.rebin_log_templates[i].wavelengths),np.size(kernel))
+                #exit()
+                interpolated_template_convolved = np.interp(np.log(spectrum.wavelengths),self.rebin_log_templates[i].wavelengths,	\
                 fftwconvolved,left=0,right=0)
-                interpolated_template_convolved_normalization_flux = np.interp(log_norm_waves[i],rebin_log_template.wavelengths,	\
+                interpolated_template_convolved_normalization_flux = np.interp(log_norm_waves[i],self.rebin_log_templates[i].wavelengths,	\
                 fftwconvolved,left=0,right=0) # since in log space, need log_norm_waves here!
                 # Find NaN errors early from dividing by zero.
                 assert interpolated_template_convolved_normalization_flux != 0., "Interpolated convolution flux valued at 0 at the location of peak template flux!"
