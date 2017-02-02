@@ -322,31 +322,31 @@ class FeComponent(Component):
 
         # Need to return parameters as a list in the correct order
         ln_priors = list()
-
+        
+        normalizations = list()
+        for i in range(1, len(self.templates)+1):
+            normalizations.append(params[self.parameter_index("iron_normalization_template_{0}".format(i))])
         # Get each parameter
-        normalizations = params[0:len(self.templates)]	# first (number of templates) parameters are normalizations
-        fe_fwhm = params[len(self.templates):] # second (number of templates) parameters are dispersions
+        
+        fe_fwhm = list()
+        for i in range(1, len(self.templates)+1):
+            fe_fwhm.append(params[self.parameter_index("iron_FWHM_template_{0}".format(i))])
 
         # Sanity checks
         assert len(normalizations) == len(fe_fwhm), "Different number of normalizations and dispersions!"
         assert len(normalizations) == len(self.templates), "Different number of normalizations and templates!"
 
-        # Normalization parameter
-        # Flat prior within the expected ranges.  Should it be less than infinity?
-        # Width parameter
-        ln_prior_norms = np.zeros(len(self.templates))
-        ln_prior_fwhm =  np.zeros(len(self.templates))
 
         for i in range(len(self.templates)):
             if self.norm_min[i] < normalizations[i] < self.norm_max[i]:
-                ln_prior_norms[i] = 0
+                ln_priors.append(0.0)
             else:
-                ln_prior_norms[i] = -np.inf
+                ln_priors.append(-np.inf)
             if self.fwhm_min[i] < fe_fwhm[i] < self.fwhm_max[i]:
-                ln_prior_fwhm[i] = 0
+                ln_priors.append(0.0)
             else:
-                ln_prior_fwhm[i] = -np.inf
-        return ln_prior_norms.tolist() + ln_prior_fwhm.tolist()
+                ln_priors.append(-np.inf)
+        return ln_priors
 
     @property
     def parameter_count(self):
@@ -366,18 +366,27 @@ class FeComponent(Component):
 
         assert len(parameters) == self.parameter_count, \
                         "The wrong number of indices were provided: {0}".format(parameters)
-        norm = list() # parameter normalization
+        normalization = list()
+        for i in range(1, len(self.templates)+1):
+            normalization.append(parameters[self.parameter_index("iron_normalization_template_{0}".format(i))])
+        # Get each parameter
+        
+        fe_fwhm = list()
+        fwhm_over_c = list()
+        for i in range(1, len(self.templates)+1):
+            fe_fwhm.append(parameters[self.parameter_index("iron_FWHM_template_{0}".format(i))])
+            fwhm_over_c.append(parameters[self.parameter_index("iron_FWHM_template_{0}".format(i))]/(c_km_per_s))
+        norm = list()
         interpolated_convolved_templates = list()
         # The next two parameters are lists of size len(self.templates)
         norm_waves = self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
         log_norm_waves = np.log(norm_waves)
         self._flux_arrays[:] = 0.0
 
-        for i in range(len(self.templates)):	
+        for i in range(len(self.templates)):
             # Parameter len(self.templates) + i gives Gaussian width of that template in this run
-            fwhm = parameters[i + len(self.templates)]
-            fwhm_over_c = fwhm/(c_km_per_s)
-            if fwhm < (self._template_inherent_widths[i]):
+            #fwhm_over_c[i] = fe_fwhm[i]/(c_km_per_s)
+            if fe_fwhm < (self._template_inherent_widths[i]):
                 # Arbitrarily large flux, model will not be a good fit if narrower than template width.  Preferably infinity, but that doesn't play nice with the Model.likelihood method
                 interpolated_convolved_templates.append((np.ones(len(spectrum.wavelengths), dtype = float) * 1.e50))
                 norm.append(1.)
@@ -389,6 +398,9 @@ class FeComponent(Component):
                 equal_log_bin_size = self.rebin_log_templates[i].wavelengths[2] - self.rebin_log_templates[i].wavelengths[1]
                 sig_norm = sigma_conv/equal_log_bin_size
                 kernel = signal.gaussian(1000,sig_norm)/(np.sqrt(2*math.pi)*sig_norm)
+                if np.size(self.rebin_log_templates[i].flux)%2 > 0:
+                    self.rebin_log_templates[i].flux = self.rebin_log_templates[i].flux[:-1]
+                    self.rebin_log_templates[i].wavelengths = self.rebin_log_templates[i].wavelengths[:-1]
                 fftwconvolved = fftwconvolve_1d(self.rebin_log_templates[i].flux, kernel)
                 #print('test',np.size(fftwconvolved),np.size(self.rebin_log_templates[i].wavelengths),np.size(kernel))
                 #exit()
@@ -399,6 +411,6 @@ class FeComponent(Component):
                 # Find NaN errors early from dividing by zero.
                 assert interpolated_template_convolved_normalization_flux != 0., "Interpolated convolution flux valued at 0 at the location of peak template flux!"
                 interpolated_convolved_templates.append(interpolated_template_convolved)
-                norm.append(parameters[i] / interpolated_template_convolved_normalization_flux) # Scale normalization parameter to flux in template
+                norm.append(normalization[i] / interpolated_template_convolved_normalization_flux) # Scale normalization parameter to flux in template
             self._flux_arrays += norm[i] * interpolated_convolved_templates[i]
         return self._flux_arrays
