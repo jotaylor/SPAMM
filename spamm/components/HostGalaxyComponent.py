@@ -6,13 +6,63 @@ import numpy as np
 import scipy.interpolate
 import numpy as np
 import scipy.integrate
-
+import pyfftw 
+from scipy import signal
+from astropy.convolution import Gaussian1DKernel, convolve
+import warnings
+import math
+from scipy.signal.signaltools import _next_regular
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
 
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from pysynphot import observation
+    from pysynphot import spectrum as pysynspec
+
 #NORMALIZATON = 0
 #STELLAR_DISPERSION = 1
+
+c_km_per_s = 299792.458 # speed of light in km/s
+
+def fftwconvolve_1d(in1, in2):
+    outlen = in1.shape[-1] + in2.shape[-1] - 1 
+    origlen = in1.shape[-1]
+    n = _next_regular(outlen) 
+    tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, n) 
+    tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, n) 
+    sh = np.broadcast(tr1, tr2).shape 
+    dt = np.common_type(tr1, tr2) 
+    pr = pyfftw.n_byte_align_empty(sh, 16, dt) 
+    np.multiply(tr1, tr2, out=pr) 
+    out = pyfftw.interfaces.numpy_fft.irfft(pr, n) 
+    index_low = int(outlen/2.)-int(np.floor(origlen/2))
+    index_high = int(outlen/2.)+int(np.ceil(origlen/2))
+    return out[..., index_low:index_high].copy() 
+
+def find_nearest(input_list,value):
+    '''
+    Find nearest entry in an array to a specified value.
+    list = list of floats
+    value = desired value to find closest match to in the array
+    return = value closest to input value from input_list
+    Ref: http://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+    '''
+    idx = (np.abs(np.asarray(input_list, dtype = float)-value)).argmin()
+    return input_list[idx]
+
+def rebin_spec(wave, specin, wavnew):
+    '''
+    Rebin spectra to bins used in wavnew.
+    Ref: http://www.astrobetter.com/blog/2013/08/12/python-tip-re-sampling-spectra-with-pysynphot/
+    '''
+    spec = pysynspec.ArraySourceSpectrum(wave=wave, flux=specin)
+    f = np.ones(len(wave))
+    filt = pysynspec.ArraySpectralElement(wave, f, waveunits='angstrom')
+    obs = observation.Observation(spec, filt, binset=wavnew, force='taper')
+
+    return obs.binflux
 
 def runningMeanFast(x, N):
     '''
@@ -109,6 +159,7 @@ class HostGalaxyComponent(Component):
         # determine the file name
         if template_set is None:
             template_set_file_name = "../Data/HostModels/HostGalaxy_Kevin/trueascii.lst"
+            #template_set_file_name = "../Templates/Host_templates/default_list_of_templates.txt"
         else:
             raise Exception("Host galaxy template set '{0}' not found.".format(template_set))
             #print template_set,"is not available"
@@ -153,7 +204,7 @@ class HostGalaxyComponent(Component):
         norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max*0.1, size=self.norm_min.size)
 
         self.stellar_dispersion_min = 30.0
-        self.stellar_dispersion_max = 600.0
+        self.stellar_dispersion_max = 1000.0
         stellar_dispersion_init = np.random.uniform(low=self.stellar_dispersion_min, high=self.stellar_dispersion_max)
 
         return norm_init.tolist() + [stellar_dispersion_init]
@@ -180,16 +231,44 @@ class HostGalaxyComponent(Component):
 
         self.interpolated_templates = list()
         self.interpolated_normalization_flux = list()
+        
+        # We'll eventually need to convolve these in constant velocity space, so rebin to equal log bins
+        self.rebin_log_templates = list()
+        self.interpolated_templates_logspace_rebin = list()
 
-        for template in self.templates:
-            f = scipy.interpolate.interp1d(template.wavelengths, template.flux) # returns function
-            self.interpolated_templates.append(f(data_spectrum.wavelengths))
-            ## fnw = flux at normalized wavelength##
-            #if self._norm_wavelength is None:
-            #    self._norm_wavelength = np.median(data_spectrum.wavelengths)
-            #fnw = self._norm_wavelength#
-            fnw=self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
-            self.interpolated_normalization_flux.append(f(fnw))
+        fnw = self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths) # flux at normalization wavelength
+
+        #for template in self.templates:
+        #    f = scipy.interpolate.interp1d(template.wavelengths, template.flux) # returns function
+        #    #self.interpolated_templates.append(f(data_spectrum.wavelengths))
+        #    template_rebin_fluxes = rebin_spec(template.wavelengths, template.flux, data_spectrum.wavelengths) # do the rebinning
+        #    self.interpolated_templates.append(template_rebin_fluxes)
+        #    
+        #    ## fnw = flux at normalized wavelength##
+        #    #if self._norm_wavelength is None:
+        #    #    self._norm_wavelength = np.median(data_spectrum.wavelengths)
+        #    #fnw = self._norm_wavelength#
+        #    fnw=self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
+        #    self.interpolated_normalization_flux.append(f(fnw))
+            
+        for i,template in enumerate(self.templates):
+            # This method lets you interpolate beyond the wavelength coverage of the template if/when the data covers beyond it.  
+            # Function returns 0 outside the wavelength coverage of the template.
+            # To broaden in constant velocity space, you need to rebin the templates to be in equal bins in log(lambda) space.
+            equal_log_bins = np.linspace(min(np.log(template.wavelengths)), max(np.log(template.wavelengths)), num = len(template.wavelengths))
+            template_fluxes_rebin_equal_log_fluxes = rebin_spec(np.log(template.wavelengths), template.flux, equal_log_bins) # do the rebinning
+
+            
+            rebinwavelengths,rebinflux = equal_log_bins, template_fluxes_rebin_equal_log_fluxes
+            template_equal_log_rebin_spec = Spectrum(rebinflux)
+            template_equal_log_rebin_spec.wavelengths=rebinwavelengths
+            self.rebin_log_templates.append(template_equal_log_rebin_spec)
+
+
+            self.interpolated_templates.append(rebin_spec(template.wavelengths, template.flux, data_spectrum.wavelengths))
+            self.interpolated_templates_logspace_rebin.append(rebin_spec(equal_log_bins, template_fluxes_rebin_equal_log_fluxes,np.log(data_spectrum.wavelengths)))
+            self.interpolated_normalization_flux.append(np.interp(fnw,template.wavelengths, template.flux,left=0,right=0))
+
 
     @property
     def native_wavelength_grid(self):### do we need this (I assume templates may have different spacing)
@@ -288,63 +367,93 @@ class HostGalaxyComponent(Component):
                 #implicit assumption is that each template has an
                 #intrinsic velocity dispersion = 0 km/s.
                 
-        #Create the dispersion-convolution matrix.
-        Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
-        #Kmat = np.identity(len(spectrum.wavelengths))
-        #flux = np.zeros(wavelengths.shape)
-        #print "******* {0}".format(parameters)
-        norm = list() # parameter normalization
+#        #Create the dispersion-convolution matrix.
+#        Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
+#        #Kmat = np.identity(len(spectrum.wavelengths))
+#        #flux = np.zeros(wavelengths.shape)
+#        #print "******* {0}".format(parameters)
+#        norm = list() # parameter normalization
+#        for i in range(len(self.templates)):
+#            norm.append(parameters_host[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
+##        norm = parameters[0:-1] / self.interpolated_normalization_flux
+#        self._flux_arrays = 0.0
+#        for i in range(len(self.templates)):
+#            convolved_template = Kmat.dot(self.interpolated_templates[i])
+#            self._flux_arrays += norm[i] * convolved_template
+#            #self._flux_arrays += norm[i] * self.interpolated_templates[i]
+
+        norm = list()
+        interpolated_convolved_templates = list()
+        # The next two parameters are lists of size len(self.templates)
+        norm_waves = self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
+        log_norm_waves = np.log(norm_waves)
+        self._flux_arrays[:] = 0.0
+        sd_over_c = stellar_dispersion/(c_km_per_s)
+            
         for i in range(len(self.templates)):
-            norm.append(parameters_host[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
-#        norm = parameters[0:-1] / self.interpolated_normalization_flux
-        self._flux_arrays = 0.0
-        for i in range(len(self.templates)):
-            convolved_template = Kmat.dot(self.interpolated_templates[i])
-            self._flux_arrays += norm[i] * convolved_template
-            #self._flux_arrays += norm[i] * self.interpolated_templates[i]
+            # Want to smooth and convolve in log space, since d(log(lambda)) ~ dv/c and we can broaden based on a constant velocity width
+            # Compare smoothing (v/c) to bin size, and that tells you how many bins wide your Gaussian to convolve over is
+            # sigma_conv is the width to broaden over, as given in Eqn 1 of Vestergaard and Wilkes 2001 (essentially the first line below this)
+            sigma_conv = sd_over_c
+            equal_log_bin_size = self.rebin_log_templates[i].wavelengths[2] - self.rebin_log_templates[i].wavelengths[1]
+            sig_norm = sigma_conv/equal_log_bin_size
+            kernel = signal.gaussian(1000,sig_norm)/(np.sqrt(2*math.pi)*sig_norm)
+            if np.size(self.rebin_log_templates[i].flux)%2 > 0:
+                self.rebin_log_templates[i].flux = self.rebin_log_templates[i].flux[:-1]
+                self.rebin_log_templates[i].wavelengths = self.rebin_log_templates[i].wavelengths[:-1]
+            fftwconvolved = fftwconvolve_1d(self.rebin_log_templates[i].flux, kernel)
+            interpolated_template_convolved = np.interp(np.log(spectrum.wavelengths),self.rebin_log_templates[i].wavelengths,	\
+            fftwconvolved,left=0,right=0)
+            interpolated_template_convolved_normalization_flux = np.interp(log_norm_waves,self.rebin_log_templates[i].wavelengths,	\
+            fftwconvolved,left=0,right=0) # since in log space, need log_norm_waves here!
+            # Find NaN errors early from dividing by zero.
+            assert interpolated_template_convolved_normalization_flux != 0., "Interpolated convolution flux valued at 0 at the location of peak template flux!"
+            interpolated_convolved_templates.append(interpolated_template_convolved)
+            norm.append(parameters[i] / interpolated_template_convolved_normalization_flux) # Scale normalization parameter to flux in template
+            self._flux_arrays += norm[i] * interpolated_convolved_templates[i]
 
         return self._flux_arrays
 
-    def stellar_dispersion_matrix(self, stellar_dispersion, spectrum=None):
-
-        Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
-        lam = spectrum.wavelengths
-        for k,lamk in enumerate(spectrum.wavelengths):
-            sig = stellar_dispersion * lamk/3.e5 #Assume the dispersion is provided in km/s.
-
-            #To speed things up, we'll only consider bins with central
-            #wavelengths within 5 sigma of the current spectral bin.
-
-            #Get the bin indices that are closest to +/- 20 sigma.
-            lmin = np.argmin(abs((lamk-lam)/sig - 3.))
-            lmax = np.argmin(abs((lamk-lam)/sig + 3.))
-
-            #See if we are near the bounds and determine
-            #the kernel normalization accordingly.
-            if lmin>0 and lmax<len(lam):
-                norm = sig*(2.*np.pi)**0.5
-            else:
-                if lmin==0:
-                    a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
-                    b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
-                else:
-                    a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
-                    b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
-                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
-
-            for l in range(lmin,lmax+1):
-                if l==0:
-                    a = lam[l]-0.5*(lam[l+1]-lam[l])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                elif l==len(lam)-1:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l]-lam[l-1])
-                else:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
-
-        return Kmat
+#    def stellar_dispersion_matrix(self, stellar_dispersion, spectrum=None):
+#
+#        Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
+#        lam = spectrum.wavelengths
+#        for k,lamk in enumerate(spectrum.wavelengths):
+#            sig = stellar_dispersion * lamk/3.e5 #Assume the dispersion is provided in km/s.
+#
+#            #To speed things up, we'll only consider bins with central
+#            #wavelengths within 5 sigma of the current spectral bin.
+#
+#            #Get the bin indices that are closest to +/- 20 sigma.
+#            lmin = np.argmin(abs((lamk-lam)/sig - 3.))
+#            lmax = np.argmin(abs((lamk-lam)/sig + 3.))
+#
+#            #See if we are near the bounds and determine
+#            #the kernel normalization accordingly.
+#            if lmin>0 and lmax<len(lam):
+#                norm = sig*(2.*np.pi)**0.5
+#            else:
+#                if lmin==0:
+#                    a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
+#                    b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
+#                else:
+#                    a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
+#                    b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
+#                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
+#
+#            for l in range(lmin,lmax+1):
+#                if l==0:
+#                    a = lam[l]-0.5*(lam[l+1]-lam[l])
+#                    b = lam[l]+0.5*(lam[l+1]-lam[l])
+#                elif l==len(lam)-1:
+#                    a = lam[l]-0.5*(lam[l]-lam[l-1])
+#                    b = lam[l]+0.5*(lam[l]-lam[l-1])
+#                else:
+#                    a = lam[l]-0.5*(lam[l]-lam[l-1])
+#                    b = lam[l]+0.5*(lam[l+1]-lam[l])
+#                Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
+#
+#        return Kmat
 
     def gaussian_kernel(self,x,mu,sig):
         return np.exp(-0.5*((x-mu)/sig)**2)
