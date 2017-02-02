@@ -27,6 +27,7 @@ import triangle
 import matplotlib.pyplot as pl
 from matplotlib import cm,mlab,colors,ticker,rc
 from matplotlib.ticker import NullFormatter
+import numpy as np
 
 sys.path.append(os.path.abspath("../"))
 
@@ -50,8 +51,8 @@ try:
 except UnicodeDecodeError:
     model = pickle.loads(gzip.open(opts.model_filename).read(), encoding="latin1")
 
-samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
-
+samples = model.sampler.chain[:, 10:, :].reshape((-1, model.total_parameter_count))
+print('size',np.shape(samples))
 #rc('font', **{'family':'serif','serif':['Palatino'],'size'   : 24})
 #rc('text', usetex=True)           
 #nullfmt = NullFormatter() 
