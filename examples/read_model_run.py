@@ -24,8 +24,11 @@ try:
 except ImportError:
     import pickle
 import triangle
+import matplotlib.pyplot as pl
+from matplotlib import cm,mlab,colors,ticker,rc
+from matplotlib.ticker import NullFormatter
 
-sys.path.append(os.path.abspath("../source"))
+sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -49,7 +52,16 @@ except UnicodeDecodeError:
 
 samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
 
-fig = triangle.corner(samples, labels=model.model_parameter_names())
-fig.savefig("triangle_from_pickle.png")
+#rc('font', **{'family':'serif','serif':['Palatino'],'size'   : 24})
+#rc('text', usetex=True)           
+#nullfmt = NullFormatter() 
+
+pl.plot(model.data_spectrum.dispersion,model.data_spectrum.flux)
+pl.plot(model.model_spectrum.dispersion,model.model_spectrum.flux)
+pl.savefig("fit_from_pickle.eps", format='eps', dpi=1000)
+pl.close()
+
+fig2 = triangle.corner(samples, labels=model.model_parameter_names())
+fig2.savefig("triangle_from_pickle.eps")
 
 sys.exit(0)

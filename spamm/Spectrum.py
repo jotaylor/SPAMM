@@ -12,13 +12,13 @@ class Spectrum(Spectrum1DRef):
     '''
     Inherit from Spectrum1DRef in specutils.
     '''
-    def __init__(self, data, wcs=None,  maskType=None, mask_FWHM_broad=5000, mask_FWHM_narrow=1000, *args, **kwargs):
+    def __init__(self, data, wcs=None, *args, **kwargs):
         '''
         The Spectrum initialization.
 
         @param z Redshift z.
         '''
-        self.flux_error = None
+        #self.flux_error = None
         self._norm_wavelength = None
         self._flux_at_norm_wavelength = None
         super(Spectrum, self).__init__(data, wcs=wcs, *args, **kwargs)
@@ -74,7 +74,7 @@ class Spectrum(Spectrum1DRef):
     def flux(self):
         self._flux = super(Spectrum, self).flux
         flux = np.array(Quantity(self._flux, unit=self.unit))
-        
+        flux = np.ma.masked_array(flux,mask=self.mask)
         return flux
 
     @flux.setter

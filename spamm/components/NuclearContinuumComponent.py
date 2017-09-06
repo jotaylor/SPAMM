@@ -22,11 +22,12 @@ class NuclearContinuumComponent(Component):
     slope : \f$ \alpha \f$ 
 
     '''
-    def __init__(self):
+    def __init__(self, broken_pl=False):
         super(NuclearContinuumComponent, self).__init__()
 
+        self.broken_powerlaw = broken_pl
         self.model_parameter_names = list()
-        self.model_parameter_names.append("normalization")
+        self.model_parameter_names.append("normalization_PL")
         self.model_parameter_names.append("slope")
         self.name = "Nuclear"
 

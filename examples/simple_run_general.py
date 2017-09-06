@@ -15,10 +15,11 @@ except:
 
 import numpy as np
 import matplotlib.pyplot as pl
+from astropy import units
 
 import triangle
 
-sys.path.append(os.path.abspath("../source"))
+sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -27,6 +28,7 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
+from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
 
 # -----------------------------------------------------------------
@@ -49,7 +51,7 @@ sys.excepthook = info
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 5000
+n_iterations = 500
 
 # Use MPI to distribute the computations
 MPI = True 
@@ -63,16 +65,17 @@ MPI = True
 #Fe and host galaxy components need more work - see tickets
 #To do: implement combined - Gisella - see tickets
 
-PL = False#True
+PL = True#False#
 HOST = False
 FE = False#True#
 BC =  False#True#
 BpC = False#True#
-Calzetti_ext = True#False#
+Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
 AGN_ext = False
 LMC_ext = False
+maskType="Continuum"#"Emission lines reduced"#None#
 
 show_plots = False
 
@@ -100,11 +103,15 @@ if BC and BpC:
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 # need to resolve
-spectrum = Spectrum.from_array(flux)
+mask = Mask(wavelengths=wavelengths,maskType=maskType)
+spectrum = Spectrum(flux)#Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
-spectrum.dispersion = wavelengths
+spectrum.mask=mask
+spectrum.dispersion = wavelengths#*units.angstrom
 spectrum.flux_error = flux_err    
-
+pl.plot(spectrum.wavelengths,spectrum.flux)
+pl.show()
+#exit()
 # ------------
 # Initialize model
 # ------------
