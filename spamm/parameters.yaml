@@ -4,4 +4,4 @@ host_galaxy: ""
 emission_lines: ""
 input_models: "" #dir
 broken_powerlaw: None
-
+boxcar_width: 5
