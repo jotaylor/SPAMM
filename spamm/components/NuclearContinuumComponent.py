@@ -2,6 +2,8 @@
 
 import sys
 import numpy as np
+from astropy.modeling.powerlaws import PowerLaw1D,BrokenPowerLaw1D
+
 from .ComponentBase import Component
 #! from utils import runningMeanFast
 #! get boxcar_width from yaml
@@ -22,12 +24,11 @@ class NuclearContinuumComponent(Component):
         self.broken_powerlaw = broken_pl
         self.model_parameter_names = list()
         if not self.broken_powerlaw:
-            self.model_parameter_names.append("norm_PL1")
+            self.model_parameter_names.append("norm_PL")
             self.model_parameter_names.append("slope1")
         else:
             self.model_parameter_names.append("wave_break")
-            self.model_parameter_names.append("norm_PL1")
-            self.model_parameter_names.append("norm_PL2")
+            self.model_parameter_names.append("norm_PL")
             self.model_parameter_names.append("slope1")
             self.model_parameter_names.append("slope2")
         self.name = "Nuclear"
@@ -71,7 +72,7 @@ class NuclearContinuumComponent(Component):
             pl_init.append(self.wave_break_init)
         else:
             size = 1
-        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=size)
+        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=1)
         pl_init.append(norm_init)
 
         self.norm_min = 0
@@ -97,6 +98,7 @@ class NuclearContinuumComponent(Component):
         # need to return parameters as a list in the correct order
         ln_priors = list()
 
+        #! need to add slope2, wave_break
         norm = params[self.parameter_index("norm_PL")]
         slope = params[self.parameter_index("slope")]
         if self.norm_min < norm < self.norm_max:
@@ -121,11 +123,15 @@ class NuclearContinuumComponent(Component):
         '''
         assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
         
+        norm = parameters[self.parameter_index("norm_PL")]
+        slope1 = parameters[self.parameter_index("slope1")]
         if not broken_pl:   
-            norm = parameters[self.parameter_index("norm_PL")]
-            slope = parameters[self.parameter_index("slope")]
-            normalized_wavelengths = spectrum.wavelengths / spectrum.norm_wavelength
-            flux = norm * np.power(normalized_wavelengths, slope)
-#!        else:
+            PL = PowerLaw1D(norm, spectrum.norm_wavelength, slope1)  
+        else:
+            x_break = parameters[self.parameter_index("wave_break")]
+            slope2 = parameters[self.parameter_index("slope2")]
+            PL = BrokenPowerLaw1D(norm, x_break, slope1, slope2)
+        flux = PL.evaluate(spectrum.wavelengths)
+
 #!
         return flux
