@@ -3,14 +3,8 @@
 import sys
 import numpy as np
 from .ComponentBase import Component
-
-def runningMeanFast(x, N):
-    '''
-    x = array of points
-    N = window width
-    Ref: http://stackoverflow.com/questions/13728392/moving-average-or-running-mean
-    '''
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
+#! from utils import runningMeanFast
+#! get boxcar_width from yaml
 
 class NuclearContinuumComponent(Component):
     '''
@@ -27,14 +21,21 @@ class NuclearContinuumComponent(Component):
 
         self.broken_powerlaw = broken_pl
         self.model_parameter_names = list()
-        self.model_parameter_names.append("normalization_PL")
-        self.model_parameter_names.append("slope")
+        if not self.broken_powerlaw:
+            self.model_parameter_names.append("norm_PL1")
+            self.model_parameter_names.append("slope1")
+        else:
+            self.model_parameter_names.append("wave_break")
+            self.model_parameter_names.append("norm_PL1")
+            self.model_parameter_names.append("norm_PL2")
+            self.model_parameter_names.append("slope1")
+            self.model_parameter_names.append("slope2")
         self.name = "Nuclear"
 
         self._norm_wavelength =  None
 
-        self.normalization_min = None
-        self.normalization_max = None
+        self.norm_min = None
+        self.norm_max = None
         self.slope_min = None
         self.slope_max = None
 
@@ -48,32 +49,42 @@ class NuclearContinuumComponent(Component):
         Return type must be a list (not an np.array).
 
         Called by the emcee.
+        
+        :param spectrum
+        
+        Returns:
+        --------
+            norm_init : array-like
+
+            slope_init : array-like
         '''
 
-        boxcar_width = 5 # width of smoothing function
+        pl_init = []
 
-        self.normalization_min = 0
-        self.normalization_max = max(runningMeanFast(spectrum.flux, boxcar_width))
+        if self.broken_pl:
+            size = 2
+            self.wave_break_min = min(spectrum.wavelength)
+            self.wave_break_max = max(spectrum.wavelength)
+            self.wave_break_init = np.random.uniform(low=self.wave_break_min, 
+                                                     high=self.wave_break_max,
+                                                     size=1)
+            pl_init.append(self.wave_break_init)
+        else:
+            size = 1
+        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=size)
+        pl_init.append(norm_init)
 
-        normalization_init = np.random.uniform(low=self.normalization_min,high=self.normalization_max)
+        self.norm_min = 0
+        self.norm_max = max(runningMeanFast(spectrum.flux, boxcar_width))
 
-        self.slope_min = -3.0
+        self.slope_min = -3.0 #[x for x in slopes]
         self.slope_max = 3.0
 
-        slope_init = np.random.uniform(low=self.slope_min,high=self.slope_max)
+        slope_init = np.random.uniform(low=self.slope_min, high=self.slope_max, size=size)
+        pl_init.append(slope_init)
 
-        return [normalization_init, slope_init]
-
-
-    def normalization_wavelength(self, data_spectrum_wavelength=None):
-        '''
-
-        '''
-        if self._norm_wavelength is None:
-            if data_spectrum_wavelength is None:
-                raise Exception("The wavelength array of the data spectrum must be specified.")
-            self._norm_wavelength = np.median(data_spectrum_wavelength)
-        return self._norm_wavelength
+        return pl_init
+#! need to modify emcee initial_values call
 
     def ln_priors(self, params):
         '''
@@ -86,9 +97,9 @@ class NuclearContinuumComponent(Component):
         # need to return parameters as a list in the correct order
         ln_priors = list()
 
-        normalization = params[self.parameter_index("normalization_PL")]
+        norm = params[self.parameter_index("norm_PL")]
         slope = params[self.parameter_index("slope")]
-        if self.normalization_min < normalization < self.normalization_max:
+        if self.norm_min < norm < self.norm_max:
             ln_priors.append(0.)
         else:
             #arbitrarily small number
@@ -110,12 +121,11 @@ class NuclearContinuumComponent(Component):
         '''
         assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
         
-        normalization = parameters[self.parameter_index("normalization_PL")]
-        slope = parameters[self.parameter_index("slope")]
-        
-        # calculate flux of the component
-        normalized_wavelengths = spectrum.wavelengths / \
-            self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
-        flux = normalization * np.power(normalized_wavelengths, slope)
-        
+        if not broken_pl:   
+            norm = parameters[self.parameter_index("norm_PL")]
+            slope = parameters[self.parameter_index("slope")]
+            normalized_wavelengths = spectrum.wavelengths / spectrum.norm_wavelength
+            flux = norm * np.power(normalized_wavelengths, slope)
+#!        else:
+#!
         return flux
