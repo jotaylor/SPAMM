@@ -33,12 +33,13 @@ class NuclearContinuumComponent(Component):
             self.model_parameter_names.append("slope2")
         self.name = "Nuclear"
 
-        self._norm_wavelength =  None
-
+#! these should be read in from yaml
         self.norm_min = None
         self.norm_max = None
         self.slope_min = None
         self.slope_max = None
+        self.wave_break_min = None
+        self.wave_break_max = None
 
     @property
     def is_analytic(self):
@@ -61,31 +62,34 @@ class NuclearContinuumComponent(Component):
         '''
 
         pl_init = []
+        if pl_norm_max == "max_flux":
+            self.norm_max = max(runningMeanFast(spectrum.flux, boxcar_width))
 
         if self.broken_pl:
             size = 2
-            self.wave_break_min = min(spectrum.wavelength)
-            self.wave_break_max = max(spectrum.wavelength)
-            self.wave_break_init = np.random.uniform(low=self.wave_break_min, 
-                                                     high=self.wave_break_max,
-                                                     size=1)
-            pl_init.append(self.wave_break_init)
+#! need to read in wave_break_min/max from yaml            
+            if self.wave_break_min == "min_wl":
+                self.wave_break_min = min(spectrum.wavelength)
+            if self.wave_break_max == "max_wl": 
+                self.wave_break_max = max(spectrum.wavelength)
+            wave_break_init = np.random.uniform(low=self.wave_break_min, 
+                                                     high=self.wave_break_max)
+            pl_init.append(wave_break_init)
         else:
             size = 1
-        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=1)
+        
+        norm_init = np.random.uniform(self.norm_min, high=self.norm_max)
         pl_init.append(norm_init)
 
-        self.norm_min = 0
-        self.norm_max = max(runningMeanFast(spectrum.flux, boxcar_width))
-
-        self.slope_min = -3.0 #[x for x in slopes]
-        self.slope_max = 3.0
-
         slope_init = np.random.uniform(low=self.slope_min, high=self.slope_max, size=size)
-        pl_init.append(slope_init)
+        # pl_init should be a list of scalars
+        for slope in slope_init:
+            pl_init.append(slope)
 
         return pl_init
 #! need to modify emcee initial_values call
+
+#-------------------------#
 
     def ln_priors(self, params):
         '''
@@ -98,21 +102,35 @@ class NuclearContinuumComponent(Component):
         # need to return parameters as a list in the correct order
         ln_priors = list()
 
-        #! need to add slope2, wave_break
+        if self.broken_pl:
+            wave_break = params[self.parameter_index("wave_break")]
+            if self.wave_break_min < wave_break < wave_break_max:
+                ln_priors.append(0.)
+            else:
+                #arbitrarily small number
+                ln_priors.append(-np.inf)
+        
         norm = params[self.parameter_index("norm_PL")]
-        slope = params[self.parameter_index("slope")]
         if self.norm_min < norm < self.norm_max:
             ln_priors.append(0.)
         else:
             #arbitrarily small number
             ln_priors.append(-np.inf)
-            
-        if self.slope_min < slope < self.slope_max:
+
+        slope1 = params[self.parameter_index("slope1")]
+        if self.slope_min < slope1 < self.slope_max:
             ln_priors.append(0.)
         else:
             #arbitrarily small number
             ln_priors.append(-np.inf)
             # TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
+        if self.broken_pl:
+            slope2 = params[self.parameter_index("slope2")]
+            if self.slope_min < slope2 < self.slope_max:
+                ln_priors.append(0.)
+            else:
+                #arbitrarily small number
+                ln_priors.append(-np.inf)
 
         return ln_priors
 
