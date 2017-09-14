@@ -5,7 +5,7 @@ import numpy as np
 from .ComponentBase import Component
 from scipy.interpolate import interp1d
 from scipy.integrate import simps
-from scipy.signal.signaltools import _next_regular 
+from scipy.fftpack.helper import next_fast_len
 import pyfftw 
 import pickle
 from pysynphot import observation
@@ -124,7 +124,7 @@ pyfftw.interfaces.cache.set_keepalive_time(1.0)
 def fftwconvolve_1d(in1, in2):
     outlen = in1.shape[-1] + in2.shape[-1] - 1 
     origlen = in1.shape[-1]
-    num = _next_regular(outlen) 
+    num = next_fast_len(outlen) 
     tr1 = pyfftw.interfaces.numpy_fft.rfft(in1, num) 
     tr2 = pyfftw.interfaces.numpy_fft.rfft(in2, num) 
     sh = np.broadcast(tr1, tr2).shape 
