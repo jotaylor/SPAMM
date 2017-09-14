@@ -7,8 +7,8 @@ import scipy.interpolate
 import numpy as np
 import scipy.integrate
 
-#! from ? import runningMeanFast
-#! from utils import gaussian_kernel
+from utils.runningmeanfast import runningMeanFast
+from utils.gaussian_kernel import gaussian_kernel
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
@@ -206,7 +206,7 @@ class HostGalaxyComponent(Component):
                 else:
                     a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
                     b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
-                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
+                norm = scipy.integrate.quad(gaussian_kernel, a, b, args=(lamk,sig))[0]
 
             for l in range(lmin,lmax+1):
                 if l==0:
@@ -218,7 +218,7 @@ class HostGalaxyComponent(Component):
                 else:
                     a = lam[l]-0.5*(lam[l]-lam[l-1])
                     b = lam[l]+0.5*(lam[l+1]-lam[l])
-                Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
+                Kmat[k,l] = scipy.integrate.quad(gaussian_kernel, a, b, args=(lamk,sig))[0]/norm
 
         return Kmat
 

@@ -8,6 +8,8 @@ from scipy import signal
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 
+from utils.runningmeanfast import runningMeanFast
+
 # Suppress warnings about not having templates for pysynphot
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
@@ -33,14 +35,6 @@ def fftwconvolve_1d(in1, in2):
     index_low = int(outlen/2.)-int(np.floor(origlen/2))
     index_high = int(outlen/2.)+int(np.ceil(origlen/2))
     return out[..., index_low:index_high].copy() 
-
-def runningMeanFast(x, N):
-    '''
-    x = array of points
-    N = window width
-    Ref: http://stackoverflow.com/questions/13728392/moving-average-or-running-mean
-    '''
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
 
 def find_nearest(input_list,value):
     '''

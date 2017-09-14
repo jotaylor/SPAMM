@@ -5,15 +5,9 @@
 
 import sys
 import numpy as np
-from .ComponentBase import Component
 
-def runningMeanFast(x, N):
-    '''
-    x = array of points
-    N = window width
-    Ref: http://stackoverflow.com/questions/13728392/moving-average-or-running-mean
-    '''
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
+from .ComponentBase import Component
+from utils.runningmeanfast import runningMeanFast
 
 def Gaussian(x,cenwave,sigma,ampl):
     '''

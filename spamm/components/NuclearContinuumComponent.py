@@ -5,7 +5,8 @@ import numpy as np
 from astropy.modeling.powerlaws import PowerLaw1D,BrokenPowerLaw1D
 
 from .ComponentBase import Component
-#! from utils import runningMeanFast
+from utils.runningmeanfast import runningMeanFast
+
 #! get boxcar_width from yaml
 
 class NuclearContinuumComponent(Component):
