@@ -45,7 +45,7 @@ class NuclearContinuumComponent(Component):
     def is_analytic(self):
         return True    
 
-    def initial_values(self, spectrum=None):
+    def initial_values(self, spectrum):
         '''
         Needs to sample from prior distribution.
         Return type must be a list (not an np.array).
@@ -134,7 +134,7 @@ class NuclearContinuumComponent(Component):
 
         return ln_priors
 
-    def flux(self, spectrum=None, parameters=None):
+    def flux(self, spectrum, parameters=None):
         '''
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
