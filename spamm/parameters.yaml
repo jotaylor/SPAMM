@@ -2,6 +2,16 @@ nuclear_continuum: ""
 fe: ""
 host_galaxy: ""
 emission_lines: ""
-input_models: "" #dir
+host_galaxy_models: "" #dir
 broken_powerlaw: None
 boxcar_width: 5
+
+# NuclearContnuumComponent parameters
+pl_slope_min: -3.
+pl_slope_max: 3.
+pl_norm_min: 0.
+pl_norm_max: "max_flux"
+pl_wave_break_min: "min_wl"
+pl_wave_break_max: "max_wl"
+#pl_par_prior: np.random.uniform
+
