@@ -31,24 +31,6 @@ from spamm.components.ReddeningLaw import Extinction
 from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
 
-# -----------------------------------------------------------------
-# This block of code tells Python to drop into the debugger
-# if there is an uncaught exception when run from the command line.
-def info(type, value, tb):
-    if hasattr(sys, 'ps1') or not sys.stderr.isatty():
-        # we are in interactive mode or we don't have a tty-like
-        # device, so we call the default hook
-        sys.__excepthook__(type, value, tb)
-    else:
-        import traceback, pdb
-        # we are NOT in interactive mode, print the exception...
-        traceback.print_exception(type, value, tb)
-        print()
-        # ...then start the debugger in post-mortem mode.
-        pdb.pm()
-sys.excepthook = info
-# -----------------------------------------------------------------
-
 #emcee parameters
 n_walkers = 30
 n_iterations = 500
@@ -102,9 +84,8 @@ if BC and BpC:
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
-# need to resolve
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
-spectrum = Spectrum(flux)#Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
+spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
 spectrum.mask=mask
 spectrum.dispersion = wavelengths#*units.angstrom
@@ -112,6 +93,7 @@ spectrum.flux_error = flux_err
 pl.plot(spectrum.wavelengths,spectrum.flux)
 pl.show()
 #exit()
+
 # ------------
 # Initialize model
 # ------------
