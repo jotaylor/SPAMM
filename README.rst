@@ -9,8 +9,8 @@ SPAMM
 
 Contributing
 ============
-Please open a new `issue <https://github.com/justincely/spamm/issue>`_ or new
-`pull request <https://github.com/justincely/spamm/pulls>`_ for
+Please open a new `issue <https://github.com/antking/SPAMM/issue>`_ or new
+`pull request <https://github.com/antking/SPAMM/pulls>`_ for
 bugs, feedback, or new features you would like to see.
 
 To contribute code, please use the following workflow:
@@ -27,7 +27,7 @@ has more information.
 Getting More Information
 ========================
 
-* `WIKI <https://github.com/justincely/spamm/wiki>`_
+* `WIKI <https://github.com/antking/SPAMM/wiki>`_
 
 Documentation
 -------------
