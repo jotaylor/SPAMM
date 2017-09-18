@@ -6,12 +6,23 @@ import numpy as np
 import scipy.interpolate
 import numpy as np
 import scipy.integrate
+import pyfftw 
+from scipy import signal
+from astropy.convolution import Gaussian1DKernel, convolve
+import warnings
+import math
+from scipy.fftpack.helper import next_fast_len
+from astropy import constants
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
+from utils.fftwconvolve_1d import fftwconvolve_1d
+from utils.find_nearest_index import find_nearest
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
+
+#-----------------------------------------------------------------------------#
 
 class HostGalaxyComponent(Component):
     '''
@@ -29,7 +40,7 @@ class HostGalaxyComponent(Component):
         super(HostGalaxyComponent, self).__init__()
 
         self.host_gal = self.load_templates()
-        self.interp_host_gal = [] # interpolated to data provided
+        self.interp_host_gal = [] 
         self.interp_norm_flux = []
         self.name = "HostGalaxy"
 
@@ -38,12 +49,6 @@ class HostGalaxyComponent(Component):
 
         self.stellar_disp_min = None
         self.stellar_disp_max = None
-        
-#! need to read these from yaml
-        self.norm_min = hg_norm_min
-        self.norm_max = hg_norm_max
-        self.stellar_disp_min = stellar_disp_min
-        self.stellar_disp_max = stellar_disp_max
 
     @property
     def is_analytic(self):
@@ -78,17 +83,16 @@ class HostGalaxyComponent(Component):
             parameter_names.append("norm_{0}".format(i))
         parameter_names.append("stellar_disp")
         return parameter_names
-    
+
     @property
     def parameter_count(self):
         ''' Returns the number of parameters of this component. '''
         no_parameters = len(self.host_gal) + 1
         
         return no_parameters
-
+    
     def initial_values(self, spectrum):
         '''
-
         Needs to sample from prior distribution.
         Return type must be a single list (not an np.array).
         '''
@@ -108,15 +112,45 @@ class HostGalaxyComponent(Component):
 
         return norm_init.tolist() + [stellar_disp_init]
 
-    def initialize(self, data_spectrum):
+    def initialize(self, data_spectrum=None):
         '''
-        Perform any initializations where the data is optional.
+        Perform any initializations using data spectrum.
         '''
+        if data_spectrum is None:
+            raise Exception("The data spectrum must be specified to initialize" + 
+                            "{0}.".format(self.__class__.__name__))
 
-        for template in self.host_gal:
-            f = scipy.interpolate.interp1d(template.wavelengths, template.flux) # returns function
-            self.interp_host_gal.append(f(data_spectrum.wavelengths))
-            self.interp_norm_flux.append(f(data_spectrum._norm_wavelength))
+        self._flux_arrays = np.zeros(len(data_spectrum.wavelengths)) # calculate flux on this array
+
+        # We'll eventually need to convolve these in constant 
+        # velocity space, so /ebin to equal log bins
+        self.rebin_log_templates = list()
+
+#        fnw = self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths) # flux at normalization wavelength
+
+
+#! need to verify if this is necessary            
+        for i,template in enumerate(self.host_gal):
+            # This method lets you interpolate beyond the wavelength 
+            #coverage of the template if/when the data covers beyond it.  
+            # Function returns 0 outside the wavelength coverage of the template.
+            # To broaden in constant velocity space, you need to rebin the 
+            #templates to be in equal bins in log(lambda) space.
+            equal_log_bins = np.linspace(min(np.log(template.wavelengths)), max(np.log(template.wavelengths)), num = len(template.wavelengths))
+#! need to verify Spectrum method name
+            template_fluxes_rebin_equal_log_fluxes = Spectrum.bin_spectrum(np.log(template.wavelengths), template.flux, equal_log_bins) # do the rebinning
+
+            
+            rebinwavelengths,rebinflux = equal_log_bins, template_fluxes_rebin_equal_log_fluxes
+            template_equal_log_rebin_spec = Spectrum(rebinflux)
+            template_equal_log_rebin_spec.wavelengths=rebinwavelengths
+            self.rebin_log_templates.append(template_equal_log_rebin_spec)
+
+
+#! need to verify Spectrum method name
+#! Do we rebin or interpolate here?
+            self.interp_host_gal.append(Spectrum.bin_spectrum(template.wavelengths, template.flux, data_spectrum.wavelengths))
+            self.interpolated_normalization_flux.append(np.interp(fnw,template.wavelengths, template.flux,left=0,right=0))
 
     def ln_priors(self, params):
         '''
@@ -124,101 +158,104 @@ class HostGalaxyComponent(Component):
         
         @param params
         '''
-
+        
         # need to return parameters as a list in the correct order
         ln_priors = list()
         
-        norm = list()
+        normalization = list()
         for i in range(1, len(self.host_gal)+1):
-            norm.append(params[self.parameter_index("norm_{0}".format(i))])
+            normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
+        
+        stellar_dispersion = params[self.parameter_index("stellar dispersion")]
+        # Normalization parameter
 
-        stellar_disp = params[self.parameter_index("stellar_disp")]
-
+        
         # Flat prior within the expected ranges.
         for i in range(len(self.host_gal)):
-            if self.norm_min < norm[i] < self.norm_max:
+            if self.norm_min[i] < normalization[i] < self.norm_max[i]:
                 ln_priors.append(0.0)
             else:
-                ln_priors.append(np.inf)
-
+                ln_priors.append(-np.inf)
+        #print('norm',np.sum(normalization),self.norm_max[0],self.norm_min[0],normalization)
+        #exit()
+#! why is this here? another prior is added
+        if np.sum(normalization) <= np.max(self.norm_max):
+                ln_priors.append(0.0)
+        else:
+                ln_priors.append(-np.inf)
+        
         # Stellar dispersion parameter
-        if self.stellar_disp_min < stellar_disp < self.stellar_disp_max:
+        if self.stellar_dispersion_min < stellar_dispersion < self.stellar_dispersion_max:
             ln_priors.append(0.0)
         else:
             ln_priors.append(-np.inf)
-        
+        #print('ln_priors',ln_priors)
+        #print('norm',np.sum(normalization),np.max(self.norm_max),np.min(self.norm_min),normalization)
+        #exit()
+        # ln_prior_norms is an array, need to return a 1D array of parameters to emcee
         return ln_priors
 
-    def flux(self, spectrum, parameters=None):
+
+
+    def flux(self, spectrum=None, parameters=None):
         '''
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
         '''
         
-        norm = list()
+        normalization = list()
         for i in range(1, len(self.host_gal)+1):
-            norm.append(parameters[self.parameter_index("norm_{0}".format(i))])
+            normalization.append(parameters[self.parameter_index("normalization_{0}".format(i))])
+        stellar_dispersion = parameters[self.parameter_index("stellar dispersion")]
+        parameters_host = normalization
+        parameters_host.append(stellar_dispersion)
 
-        stellar_disp = parameters[self.parameter_index("stellar_disp")]
-
-        assert len(parameters) == self.parameter_count, \
+        assert len(parameters_host) == self.parameter_count, \
                 "The wrong number of indices were provided: {0}".format(parameters)
 
-        #Convolve to increase the velocity dispersion. Need to
-        #consider it as an excess dispersion above that which
-        #is intrinsic to the template. For the moment, the
-        #implicit assumption is that each template has an
-        #intrinsic velocity dispersion = 0 km/s.
-        
-        #Create the dispersion-convolution matrix.
-        #Kmat = self.stellar_disp_matrix(stellar_disp,spectrum)
-        Kmat = np.identity(len(spectrum.wavelengths))
+                #Convolve to increase the velocity dispersion. Need to
+                #consider it as an excess dispersion above that which
+                #is intrinsic to the template. For the moment, the
+                #implicit assumption is that each template has an
+                #intrinsic velocity dispersion = 0 km/s.
+                
 
-        self.host_gal_final = np.zeros(len(spectrum.wavelengths)) # calculate flux on this array
+        norm = list()
+        interpolated_convolved_templates = list()
+        # The next two parameters are lists of size len(self.host_gal)
+        norm_waves = self.normalization_wavelength(data_spectrum_wavelength=spectrum.wavelengths)
+        c_kms = constants.c.to("km/s")
+        log_norm_waves = np.log(norm_waves)
+        self._flux_arrays[:] = 0.0
+        template_stellar_dispersion = 0.0 ## need to specify this value. For the moments we are assuming it is zero.
+        sd_over_c = (stellar_dispersion-template_stellar_dispersion)/(c_km_per_s)
+            
         for i in range(len(self.host_gal)):
-            convolved_template = Kmat.dot(self.interp_host_gal[i])
-            self.host_gal_final += norm[i]/self.interp_norm_flux[i] * convolved_template
+            # Want to smooth and convolve in log space, since d(log(lambda)) ~ dv/c and we can broaden based on a constant velocity width
+            # Compare smoothing (v/c) to bin size, and that tells you how many bins wide your Gaussian to convolve over is
+            # sigma_conv is the width to broaden over, as given in Eqn 1 of Vestergaard and Wilkes 2001 (essentially the first line below this)
+            sigma_conv = sd_over_c
+            equal_log_bin_size = self.rebin_log_templates[i].wavelengths[2] - self.rebin_log_templates[i].wavelengths[1]
+            sig_norm = sigma_conv/equal_log_bin_size
+            kernel = signal.gaussian(1000,sig_norm)/(np.sqrt(2*math.pi)*sig_norm)
+            if np.size(self.rebin_log_templates[i].flux)%2 > 0: #check to see if length of array is even. If it is odd need to remove last index as fftwconvolution only works on even size arrays
+                self.rebin_log_templates[i].flux = self.rebin_log_templates[i].flux[:-1]
+                self.rebin_log_templates[i].wavelengths = self.rebin_log_templates[i].wavelengths[:-1]
+            #convolve flux (in log space) with gaussian broadening kernel
+            fftwconvolved_flux = fftwconvolve_1d(self.rebin_log_templates[i].flux, kernel)
 
-        return self.host_gal_final
-#! still need to finalize this function below
-    def stellar_disp_matrix(self, stellar_disp, spectrum):
+            #shift spectrum back into linear space
+#! need to check Spectrum.bin_spectrum()
+            interpolated_template_convolved = Spectrum.bin_spectrum(self.rebin_log_templates[i].wavelengths,fftwconvolved_flux,np.log(spectrum.wavelengths))
+            interpolated_template_convolved_normalization_flux = np.interp(log_norm_waves,self.rebin_log_templates[i].wavelengths,	\
+            fftwconvolved_flux,left=0,right=0) #the left and right statements just set the flux value to zero if the specified log_norm_waves is outside the bounds of self.rebin_log_templates[i].wavelengths
+            
+            # Find NaN errors early from dividing by zero.
+            assert interpolated_template_convolved_normalization_flux != 0., "Interpolated convolution flux valued at 0 at the location of peak template flux!"
+            interpolated_convolved_templates.append(interpolated_template_convolved)
+            norm.append(parameters[i] / interpolated_template_convolved_normalization_flux) # Scale normalization parameter to flux in template
+            self._flux_arrays += norm[i] * interpolated_convolved_templates[i]
 
-        Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
-        lam = spectrum.wavelengths
-        for k,lamk in enumerate(spectrum.wavelengths):
-            sig = stellar_disp * lamk/3.e5 #Assume the dispersion is provided in km/s.
+        return self._flux_arrays
 
-            #To speed things up, we'll only consider bins with central
-            #wavelengths within 5 sigma of the current spectral bin.
-
-            #Get the bin indices that are closest to +/- 5 sigma.
-            lmin = np.argmin(abs((lamk-lam)/sig - 5.))
-            lmax = np.argmin(abs((lamk-lam)/sig + 5.))
-
-            #See if we are near the bounds and determine
-            #the kernel normalization accordingly.
-            if lmin>0 and lmax<len(lam):
-                norm = sig*(2.*np.pi)**0.5
-            else:
-                if lmin==0:
-                    a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
-                    b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
-                else:
-                    a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
-                    b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
-                norm = scipy.integrate.quad(gaussian_kernel, a, b, args=(lamk,sig))[0]
-
-            for l in range(lmin,lmax+1):
-                if l==0:
-                    a = lam[l]-0.5*(lam[l+1]-lam[l])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                elif l==len(lam)-1:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l]-lam[l-1])
-                else:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                Kmat[k,l] = scipy.integrate.quad(gaussian_kernel, a, b, args=(lamk,sig))[0]/norm
-
-        return Kmat
 
