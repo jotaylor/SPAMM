@@ -6,24 +6,47 @@ from astropy.modeling.powerlaws import PowerLaw1D,BrokenPowerLaw1D
 
 from .ComponentBase import Component
 from utils.runningmeanfast import runningMeanFast
+from utils.parse_pars import parse_pars
 
-#! get boxcar_width from yaml
+PARS = parse_pars()
+
+#-----------------------------------------------------------------------------#
 
 class NuclearContinuumComponent(Component):
-    '''
+    """
     AGN Continuum Component
-    \f$ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} \f$ 
+        \f$ F_{\lambda,{\rm PL}}=F_{\rm PL,0} \ 
+        \left(\frac{\lambda}{\lambda_0}\right)^{\alpha} \f$ 
     This component has two parameters:
+        normalization : \f$ F_{\rm PL,0} \f$ 
+        slope : \f$ \alpha \f$ 
+    
+    Attributes:
+        broken_powerlaw (Bool): True if a broken power law should be used.
+        model_parameter_names (list): List of model parameter names,
+            e.g. slope1, wave_break
+        name (str): Name of component, i.e. "Nuclear"
+        norm_min (): 
+        norm_max ():
+        slope_min ():
+        slope_max ():
+        wave_break_min ():
+        wave_break_max ():
 
-    normalization : \f$ F_{\rm PL,0} \f$ 
-    slope : \f$ \alpha \f$ 
-
-    '''
+    """
     def __init__(self, broken_pl=False):
-        super(NuclearContinuumComponent, self).__init__()
+        """
+        Args:
+            broken_pl (Bool): True if a broken power law should be used.
+        """
+
+        super().__init__()
+        
+        self.name = "Nuclear"
 
         self.broken_powerlaw = broken_pl
         self.model_parameter_names = list()
+        
         if not self.broken_powerlaw:
             self.model_parameter_names.append("norm_PL")
             self.model_parameter_names.append("slope1")
@@ -32,43 +55,45 @@ class NuclearContinuumComponent(Component):
             self.model_parameter_names.append("norm_PL")
             self.model_parameter_names.append("slope1")
             self.model_parameter_names.append("slope2")
-        self.name = "Nuclear"
 
-#! these should be read in from yaml
-        self.norm_min = None
-        self.norm_max = None
-        self.slope_min = None
-        self.slope_max = None
-        self.wave_break_min = None
-        self.wave_break_max = None
+        self.norm_min = PARS["pl_norm_min"]
+        self.norm_max = PARS["pl_norm_max"]
+        self.slope_min = PARS["pl_slope_min"]
+        self.slope_max = PARS["pl_slope_max"]
+        self.wave_break_min = PARS["pl_wave_break_min"]
+        self.wave_break_max = PARS["pl_wave_break_max"]
 
+#-----------------------------------------------------------------------------#
+
+#TODO could this be moved to Component.py?
     @property
     def is_analytic(self):
+        """ Method that stores whether component is anlytic or not"""
         return True    
 
+#-----------------------------------------------------------------------------#
+
     def initial_values(self, spectrum):
-        '''
+        """
         Needs to sample from prior distribution.
         Return type must be a list (not an np.array).
 
-        Called by the emcee.
+        Called by emcee.
         
-        :param spectrum
+        Args:
+            spectrum (Spectrum object): ?
         
         Returns:
-        --------
-            norm_init : array-like
-
-            slope_init : array-like
-        '''
+            norm_init (array):
+            slope_init (array):
+        """
 
         pl_init = []
         if pl_norm_max == "max_flux":
-            self.norm_max = max(runningMeanFast(spectrum.flux, boxcar_width))
+            self.norm_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
 
         if self.broken_pl:
             size = 2
-#! need to read in wave_break_min/max from yaml            
             if self.wave_break_min == "min_wl":
                 self.wave_break_min = min(spectrum.wavelength)
             if self.wave_break_max == "max_wl": 
@@ -88,59 +113,72 @@ class NuclearContinuumComponent(Component):
             pl_init.append(slope)
 
         return pl_init
-#! need to modify emcee initial_values call
+#TODO need to modify emcee initial_values call
 
-#-------------------------#
+#-----------------------------------------------------------------------------#
 
     def ln_priors(self, params):
-        '''
+        """
         Return a list of the ln of all of the priors.
+#            norm: Uniform linear prior between 0 and the maximum of the 
+#                spectral flux after computing running median.
+#            slope: Uniform linear prior in range [-3,3]??
 
-        normalization : uniform linear prior between 0 and the maximum of the spectral flux after computing running median
-        slope : uniform linear prior in range [-3,3]
-        '''
+        Args:
+            params (): ?
 
-        # need to return parameters as a list in the correct order
-        ln_priors = list()
+        Returns:
+            ln_priors (list): ln of all the priors.
+        """
+
+        # Need to return parameters as a list in the correct order.
+        ln_priors = []
 
         if self.broken_pl:
             wave_break = params[self.parameter_index("wave_break")]
             if self.wave_break_min < wave_break < wave_break_max:
                 ln_priors.append(0.)
             else:
-                #arbitrarily small number
-                ln_priors.append(-np.inf)
+                ln_priors.append(-np.inf) # Arbitrarily small number
         
         norm = params[self.parameter_index("norm_PL")]
         if self.norm_min < norm < self.norm_max:
             ln_priors.append(0.)
         else:
-            #arbitrarily small number
-            ln_priors.append(-np.inf)
+            ln_priors.append(-np.inf) # Arbitrarily small number
 
         slope1 = params[self.parameter_index("slope1")]
         if self.slope_min < slope1 < self.slope_max:
             ln_priors.append(0.)
         else:
-            #arbitrarily small number
-            ln_priors.append(-np.inf)
+            ln_priors.append(-np.inf) # Arbitrarily small number
             # TODO - suppress "RuntimeWarning: divide by zero encountered in log" warning.
         if self.broken_pl:
             slope2 = params[self.parameter_index("slope2")]
             if self.slope_min < slope2 < self.slope_max:
                 ln_priors.append(0.)
             else:
-                #arbitrarily small number
-                ln_priors.append(-np.inf)
+                ln_priors.append(-np.inf) # Arbitrarily small number
 
         return ln_priors
 
+#-----------------------------------------------------------------------------#
+
     def flux(self, spectrum, parameters=None):
-        '''
-        Returns the flux for this component for a given wavelength grid
-        and parameters. Will use the initial parameters if none are specified.
-        '''
-        assert len(parameters) == len(self.model_parameter_names), "The wrong number of indices were provided: {0}".format(parameters)
+        """
+        Compute the flux for this component for a given wavelength grid
+        and parameters. Use the initial parameters if none are specified.
+
+        Args:
+            spectrum (Spectrum object): ?
+            parameters (): ?
+
+        Return:
+            flux (): Flux of the componenet.
+        """
+        
+        assert len(parameters) == len(self.model_parameter_names), \
+            "The wrong number of indices were provided: {0}".format(parameters)
         
         norm = parameters[self.parameter_index("norm_PL")]
         slope1 = parameters[self.parameter_index("slope1")]
@@ -152,5 +190,4 @@ class NuclearContinuumComponent(Component):
             PL = BrokenPowerLaw1D(norm, x_break, slope1, slope2)
         flux = PL.evaluate(spectrum.wavelengths)
 
-#!
         return flux
