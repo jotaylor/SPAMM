@@ -34,3 +34,8 @@ docs/_build/
 #*.pdf
 documentation/tmp
 documentation/_build
+
+# Fortran
+*.f90
+*.o
+*.mod
