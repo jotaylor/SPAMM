@@ -1,7 +1,12 @@
 fe: ""
-host_galaxy: ""
 emission_lines: ""
-host_galaxy_models: "/user/jotaylor/git/spamm/Data/HostModels" #dir
+## Host Galaxy parameters##
+host_galaxy:
+    hg_models: "/user/jotaylor/git/spamm/Data/HostModels" #dir
+    hg_norm_min: 0.
+    hg_norm_max: "max_flux"
+    hg_stellar_disp_min: 0.
+    hg_stellar_disp_max: ?
 
 ## Boxcar width to use when calculating running mean ##
 boxcar_width: 5
