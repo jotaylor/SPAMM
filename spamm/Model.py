@@ -110,7 +110,7 @@ class Model(object):
         self._data_spectrum = None
         
         self.z = None
-        self.components = list()
+        self.components = []
         self.mpi = mpi
 
         self.sampler = None
@@ -131,7 +131,7 @@ class Model(object):
 # TODO is this needed? vvvv
 
 #        self.reddening = None
-#        self.model_parameters = dict()
+#        self.model_parameters = {}
 #        self.mcmc_param_vector = None
 #    @property
 #    def mask(self):
@@ -161,7 +161,11 @@ class Model(object):
     def data_spectrum(self):
         """
         All components of the model must be set before setting the data.
+
+        Returns:
+            _data_spectrum (Spectrum object): ?
         """
+
         return self._data_spectrum
 
 #-----------------------------------------------------------------------------#
@@ -187,7 +191,7 @@ class Model(object):
         # *and* they are not more coarse than the data, interpolate. 
         # If not, fail.
         need_to_downsample_data = False
-        components_to_upsample = dict()
+        components_to_upsample = {}
 
         gs = 0 # grid spacing
         worst_component = None # holds component with most course wavelength grid spacing
@@ -241,15 +245,12 @@ class Model(object):
         Args:
             n_walkers (int): Number of walkers to pass to the MCMC.
             n_iteratins (int): Number of iterations to pass to the MCMC. 
-
-        Returns:
-            EXAMPLE (str): This is the object that is returned.
         """
 
         # Initialize walker matrix with initial parameters
-        walkers_matrix = list() # must be a list, not an np.array
+        walkers_matrix = [] # must be a list, not an np.array
         for walker in range(n_walkers):
-            walker_params = list()
+            walker_params = []
             for component in self.components:
                 walker_params = walker_params + component.initial_values(self.data_spectrum)
             walkers_matrix.append(walker_params)
@@ -396,23 +397,14 @@ class Model(object):
 #-----------------------------------------------------------------------------#
 
     def model_parameter_names(self):
-    """
-    Description.
+        """
+        Return a list of all component parameter names.
 
-    Args:
-        EXAMPLE (int): This is EXAMPLE, sometimes it continues
-            to the next line.
+        Returns:
+            labels (list): List of component names.
+        """
 
-    Returns:
-        EXAMPLE (str): This is the object that is returned.
-    """
-
-        '''
-        Returns a list of all component parameter names.
-
-        :rtype: list of strings
-        '''
-        labels = list()
+        labels = []
         for c in self.components:
             labels = labels + [x for x in c.model_parameter_names]
         return labels
@@ -462,12 +454,6 @@ class Model(object):
         Returns:
             ln_p (float): Sum of ln(prior) values?
         """
-
-        '''
-
-        :param params: describe me!
-        :rtype: describe me
-        '''
 
         # Make a copy since we'll delete elements.
         p = np.copy(params)

@@ -168,7 +168,6 @@ class HostGalaxyComponent(Component):
 
         Args:
             data_spectrum (Spectrum object): ?
-
         """
         
         # Calculate flux on this array
@@ -218,7 +217,11 @@ class HostGalaxyComponent(Component):
         """
         Return a list of the ln of all of the priors.
         
-        @param params
+        Args:
+            params (): ?
+
+        Returns:
+            ln_priors (list): List of the ln of all priors.
         """
         
         # need to return parameters as a list in the correct order
@@ -257,6 +260,13 @@ class HostGalaxyComponent(Component):
         """
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
+
+        Args:
+            spectrum (Spectrum object): 
+            parameters (): ?
+
+        Returns: 
+            flux_arrays (): ?
         """
         
         norm = []

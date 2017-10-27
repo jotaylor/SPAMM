@@ -68,7 +68,12 @@ class NuclearContinuumComponent(Component):
 #TODO could this be moved to Component.py?
     @property
     def is_analytic(self):
-        """ Method that stores whether component is anlytic or not"""
+        """ 
+        Method that stores whether component is analytic or not
+        
+        Returns:
+            Bool (Bool): True if componenet is analytic.
+        """
         return True    
 
 #-----------------------------------------------------------------------------#
