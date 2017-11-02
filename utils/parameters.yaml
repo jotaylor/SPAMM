@@ -7,6 +7,8 @@ host_galaxy:
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 0.
     hg_stellar_disp_max: ?
+    hg_template_stellar_disp: 0.0
+    hg_kernel_size_sigma: 10
 
 ## Boxcar width to use when calculating running mean ##
 boxcar_width: 5
