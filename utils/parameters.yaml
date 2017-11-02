@@ -2,11 +2,12 @@ fe: ""
 emission_lines: ""
 ## Host Galaxy parameters##
 host_galaxy:
-    hg_models: "/user/jotaylor/git/spamm/Data/HostModels" #dir
-    hg_norm_min: 0.
-    hg_norm_max: "max_flux"
-    hg_stellar_disp_min: 0.
-    hg_stellar_disp_max: ?
+    boxcar_width: 5
+    hg_models: "/user/jotaylor/git/spamm/Data/HostModels"
+    hg_norm_min: None
+    hg_norm_max: None
+    hg_stellar_disp_min: 30.
+    hg_stellar_disp_max: 1000.
     hg_template_stellar_disp: 0.0
     hg_kernel_size_sigma: 10
 
@@ -15,6 +16,7 @@ boxcar_width: 5
 
 ## NuclearContnuumComponent power law parameters ##
 nuclear_continuum:
+    boxcar_width: 5
     broken_pl: False 
     pl_slope_min: -3.
     pl_slope_max: 3.
