@@ -16,13 +16,12 @@ from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
 from utils.fftwconvolve_1d import fftwconvolve_1d
 from utils.find_nearest_index import find_nearest
-from utils.parse_input import parse_input
 from utils.parse_pars import parse_pars
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
 
-PARS = parse_pars()
+PARS = parse_pars()["host_galaxy"]
 
 #-----------------------------------------------------------------------------#
 

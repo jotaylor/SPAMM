@@ -15,9 +15,9 @@ from utils.rebin_spec import rebin_spec
 from utils.fftwconvolve_1d import fftwconvolve_1d
 
 # Constants are in cgs.  
-c = c.to("cg/s")
-h = h.to("cg/s")
-k = k_B.to("cg/s")
+c = c.cgs
+h = h.cgs
+k = k_B.cgs
 R = Ryd.to("1/Angstrom")
 E0 = 2.179e-11
 balmer_edge = 3646 # Angstroms
@@ -261,7 +261,7 @@ def BC_flux(spectrum=None, parameters=None):
     blackbody = blackbody_lambda(spectrum.wavelengths, parameters[1])
     #calculates [1 - e^(-tau)] (optically-thin emitting slab)
     #assumes angstroms
-    tau = parameters[2]*(sp_wavel/balmer_edge.)**3
+    tau = parameters[2]*(sp_wavel/balmer_edge)**3
     absorption = 1 - np.exp(-tau)
     bc_flux = absorption * blackbody
 
@@ -394,7 +394,7 @@ class BalmerCombined(Component):
             raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
         
         if self.normalization_min == None or self.normalization_max == None:
-            m = np.nonzero(abs(spectrum.wavelengths - balmer_edge.) == np.min(abs(spectrum.wavelengths - balmer_edge.)))
+            m = np.nonzero(abs(spectrum.wavelengths - balmer_edge) == np.min(abs(spectrum.wavelengths - balmer_edge)))
             print('m',m)
             BCmax = np.max(spectrum.flux[m[0][0]-10:m[0][0]+10])
             self.normalization_min = 0

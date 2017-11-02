@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import numpy asnp
+import numpy as np
 
 def find_nearest(input_list, value):
     '''

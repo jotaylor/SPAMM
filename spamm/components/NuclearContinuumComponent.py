@@ -8,7 +8,7 @@ from .ComponentBase import Component
 from utils.runningmeanfast import runningMeanFast
 from utils.parse_pars import parse_pars
 
-PARS = parse_pars()
+PARS = parse_pars()["nuclear_continuum"]
 
 #-----------------------------------------------------------------------------#
 
@@ -34,20 +34,15 @@ class NuclearContinuumComponent(Component):
         wave_break_max ():
 
     """
-    def __init__(self, broken_pl=False):
-        """
-        Args:
-            broken_pl (Bool): True if a broken power law should be used.
-        """
-
+    def __init__(self):
         super().__init__()
         
         self.name = "Nuclear"
 
-        self.broken_powerlaw = broken_pl
+        self.broken_pl = PARS["broken_pl"]
         self.model_parameter_names = list()
         
-        if not self.broken_powerlaw:
+        if not self.broken_pl:
             self.model_parameter_names.append("norm_PL")
             self.model_parameter_names.append("slope1")
         else:
@@ -94,7 +89,7 @@ class NuclearContinuumComponent(Component):
         """
 
         pl_init = []
-        if pl_norm_max == "max_flux":
+        if self.norm_max == "max_flux":
             self.norm_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
 
         if self.broken_pl:
@@ -187,12 +182,11 @@ class NuclearContinuumComponent(Component):
         
         norm = parameters[self.parameter_index("norm_PL")]
         slope1 = parameters[self.parameter_index("slope1")]
-        if not broken_pl:   
+        if not self.broken_pl:   
             PL = PowerLaw1D(norm, spectrum.norm_wavelength, slope1)  
         else:
             x_break = parameters[self.parameter_index("wave_break")]
             slope2 = parameters[self.parameter_index("slope2")]
             PL = BrokenPowerLaw1D(norm, x_break, slope1, slope2)
-        flux = PL.evaluate(spectrum.wavelengths)
-
+        flux = PL(spectrum.wavelengths)
         return flux

@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-from scipy.interpolate import iterp1d
+from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import emcee
 
@@ -434,9 +434,7 @@ class Model(object):
         # interp_model_flux = [f(x) for x in self.data_spectrum.wavelength]
         interp_model_flux = f(self.data_spectrum.dispersion)
 
-        ln_l = np.power(( (self.data_spectrum.flux - interp_model_flux) / 
-                         self.data_spectrum.flux_error), 2) + 
-                         np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
+        ln_l = np.power(( (self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2) + np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
         #ln_l *= self.mask
         ln_l = -0.5 * np.sum(ln_l)
 
