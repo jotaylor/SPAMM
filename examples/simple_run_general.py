@@ -8,10 +8,7 @@ from __future__ import absolute_import
 import os
 import sys
 import gzip
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import dill as pickle
 
 import numpy as np
 import matplotlib.pyplot as pl
@@ -136,12 +133,4 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 # ------------
 with gzip.open('model.pickle.gz', 'wb') as model_output:
     model_output.write(pickle.dumps(model))
-
-
-
-
-
-
-
-
 
