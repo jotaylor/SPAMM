@@ -25,10 +25,8 @@ nuclear_continuum:
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
-    
+
 balmer_continuum:
-    bc_line_type: "gaussian"
     bc_lines_min: 5
     bc_lines_max: 400
-
-
+    bc_line_type: "gaussian"

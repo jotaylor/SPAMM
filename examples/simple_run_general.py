@@ -44,17 +44,17 @@ MPI = True
 #Fe and host galaxy components need more work - see tickets
 #To do: implement combined - Gisella - see tickets
 
-PL = True#False#
+PL = False#True#
 HOST = False
 FE = False#True#
-BC =  False#True#
-BpC = False#True#
+BC =  True#False#
+BpC = True#False#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
 AGN_ext = False
 LMC_ext = False
-maskType="Continuum"#"Emission lines reduced"#None#
+maskType=None#"Continuum"#"Emission lines reduced"#
 
 show_plots = False
 

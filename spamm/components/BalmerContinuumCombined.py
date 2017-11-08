@@ -13,9 +13,10 @@ from astropy.analytic_functions import blackbody_lambda
 #TODO this needs to be integrated into Spectrum eventually
 from utils.rebin_spec import rebin_spec
 from utils.fftwconvolve_1d import fftwconvolve_1d
+from utils.find_nearest_index import find_nearest
 from utils.parse_pars import parse_pars
 
-PARS = parse_pars()
+PARS = parse_pars()["balmer_continuum"]
 
 # Constants are in cgs.  
 c = c.cgs
@@ -98,7 +99,6 @@ class BalmerCombined(Component):
         
         if self.normalization_min == None or self.normalization_max == None:
             m = np.nonzero(abs(spectrum.wavelengths - balmer_edge) == np.min(abs(spectrum.wavelengths - balmer_edge)))
-            print('m',m)
             BCmax = np.max(spectrum.flux[m[0][0]-10:m[0][0]+10])
             self.normalization_min = 0
             self.normalization_max = BCmax
@@ -229,7 +229,7 @@ class BalmerCombined(Component):
        kernel /= abs(np.sum(kernel))
    
        flux_conv = fftwconvolve_1d(flux_rebin, kernel)
-       assert flux_conv.size == orig_wavelength.size
+       assert flux_conv.size == wavelength.size
        #rebin spectrum to original wavelength values
        return rebin_spec(np.exp(ln_wavenew),flux_conv,wavelength)
         
@@ -246,7 +246,7 @@ class BalmerCombined(Component):
             float (float): Wavelength of the transition from n=n to n=2.
         """
         
-        ilambda = R * (0.25 - 1./line_orders**2)
+        ilambda = R.value * (0.25 - 1./line_orders**2)
         return 1. / ilambda
     
     
@@ -273,8 +273,8 @@ class BalmerCombined(Component):
         
         maxline = line_orders.max()
         minline = line_orders.min()
-        flux_ratios = np.zeros(maxline-minline)
-        n = np.arange(minline,maxline)
+        flux_ratios = np.zeros(maxline-minline+1)
+        n = np.arange(minline,maxline+1)
     
         coeff = pickle.load(open('../Data/SH95recombcoeff/coeff.interpers.pickle','rb'),
                             encoding="latin1")
@@ -284,7 +284,7 @@ class BalmerCombined(Component):
             if i <=50:
                 flux_ratios[i-minline] = coef_use[-i+2]
             else:
-                flux_ratios[i-minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T))
+                flux_ratios[i-minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k.value*T))
         return flux_ratios
     
 #-----------------------------------------------------------------------------#
@@ -303,9 +303,9 @@ class BalmerCombined(Component):
         lcenter =  self.balmerseries(line_orders)
     
     #TODO define ltype somewhere (yaml)
-        lcent -= shift*lcenter
-        LL = sp_wavel - lcent.reshape(lcent.size, 1) #(is this simply x-x0)
-        lwidth =  width*lcent.reshape(lcent.size,1)
+        lcenter -= shift*lcenter
+        LL = sp_wavel - lcenter.reshape(lcenter.size, 1) #(is this simply x-x0)
+        lwidth =  width*lcenter.reshape(lcenter.size,1)
         ltype = PARS["bc_line_type"]
         if ltype == "gaussian":
             lines = np.exp(- LL**2 /lwidth**2)
@@ -316,8 +316,10 @@ class BalmerCombined(Component):
                              format(ltype))
     
         lflux = self.balmer_ratio(n_e,line_orders,T)
-        
+
         scale = np.repeat(lflux.reshape(lflux.size,1),lines.shape[1],axis=1)
+
+
         lines *= scale
     
         balmer_lines = np.sum(lines,axis = 0)
@@ -360,17 +362,17 @@ class BalmerCombined(Component):
         logNe         = parameters[self.parameter_index("logNe")]
     
         c_kms = c.to("km/s")
-        edge_wl = balmer_edge*(1 - loffset/ckms.value)
+        edge_wl = balmer_edge*(1 - loffset/c_kms.value)
         
         n_e =10.**logNe
-        bpc_flux = makelines(spectrum.wavelengths,
+        bpc_flux = self.makelines(spectrum.wavelengths,
                  Te,n_e,
-                 loffset/ckms.value,lwidth/ckms.value)
-        
+                 loffset/c_kms.value,lwidth/c_kms.value)
         norm_index = find_nearest(spectrum.wavelengths, edge_wl) 
-        fnorm = bpc_flux[norm_index]
         
-        bpc_flux[spectrum.wavelengths < edge_wl] = 0
+        
+        fnorm = bpc_flux[norm_index]
+        bpc_flux[spectrum.wavelengths <= spectrum.wavelengths[norm_index]] = 0
         bpc_flux *= normalization/fnorm
     
         return bpc_flux
@@ -417,24 +419,21 @@ class BalmerCombined(Component):
         
         # Wavelength at which Balmer components merge.
         edge_wl = balmer_edge*(1 - loffset/c.value)
-       
+
     #TODO need WL as quantity objects for better astropy functionality
         blackbody = blackbody_lambda(spectrum.wavelengths, Te)
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms
-        tau = tauBE*(sp_wavel/balmer_edge)**3
+        tau = tauBE*(spectrum.wavelengths/balmer_edge)**3
         absorption = 1 - np.exp(-tau)
         bc_flux = absorption * blackbody
+        bc_flux = self.log_conv(spectrum.wavelengths,bc_flux,lwidth/c.value)
     
-    #TODO import from utils
         norm_index = find_nearest(spectrum.wavelengths, edge_wl) 
         fnorm = bc_flux[norm_index]
-        bc_flux[spectrum.wavelengths > edge_wl-0.5] = 0.
-        
+        bc_flux[spectrum.wavelengths > spectrum.wavelengths[norm_index]] = 0.
         bc_flux *= normalization/fnorm
         
-        bc_flux = log_conv(spectrum.wavelengths,bc_flux,lwidth/c.value)
-    
         return bc_flux
     
 
@@ -452,7 +451,7 @@ class BalmerCombined(Component):
         if self.BC and self.BpC:
             flux_BC = self.BC_flux(spectrum=spectrum, parameters=parameters)
             flux_BpC = self.BpC_flux(spectrum=spectrum, parameters=parameters)
-            flux_est=[flux_BC[i]+flux_BpC[i] for i in xrange(len(flux_BpC))]
+            flux_est=[flux_BC[i]+flux_BpC[i] for i in range(len(flux_BpC))]
 
         else:
             if self.BC:
@@ -460,7 +459,4 @@ class BalmerCombined(Component):
             if self.BpC:
                 flux_est = self.BpC_flux(spectrum=spectrum, parameters=parameters)
                 
-        plt.plot(spectrum.wavelength,flux_est)
-        plt.show()
-        exit()
         return flux_est

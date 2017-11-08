@@ -16,5 +16,5 @@ def find_nearest(input_list, value):
     '''
     
     idx = (np.abs(np.asarray(input_list, dtype = float)-value)).argmin()
-    return input_list[idx]
+    return idx
 
