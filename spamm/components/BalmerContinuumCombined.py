@@ -14,6 +14,7 @@ from astropy.analytic_functions import blackbody_lambda
 from utils.rebin_spec import rebin_spec
 from utils.fftwconvolve_1d import fftwconvolve_1d
 from utils.find_nearest_index import find_nearest
+from utils.find_nearest_index import find_nearest_index
 from utils.parse_pars import parse_pars
 
 PARS = parse_pars()["balmer_continuum"]
@@ -368,7 +369,7 @@ class BalmerCombined(Component):
         bpc_flux = self.makelines(spectrum.wavelengths,
                  Te,n_e,
                  loffset/c_kms.value,lwidth/c_kms.value)
-        norm_index = find_nearest(spectrum.wavelengths, edge_wl) 
+        norm_index = find_nearest_index(spectrum.wavelengths, edge_wl) 
         
         
         fnorm = bpc_flux[norm_index]
@@ -429,7 +430,7 @@ class BalmerCombined(Component):
         bc_flux = absorption * blackbody
         bc_flux = self.log_conv(spectrum.wavelengths,bc_flux,lwidth/c.value)
     
-        norm_index = find_nearest(spectrum.wavelengths, edge_wl) 
+        norm_index = find_nearest_index(spectrum.wavelengths, edge_wl) 
         fnorm = bc_flux[norm_index]
         bc_flux[spectrum.wavelengths > spectrum.wavelengths[norm_index]] = 0.
         bc_flux *= normalization/fnorm
