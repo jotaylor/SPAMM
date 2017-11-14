@@ -14,7 +14,6 @@ from astropy import constants
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
-from utils.fftwconvolve_1d import fftwconvolve_1d
 from utils.find_nearest_index import find_nearest
 from utils.parse_pars import parse_pars
 
@@ -318,7 +317,7 @@ class HostGalaxyComponent(Component):
                 self.log_host[i].flux = self.log_host[i].flux[:-1]
                 self.log_host[i].wavelengths = self.log_host[i].wavelengths[:-1]
             # Convolve flux (in log space) with gaussian broadening kernel
-            log_conv_host_flux = fftwconvolve_1d(self.log_host[i].flux, kernel)
+            log_conv_host_flux = np.convolve(self.log_host[i].flux, kernel,mode="same")
 
 #TODO need to check Spectrum.bin_spectrum()
             # Shift spectrum back into linear space.
