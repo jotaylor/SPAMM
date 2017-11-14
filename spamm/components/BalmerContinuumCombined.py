@@ -12,10 +12,11 @@ from astropy.analytic_functions import blackbody_lambda
 
 #TODO this needs to be integrated into Spectrum eventually
 from utils.rebin_spec import rebin_spec
-from utils.fftwconvolve_1d import fftwconvolve_1d
+#from utils.fftwconvolve_1d import fftwconvolve_1d
 from utils.find_nearest_index import find_nearest
 from utils.find_nearest_index import find_nearest_index
 from utils.parse_pars import parse_pars
+#import line_profiler
 
 PARS = parse_pars()["balmer_continuum"]
 
@@ -200,6 +201,7 @@ class BalmerCombined(Component):
 #-----------------------------------------------------------------------------#
     
     #TODO add convolution function to utils
+    
     def log_conv(self,wavelength, orig_flux, width_lines): 
        """
        Perform convolution in log space. 
@@ -229,7 +231,7 @@ class BalmerCombined(Component):
        kernel  = np.exp(- (kernel_x)**2/(dpix)**2)
        kernel /= abs(np.sum(kernel))
    
-       flux_conv = fftwconvolve_1d(flux_rebin, kernel)
+       flux_conv = np.convolve(flux_rebin, kernel,mode='same')
        assert flux_conv.size == wavelength.size
        #rebin spectrum to original wavelength values
        return rebin_spec(np.exp(ln_wavenew),flux_conv,wavelength)
@@ -289,7 +291,7 @@ class BalmerCombined(Component):
         return flux_ratios
     
 #-----------------------------------------------------------------------------#
-    
+    #@profile
     def makelines(self, sp_wavel, T, n_e, shift, width):
         """
         Args:
@@ -303,7 +305,6 @@ class BalmerCombined(Component):
         line_orders = np.arange(PARS["bc_lines_min"],PARS["bc_lines_max"]) 
         lcenter =  self.balmerseries(line_orders)
     
-    #TODO define ltype somewhere (yaml)
         lcenter -= shift*lcenter
         LL = sp_wavel - lcenter.reshape(lcenter.size, 1) #(is this simply x-x0)
         lwidth =  width*lcenter.reshape(lcenter.size,1)
@@ -441,7 +442,7 @@ class BalmerCombined(Component):
     
 #-----------------------------------------------------------------------------#
 
-
+    
     def flux(self, spectrum=None, parameters=None):
         """
         Returns the flux for this component for a given wavelength grid
