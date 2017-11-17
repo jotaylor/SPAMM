@@ -1,15 +1,14 @@
-fe: ""
 emission_lines: ""
 ## Host Galaxy parameters##
 host_galaxy:
     boxcar_width: 5
     hg_models: "/user/jotaylor/git/spamm/Data/HostModels"
-    hg_norm_min: None
-    hg_norm_max: None
-    hg_stellar_disp_min: 30.
-    hg_stellar_disp_max: 1000.
+    hg_norm_min: 0.
+    hg_norm_max: "max_flux"
+    hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM
+    hg_stellar_disp_max: 1000. # km/s. Must be dispersion, not FWHM
     hg_template_stellar_disp: 0.0
-    hg_kernel_size_sigma: 10
+    hg_kernel_size_sigma: 10 # pixels
 
 ## Boxcar width to use when calculating running mean ##
 boxcar_width: 5
@@ -25,10 +24,21 @@ nuclear_continuum:
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
-    
+
+## Balmer Continuum ##    
 balmer_continuum:
-    bc_line_type: "gaussian"
-    bc_lines_min: 5
-    bc_lines_max: 400
+    bc_line_type: "gaussian" # or "lorentzian"
+    bc_lines_min: 5. #km/s
+    bc_lines_max: 400. #km/s
 
-
+## Fe Component ##
+fe_forest:
+    boxcar_width: 10
+    fe_templates: "/user/jotaylor/git/spamm/Data/FeModels"
+    fe_template_width: 900. #km/s
+    fe_norm_min: 0. 
+    fe_norm_max: "max_flux"
+    fe_width_min: 900. # km/s (FWHM)
+    fe_width_max: 20000. # km/s (FWHM)
+    fe_line_type: "gaussian" # or "lorentzian"
+    fe_kernel_size_sigma: 10 # pixels
