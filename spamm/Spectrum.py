@@ -79,4 +79,6 @@ class Spectrum(Spectrum1DRef):
         self._norm_wavelength_flux = None
 
 #    def bin_spectrum(self):
-#! need to finalize this 
+#TODO need to finalize this 
+
+#TODO need to add log_grid_spacing
