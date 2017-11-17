@@ -49,7 +49,7 @@ class HostGalaxyComponent(Component):
     def __init__(self):
         super(HostGalaxyComponent, self).__init__()
 
-        self.host_gal = self.load_templates()
+        self.load_templates()
         self.interp_host = [] 
         self.interp_norm_flux = []
         self.name = "HostGalaxy"
@@ -76,16 +76,11 @@ class HostGalaxyComponent(Component):
 #-----------------------------------------------------------------------------#
 
     def load_templates(self):
-        """
-        Read in all of the host galaxy models.
+        """Read in all of the host galaxy models."""
 
-        Returns:
-            self.host_gal (list): List of all host galaxy model Spectrum objects.
-        """
-
-        template_list = glob.glob(os.path.join(host_galaxy_models, "*"))
+        template_list = glob.glob(os.path.join(PARS["hg_models"], "*"))
         assert len(template_list) != 0, \
-        "No host galaxy templates found in specified diretory {0}".format(host_galaxy_models)
+        "No host galaxy templates found in specified diretory {0}".format(PARS["hg_models"])
     
         self.host_gal = []
     
@@ -94,8 +89,6 @@ class HostGalaxyComponent(Component):
                 host = Spectrum()
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
                 self.host_gal.append(host)
-
-        return self.host_gal
 
 #-----------------------------------------------------------------------------#
 
