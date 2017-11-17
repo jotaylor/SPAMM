@@ -62,7 +62,6 @@ class HostGalaxyComponent(Component):
 #-----------------------------------------------------------------------------#
 
 #TODO could this be moved to Component.py?
-    @property
     def is_analytic(self):
         """ 
         Method that stores whether component is analytic or not.
@@ -92,7 +91,6 @@ class HostGalaxyComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    @property
     def model_parameter_names(self):
         """
         Determine the list of model parameter names. The number of 
@@ -113,7 +111,6 @@ class HostGalaxyComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    @property
     def parameter_count(self):
         """ 
         Returns the number of parameters of this component. 
@@ -163,33 +160,27 @@ class HostGalaxyComponent(Component):
         """
         
         # Calculate flux on this array
-        self._flux_arrays = np.zeros(len(data_spectrum.wavelengths)) 
+        self.flux_arrays = np.zeros(len(data_spectrum.wavelengths)) 
 
         # We'll eventually need to convolve these in constant 
         # velocity space, so rebin to equal log bins
         self.log_host = []
 
-        fnw = data_spectrum.flux_at_normalization_wavelength
+        fnw = data_spectrum.norm_wavelength_flux
 
 
 #TODO need to verify if this is necessary            
-        # This method lets you interpolate beyond the wavelength 
-        #coverage of the template if/when the data covers beyond it.  
-        # Function returns 0 outside the wavelength coverage of the template.
-        # To broaden in constant velocity space, you need to rebin the 
-        #templates to be in equal bins in log(lambda) space.
         for i,template in enumerate(self.host_gal):
-            equal_log_bins = np.linspace(min(np.log(template.wavelengths)), 
+            binned_wl = np.linspace(min(np.log(template.wavelengths)), 
                                          max(np.log(template.wavelengths)), 
                                          num = len(template.wavelengths))
 #TODO need to verify Spectrum method name
             # Bin template fluxes in equal log bins
-            binned_template_flux = Spectrum.bin_spectrum(np.log(template.wavelengths), 
+            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths), 
                                                          template.flux, 
                                                          equal_log_bins)
 
             
-            binned_wl, binned_flux = equal_log_bins, binned_template_flux
             binned_spectrum = Spectrum.from_array(binned_flux, dispersion=binned_wl)
             self.log_host.append(binned_spectrum)
 #TODO need to verify Spectrum method name
@@ -233,10 +224,11 @@ class HostGalaxyComponent(Component):
                 ln_priors.append(-np.inf)
 
 #TODO why is this here? another prior is added
+# Can emcee handle another prior here? (Gisella to check)
         if np.sum(norm) <= np.max(self.norm_max):
-                ln_priors.append(0.0)
+            ln_priors.append(0.0)
         else:
-                ln_priors.append(-np.inf)
+            ln_priors.append(-np.inf)
         
         # Stellar dispersion parameter
         if self.stellar_disp_min < stellar_disp < self.stellar_disp_max:
@@ -261,32 +253,21 @@ class HostGalaxyComponent(Component):
             flux_arrays (): ?
         """
         
-        norm = []
-        for i in range(1, len(self.host_gal)+1):
-            norm.append(parameters[self.parameter_index("norm_{0}".format(i))])
-        stellar_disp = parameters[self.parameter_index("stellar_disp")]
-        parameters_host = norm
-        parameters_host.append(stellar_disp)
-
-        assert len(parameters_host) == self.parameter_count, \
-                "The wrong number of indices were provided: {0}".format(parameters)
-
         #Convolve to increase the velocity dispersion. Need to
         #consider it as an excess dispersion above that which
         #is intrinsic to the template. For the moment, the
         #implicit assumption is that each template has an
         #intrinsic velocity dispersion = 0 km/s.
-
-#TODO is norm meant ot be redefined here?
-        norm = []
-        conv_hosts = []
         
         # The next two parameters are lists of size len(self.host_gal)
-        norm_wl = spectrum.normalization_wavelength
+        norm_wl = spectrum.norm_wavelength
         c_kms = constants.c.to("km/s")
         log_norm_wl = np.log(norm_wl)
+# TODO, check on handling of dispersions
         tmpl_stellar_disp = PARS["hg_template_stellar_disp"] 
-        sigma_conv = (stellar_disp - tmpl_stellar_disp) / c_kms
+        stellar_disp = parameters[self.parameter_index("stellar_disp")]
+# TODO Gisella to check with Anthea to confirm below line vv
+        sigma_conv = np.sqrt(stellar_disp**2 - tmpl_stellar_disp**2) / c_kms
             
         # Want to smooth and convolve in log space, 
         # since d(log(lambda)) ~ dv/c and we can broaden 
@@ -299,6 +280,8 @@ class HostGalaxyComponent(Component):
             bin_size = spectrum.log_grid_spacing
 #TODO cross-check with Spectrum ^^
             sigma_norm = sigma_conv / bin_size
+#TODO Gisella to check with Anthea about kernel size vv
+
             sigma_size = PARS["hg_kernel_size_sigma"] * sigma_norm
 #TODO can we use astropy below vv
 #TODO check if astropy convultion speed has improved
@@ -321,16 +304,14 @@ class HostGalaxyComponent(Component):
             conv_host = Spectrum.bin_spectrum(self.log_host[i].wavelengths,
                                                          log_conv_host_flux,
                                                          np.log(spectrum.wavelengths))
-            conv_host_norm_flux = conv_host.flux_at_normalization_wavelength
+            conv_host_norm_flux = conv_host.norm_wavelength_flux
             
             # Find NaN errors early from dividing by zero.
 #TODO check below syntax vv
             conv_host_norm_flux = np.nan_to_num(conv_host_norm_flux)
-            conv_hosts.append(conv_host)
             
             # Scale normalization parameter to flux in template
-            norm.append(parameters[i] / conv_host_norm_flux) 
-            self._flux_arrays += norm[i] * conv_hosts[i]
+            self.flux_arrays += (parameters[i] / conv_host_norm_flux) * conv_host
 
-        return self._flux_arrays
+        return self.flux_arrays
 
