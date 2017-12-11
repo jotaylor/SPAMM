@@ -11,6 +11,7 @@ from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 import math
 from astropy import constants
+import glob
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
@@ -82,9 +83,9 @@ class HostGalaxyComponent(Component):
             self.host_gal (list): List of all host galaxy model Spectrum objects.
         """
 
-        template_list = glob.glob(os.path.join(host_galaxy_models, "*"))
+        template_list = glob.glob(os.path.join(PARS["host_templates"], "*"))
         assert len(template_list) != 0, \
-        "No host galaxy templates found in specified diretory {0}".format(host_galaxy_models)
+        "No host galaxy templates found in specified diretory {0}".format(PARS["host_templates"])
     
         self.host_gal = []
     
