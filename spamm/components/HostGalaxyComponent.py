@@ -105,10 +105,8 @@ class HostGalaxyComponent(Component):
                 host = Spectrum(0)
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
                 host.flux /=np.max(host.flux)
-                plt.plot(host.wavelengths, host.flux)
                 self.host_gal.append(host)
-        plt.show()
-        #exit()
+
         return self.host_gal
 
 #-----------------------------------------------------------------------------#
@@ -248,17 +246,17 @@ class HostGalaxyComponent(Component):
         stellar_disp = params[self.parameter_index("stellar_disp")]
         
         # Flat prior within the expected ranges.
-        #for i in range(len(self.host_gal)):
-        #    if self.norm_min < norm[i] < self.norm_max:
-        #        ln_priors.append(0.0)
-        #    else:
-        #        ln_priors.append(-np.inf)
+        for i in range(len(self.host_gal)):
+            if self.norm_min < norm[i] < self.norm_max:
+                ln_priors.append(0.0)
+            else:
+                ln_priors.append(-np.inf)
 
 #TODO why is this here? another prior is added
-        #if np.sum(norm) <= np.max(self.norm_max):
-        #        ln_priors.append(0.0)
-        #else:
-        #        ln_priors.append(-np.inf)
+        if np.sum(norm) <= np.max(self.norm_max):
+                ln_priors.append(0.0)
+        else:
+                ln_priors.append(-np.inf)
         
         # Stellar dispersion parameter
         if self.stellar_disp_min < stellar_disp < self.stellar_disp_max:
@@ -347,10 +345,6 @@ class HostGalaxyComponent(Component):
             
             conv_host.rebin_spectrum(np.log(spectrum.wavelengths))
             conv_host.wavelengths = spectrum.wavelengths # convert back into linear space
-            #plt.plot(np.exp(self.log_host[i].wavelengths),self.log_host[i].flux)
-            #plt.plot(conv_host.wavelengths,conv_host.flux)
-            #plt.show()
-            #exit()
             conv_host_norm_flux = conv_host.norm_wavelength_flux
             
             # Find NaN errors early from dividing by zero.
@@ -361,8 +355,6 @@ class HostGalaxyComponent(Component):
             # Scale normalization parameter to flux in template
             norm.append(parameters[i] / conv_host_norm_flux) 
             flux_arrays += norm[i] * conv_hosts[i].flux
-        #plt.plot(spectrum.wavelengths,flux_arrays)
-        #plt.show()
-        #exit()
+
         return flux_arrays
 
