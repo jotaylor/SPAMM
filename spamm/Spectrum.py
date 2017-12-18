@@ -7,6 +7,7 @@ import scipy
 import numpy as np
 from specutils.core.generic import Spectrum1DRef
 from astropy.units import Quantity
+from utils.rebin_spec import rebin_spec
 
 class Spectrum(Spectrum1DRef):
     '''
@@ -28,7 +29,8 @@ class Spectrum(Spectrum1DRef):
         if self._norm_wavelength is None:
             self._norm_wavelength = np.median(self.wavelengths)
         return self._norm_wavelength
-
+        
+    @property
     def norm_wavelength_flux(self):
         ''' Returns the flux at the normalization wavelength. '''
         if self._norm_wavelength_flux == None:
@@ -64,6 +66,24 @@ class Spectrum(Spectrum1DRef):
     def wavelengths(self, new_wl):
         self._wavelengths = new_wl
         self._dispersion = new_wl
+        
+    @property
+    def log_wave(self):
+        log_wave = np.log(self.wavelengths)
+        
+        return log_wave
+    
+    @property
+    def log_grid(self):
+        ln_wave = self.log_wave
+        log_grid_spacing = np.r_[ln_wave.min():ln_wave.max():1j*ln_wave.size]
+        
+        return log_grid_spacing
+    
+    @property
+    def log_grid_spacing(self):
+        
+        return self.log_grid[1]-self.log_grid[0]
 
     @property
     def flux(self):
@@ -79,4 +99,17 @@ class Spectrum(Spectrum1DRef):
         self._norm_wavelength_flux = None
 
 #    def bin_spectrum(self):
+    @property
+    def log_spectrum(self):
+        ln_wave  = self.log_wave
+        ln_wavenew = self.log_grid
+        
+        return rebin_spec(ln_wave,self.flux, ln_wavenew)
+        
+    def rebin_spectrum(self, wave_new):
+        rebin_flux = rebin_spec(self.wavelengths, self.flux, wave_new)
+        self.flux = rebin_flux
+        self.wavelengths = wave_new
+        return
+
 #! need to finalize this 

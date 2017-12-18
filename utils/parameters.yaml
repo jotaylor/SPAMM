@@ -3,9 +3,9 @@ emission_lines: ""
 ## Host Galaxy parameters##
 host_galaxy:
     boxcar_width: 5
-    hg_models: "/user/jotaylor/git/spamm/Data/HostModels"
-    hg_norm_min: None
-    hg_norm_max: None
+    hg_templates: "../Templates/Host_templates"
+    hg_norm_min: 0.0
+    hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30.
     hg_stellar_disp_max: 1000.
     hg_template_stellar_disp: 0.0

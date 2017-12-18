@@ -30,7 +30,7 @@ from spamm.components.MaskingComponent import Mask
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 500
+n_iterations = 5000
 
 # Use MPI to distribute the computations
 MPI = True 
@@ -45,10 +45,10 @@ MPI = True
 #To do: implement combined - Gisella - see tickets
 
 PL = False#True#
-HOST = False
+HOST = True#False#
 FE = False#True#
-BC =  True#False#
-BpC = True#False#
+BC =  False#True#
+BpC = False#True#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False

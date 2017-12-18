@@ -7,11 +7,13 @@ import scipy.interpolate
 import numpy as np
 import scipy.integrate
 from scipy import signal
+import matplotlib.pyplot as plt
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 import math
 from astropy import constants
 import glob
+import os
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
@@ -72,6 +74,14 @@ class HostGalaxyComponent(Component):
         """
         
         return False
+        
+#-----------------------------------------------------------------------------#
+    
+    @property
+    def native_wavelength_grid(self):### do we need this (I assume templates may have different spacing)
+        for template in self.host_gal:
+            template1grid = template.wavelengths
+        return template1grid
 
 #-----------------------------------------------------------------------------#
 
@@ -83,15 +93,15 @@ class HostGalaxyComponent(Component):
             self.host_gal (list): List of all host galaxy model Spectrum objects.
         """
 
-        template_list = glob.glob(os.path.join(PARS["host_templates"], "*"))
+        template_list = glob.glob(os.path.join(PARS["hg_templates"], "*"))
         assert len(template_list) != 0, \
-        "No host galaxy templates found in specified diretory {0}".format(PARS["host_templates"])
+        "No host galaxy templates found in specified diretory {0}".format(PARS["hg_templates"])
     
         self.host_gal = []
     
         for template_filename in template_list:
             with open(template_filename) as template_file:
-                host = Spectrum()
+                host = Spectrum(0)
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
                 self.host_gal.append(host)
 
@@ -153,7 +163,9 @@ class HostGalaxyComponent(Component):
 
         # The size parameter will force the result to be a numpy array - not the case
         # if the inputs are single-valued (even if in the form of an array)
-        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=len(self.host_gal))
+
+        
+        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max/len(self.host_gal), size=len(self.host_gal))
 
         stellar_disp_init = np.random.uniform(low=self.stellar_disp_min, high=self.stellar_disp_max)
 
@@ -176,8 +188,8 @@ class HostGalaxyComponent(Component):
         # velocity space, so rebin to equal log bins
         self.log_host = []
 
-        fnw = data_spectrum.flux_at_normalization_wavelength
-
+        nw = data_spectrum.norm_wavelength
+        fnw = data_spectrum.norm_wavelength_flux
 
 #TODO need to verify if this is necessary            
         # This method lets you interpolate beyond the wavelength 
@@ -186,29 +198,27 @@ class HostGalaxyComponent(Component):
         # To broaden in constant velocity space, you need to rebin the 
         #templates to be in equal bins in log(lambda) space.
         for i,template in enumerate(self.host_gal):
-            equal_log_bins = np.linspace(min(np.log(template.wavelengths)), 
-                                         max(np.log(template.wavelengths)), 
-                                         num = len(template.wavelengths))
+            
+            ln_wave = template.log_wave
+            equal_log_bins = template.log_grid
 #TODO need to verify Spectrum method name
             # Bin template fluxes in equal log bins
-            binned_template_flux = Spectrum.bin_spectrum(np.log(template.wavelengths), 
-                                                         template.flux, 
-                                                         equal_log_bins)
-
+#            binned_template_flux = Spectrum.bin_spectrum(np.log(template.wavelengths), 
+#                                                         template.flux, 
+#                                                         equal_log_bins)
+                                                         
             
-            binned_wl, binned_flux = equal_log_bins, binned_template_flux
-            binned_spectrum = Spectrum.from_array(binned_flux, dispersion=binned_wl)
+            binned_wl, binned_flux = equal_log_bins, template.log_spectrum
+            binned_spectrum = Spectrum(binned_flux)
+            binned_spectrum.dispersion=binned_wl
             self.log_host.append(binned_spectrum)
-#TODO need to verify Spectrum method name
-#TODO Do we rebin or interpolate here?
-            self.interp_host.append(Spectrum.bin_spectrum(template.wavelengths, 
-                                                              template.flux, 
-                                                              data_spectrum.wavelengths))
-            self.interp_norm_flux.append(np.interp(fnw, 
+#TODO need to verify Spectrum method name89
+            self.interp_norm_flux.append(np.interp(nw, 
                                                    template.wavelengths, 
                                                    template.flux,
                                                    left=0,
                                                    right=0))
+
 
 #-----------------------------------------------------------------------------#
 
@@ -234,7 +244,7 @@ class HostGalaxyComponent(Component):
         
         # Flat prior within the expected ranges.
         for i in range(len(self.host_gal)):
-            if self.norm_min[i] < norm[i] < self.norm_max[i]:
+            if self.norm_min < norm[i] < self.norm_max:
                 ln_priors.append(0.0)
             else:
                 ln_priors.append(-np.inf)
@@ -250,6 +260,8 @@ class HostGalaxyComponent(Component):
             ln_priors.append(0.0)
         else:
             ln_priors.append(-np.inf)
+            
+        #print('ln_priors',ln_priors)
         
         return ln_priors
 
@@ -289,7 +301,7 @@ class HostGalaxyComponent(Component):
         conv_hosts = []
         
         # The next two parameters are lists of size len(self.host_gal)
-        norm_wl = spectrum.normalization_wavelength
+        norm_wl = spectrum.norm_wavelength
         c_kms = constants.c.to("km/s")
         log_norm_wl = np.log(norm_wl)
         tmpl_stellar_disp = PARS["hg_template_stellar_disp"] 
@@ -307,16 +319,13 @@ class HostGalaxyComponent(Component):
 #TODO cross-check with Spectrum ^^
             sigma_norm = sigma_conv / bin_size
             sigma_size = PARS["hg_kernel_size_sigma"] * sigma_norm
+            sigma_size =np.round(sigma_size.value)
+            #check if odd number
+            if sigma_size%2 ==0:
+                sigma_size +=1
 #TODO can we use astropy below vv
-#TODO check if astropy convultion speed has improved
-            kernel = signal.gaussian(sigma_size, sigma_norm) / \
-                     (np.sqrt(2 * math.pi) * sigma_norm)
-            # Check to see if length of array is even. 
-            # If it is odd, remove last index
-            # fftwconvolution only works on even size arrays
-            if len(self.log_host[i].flux) % 2 != 0: 
-                self.log_host[i].flux = self.log_host[i].flux[:-1]
-                self.log_host[i].wavelengths = self.log_host[i].wavelengths[:-1]
+            kernel = signal.gaussian(sigma_size, sigma_norm.value) / \
+                     (np.sqrt(2 * math.pi) * sigma_norm.value)
             # Convolve flux (in log space) with gaussian broadening kernel
             log_conv_host_flux = np.convolve(self.log_host[i].flux, kernel,mode="same")
 
@@ -325,10 +334,14 @@ class HostGalaxyComponent(Component):
             # the left and right statements just set the flux value 
             # to zero if the specified log_norm_wl is outside the 
             #bounds of self.log_host[i].wavelengths
-            conv_host = Spectrum.bin_spectrum(self.log_host[i].wavelengths,
-                                                         log_conv_host_flux,
-                                                         np.log(spectrum.wavelengths))
-            conv_host_norm_flux = conv_host.flux_at_normalization_wavelength
+            
+            conv_host = Spectrum(0)
+            conv_host.flux = log_conv_host_flux
+            conv_host.wavelengths = self.log_host[i].wavelengths
+            
+            conv_host.rebin_spectrum(np.log(spectrum.wavelengths))
+            conv_host.wavelengths = spectrum.wavelengths # convert back into linear space
+            conv_host_norm_flux = conv_host.norm_wavelength_flux
             
             # Find NaN errors early from dividing by zero.
 #TODO check below syntax vv
@@ -337,7 +350,9 @@ class HostGalaxyComponent(Component):
             
             # Scale normalization parameter to flux in template
             norm.append(parameters[i] / conv_host_norm_flux) 
-            self._flux_arrays += norm[i] * conv_hosts[i]
-
+            self._flux_arrays += norm[i] * conv_hosts[i].flux
+        #plt.plot(spectrum.wavelengths,self._flux_arrays)
+        #plt.show()
+        #exit()
         return self._flux_arrays
 
