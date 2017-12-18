@@ -100,11 +100,15 @@ class HostGalaxyComponent(Component):
         self.host_gal = []
     
         for template_filename in template_list:
+            print(template_filename)
             with open(template_filename) as template_file:
                 host = Spectrum(0)
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
+                host.flux /=np.max(host.flux)
+                plt.plot(host.wavelengths, host.flux)
                 self.host_gal.append(host)
-
+        plt.show()
+        #exit()
         return self.host_gal
 
 #-----------------------------------------------------------------------------#
@@ -211,6 +215,7 @@ class HostGalaxyComponent(Component):
             binned_wl, binned_flux = equal_log_bins, template.log_spectrum
             binned_spectrum = Spectrum(binned_flux)
             binned_spectrum.dispersion=binned_wl
+
             self.log_host.append(binned_spectrum)
 #TODO need to verify Spectrum method name89
             self.interp_norm_flux.append(np.interp(nw, 
@@ -243,17 +248,17 @@ class HostGalaxyComponent(Component):
         stellar_disp = params[self.parameter_index("stellar_disp")]
         
         # Flat prior within the expected ranges.
-        for i in range(len(self.host_gal)):
-            if self.norm_min < norm[i] < self.norm_max:
-                ln_priors.append(0.0)
-            else:
-                ln_priors.append(-np.inf)
+        #for i in range(len(self.host_gal)):
+        #    if self.norm_min < norm[i] < self.norm_max:
+        #        ln_priors.append(0.0)
+        #    else:
+        #        ln_priors.append(-np.inf)
 
 #TODO why is this here? another prior is added
-        if np.sum(norm) <= np.max(self.norm_max):
-                ln_priors.append(0.0)
-        else:
-                ln_priors.append(-np.inf)
+        #if np.sum(norm) <= np.max(self.norm_max):
+        #        ln_priors.append(0.0)
+        #else:
+        #        ln_priors.append(-np.inf)
         
         # Stellar dispersion parameter
         if self.stellar_disp_min < stellar_disp < self.stellar_disp_max:
@@ -306,7 +311,8 @@ class HostGalaxyComponent(Component):
         log_norm_wl = np.log(norm_wl)
         tmpl_stellar_disp = PARS["hg_template_stellar_disp"] 
         sigma_conv = (stellar_disp - tmpl_stellar_disp) / c_kms
-            
+        
+        flux_arrays = np.zeros(np.size(spectrum.wavelengths))
         # Want to smooth and convolve in log space, 
         # since d(log(lambda)) ~ dv/c and we can broaden 
         # based on a constant velocity width
@@ -341,6 +347,10 @@ class HostGalaxyComponent(Component):
             
             conv_host.rebin_spectrum(np.log(spectrum.wavelengths))
             conv_host.wavelengths = spectrum.wavelengths # convert back into linear space
+            #plt.plot(np.exp(self.log_host[i].wavelengths),self.log_host[i].flux)
+            #plt.plot(conv_host.wavelengths,conv_host.flux)
+            #plt.show()
+            #exit()
             conv_host_norm_flux = conv_host.norm_wavelength_flux
             
             # Find NaN errors early from dividing by zero.
@@ -350,9 +360,9 @@ class HostGalaxyComponent(Component):
             
             # Scale normalization parameter to flux in template
             norm.append(parameters[i] / conv_host_norm_flux) 
-            self._flux_arrays += norm[i] * conv_hosts[i].flux
-        #plt.plot(spectrum.wavelengths,self._flux_arrays)
+            flux_arrays += norm[i] * conv_hosts[i].flux
+        #plt.plot(spectrum.wavelengths,flux_arrays)
         #plt.show()
         #exit()
-        return self._flux_arrays
+        return flux_arrays
 
