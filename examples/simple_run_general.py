@@ -27,10 +27,19 @@ from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
 from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
+from pysynphot import observation
+from pysynphot import spectrum as pysynspec
+
+
+def pysnblueshift(z,wavelengths,flux):
+    z_blue = 1.0/(1.+z)-1.
+    sp = pysynspec.ArraySourceSpectrum(wave=wavelengths, flux=flux)
+    sp_rest = sp.redshift(z_blue)
+    return sp_rest.wave,sp_rest.flux
 
 #emcee parameters
-n_walkers = 30
-n_iterations = 1000#5000
+n_walkers = 50
+n_iterations = 500
 
 # Use MPI to distribute the computations
 MPI = True 
@@ -45,10 +54,10 @@ MPI = True
 #To do: implement combined - Gisella - see tickets
 
 PL = False#True#
-HOST = True#False#
+HOST = False#True#
 FE = False#True#
-BC =  False#True#
-BpC = False#True#
+BC =  True#False#
+BpC = True#False#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
@@ -66,7 +75,7 @@ if PL:
     datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
 
 if HOST:
-    datafile = "../Data/FakeData/fake_host_spectrum.dat"
+    datafile = "../Data/FakeData/Host_comp/s06_werr.dat"#"../Data/FakeData/fake_host_spectrum.dat"
 
 if FE:
     #datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
@@ -74,13 +83,19 @@ if FE:
     #datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
 
 if BC:
-    datafile = "../Data/FakeData/BaC_comp/FakeBac01_deg.dat"
+    datafile = "../Data/FakeData/BaC_comp/FakeBac02_deg.dat"
 if BC and BpC:
-    datafile = "../Data/FakeData/BaC_comp/FakeBac_lines01_deg.dat"
+    datafile = "../Data/FakeData/BaC_comp/FakeBac_lines02_deg.dat"
 
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
+z = 0.2
+# wavelengths, flux = pysnblueshift(z,wavelengths_obs,flux_obs)
+# wavelengths, flux_err = pysnblueshift(z,wavelengths_obs,flux_err_obs)
+wavelengths/=1.+z
+flux_err /=np.max(flux)
+flux /=np.max(flux)
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
@@ -134,3 +149,4 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 with gzip.open('model.pickle.gz', 'wb') as model_output:
     model_output.write(pickle.dumps(model))
 
+os.system('say "Done"')

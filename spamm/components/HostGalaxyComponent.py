@@ -105,7 +105,6 @@ class HostGalaxyComponent(Component):
                 host = Spectrum(0)
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
                 self.host_gal.append(host)
-
         return self.host_gal
 
 #-----------------------------------------------------------------------------#

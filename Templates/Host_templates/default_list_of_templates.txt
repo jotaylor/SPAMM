@@ -1,8 +1,0 @@
-####
-# Templates used by the HyperZ code. Not final, but useful for
-# initial testing
-####
-../Host_templates/CWW_E_ext.sed
-../Host_templates/CWW_Im_ext.sed
-../Host_templates/CWW_Sbc_ext.sed
-../Host_templates/CWW_Scd_ext.sed

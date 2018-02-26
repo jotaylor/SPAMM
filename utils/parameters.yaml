@@ -7,7 +7,7 @@ host_galaxy:
     hg_norm_min: 0.0
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30.
-    hg_stellar_disp_max: 1000.
+    hg_stellar_disp_max: 2000.
     hg_template_stellar_disp: 0.0
     hg_kernel_size_sigma: 10
 
@@ -28,5 +28,5 @@ nuclear_continuum:
 
 balmer_continuum:
     bc_lines_min: 3
-    bc_lines_max: 50
+    bc_lines_max: 400
     bc_line_type: "lorentzian"
