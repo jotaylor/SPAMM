@@ -8,6 +8,8 @@ from scipy import signal
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 from astropy.constants import c
+import os
+import glob
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
@@ -75,7 +77,7 @@ class FeComponent(Component):
 
         for template_filename in template_list:
             with open(template_filename) as template_file:
-                fe = Spectrum()
+                fe = Spectrum(0)
                 fe.wavelengths, fe.flux = np.loadtxt(template_filename, unpack=True)
                 self.fe_templ.append(fe)
 
@@ -175,22 +177,17 @@ class FeComponent(Component):
         fnw = data_spectrum.norm_wavelength_flux
 
         for i,template in enumerate(self.fe_templ):
-            binned_wl = np.linspace(min(np.log(template.wavelengths)), 
-                                         max(np.log(template.wavelengths)), 
-                                         num=len(template.wavelengths))
+            ln_wave = template.log_wave
+            equal_log_bins = template.log_grid
 # TODO need to verify Spectrum method name
-            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths),
-                                                         template.flux,
-                                                         equal_log_bins)
+            binned_wl, binned_flux = equal_log_bins, template.log_spectrum
+            binned_spectrum = Spectrum(binned_flux)
+            binned_spectrum.dispersion=binned_wl
 
-            binned_spectrum = Spectrum.from_array(binned_flux, dispersion=binned_wl)
-            self.log_fe.append(binned_spectrum)
-
-            self.interp_fe.append(Spectrum.bin_spectrum(template.wavelengths,
-                                                              template.flux,
-                                                              data_spectrum.wavelengths))
-            self.interp_norm_flux.append(np.interp(fnw,
-                                                   template.wavelengths,
+            self.log_host.append(binned_spectrum)
+#TODO need to verify Spectrum method name89
+            self.interp_norm_flux.append(np.interp(nw, 
+                                                   template.wavelengths, 
                                                    template.flux,
                                                    left=0,
                                                    right=0))
@@ -215,8 +212,8 @@ class FeComponent(Component):
         width = []
 
         for i in range(1, len(self.fe_templ)+1):
-            norm.append(params[self.parameter_index("norm_{0}".format(i))])
-            width.append(params[self.parameter_index("fe_width_{0}".format(i))]
+            norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
+            width.append(params[self.parameter_index("fe_width_{0}".format(i))])
 
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
@@ -248,15 +245,14 @@ class FeComponent(Component):
             flux_arrays (): ?                                                          
         """
 
-        stellar_disp = parameters[self.parameter_index("stellar_disp")]
         
         # The next two parameters are lists of size len(self.templates)
         norm_wl = spectrum.norm_wavelength
         c_kms = constants.c.to("km/s")
         log_norm_wl = np.log(norm_wl)
 
-        for i in range(len(self.fe_templ)):	
-            width = parameters[self.parameter_index("fe_width_{0}".format(i)]
+        for i in range(len(self.fe_templ)):
+            width = parameters[self.parameter_index("fe_width_{0}".format(i))]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 

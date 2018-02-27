@@ -20,7 +20,7 @@ sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
-from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
+#from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
@@ -44,9 +44,9 @@ MPI = True
 #Fe and host galaxy components need more work - see tickets
 #To do: implement combined - Gisella - see tickets
 
-PL = True#False#
+PL = False#True#
 HOST = False
-FE = False#True#
+FE = True#False#
 BC =  False#True#
 BpC = False#True#
 Calzetti_ext = False#True#
@@ -54,7 +54,7 @@ SMC_ext = False
 MW_ext = False
 AGN_ext = False
 LMC_ext = False
-maskType="Continuum"#"Emission lines reduced"#None#
+maskType=None#"Continuum"#"Emission lines reduced"#
 
 show_plots = False
 

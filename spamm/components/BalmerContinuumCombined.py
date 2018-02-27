@@ -655,7 +655,7 @@ class BalmerCombined(Component):
         blackbody = blackbody_lambda(spectrum.wavelengths, Te)
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms
-        tau = tauBE*(sp_wavel/balmer_edge.)**3
+        tau = tauBE*(sp_wavel/balmer_edge)**3
         absorption = 1 - np.exp(-tau)
         bc_flux = absorption * blackbody
     

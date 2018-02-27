@@ -14,7 +14,6 @@ from astropy import constants
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
-from utils.fftwconvolve_1d import fftwconvolve_1d
 from utils.find_nearest_index import find_nearest
 from utils.parse_pars import parse_pars
 
@@ -85,7 +84,7 @@ class HostGalaxyComponent(Component):
     
         for template_filename in template_list:
             with open(template_filename) as template_file:
-                host = Spectrum()
+                host = Spectrum(0)
                 host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
                 self.host_gal.append(host)
 
