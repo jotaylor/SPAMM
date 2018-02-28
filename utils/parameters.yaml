@@ -14,13 +14,14 @@ host_galaxy:
 boxcar_width: 5
 
 ## NuclearContnuumComponent power law parameters ##
+## WARNING: If using broken power law, need to have estimation of priors otherwise model cannot converge ##
 nuclear_continuum:
     boxcar_width: 5
     broken_pl: False 
     pl_slope_min: -3.
     pl_slope_max: 3.
     pl_norm_min: 0.
-    pl_norm_max: "max_flux"
+    pl_norm_max: "max_flux" #10*max flux
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
