@@ -103,7 +103,6 @@ class Spectrum(Spectrum1DRef):
     def log_spectrum(self):
         ln_wave  = self.log_wave
         ln_wavenew = self.log_grid
-        
         return rebin_spec(ln_wave,self.flux, ln_wavenew)
         
     def rebin_spectrum(self, wave_new):

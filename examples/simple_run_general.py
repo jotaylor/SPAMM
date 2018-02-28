@@ -30,10 +30,10 @@ from spamm.components.MaskingComponent import Mask
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 500
+n_iterations = 50
 
 # Use MPI to distribute the computations
-MPI = True 
+MPI = False
 
 #Select your component options
 # PL = nuclear continuum

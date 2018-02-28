@@ -176,7 +176,7 @@ class FeComponent(Component):
         # so rebin to equal log bins
         self.log_fe = []
         
-        nw = data_spectrum.norm_wavelength
+        nw = data_spectrum.wavelengths
         fnw = data_spectrum.norm_wavelength_flux
 
         for i,template in enumerate(self.fe_templ):
@@ -189,6 +189,7 @@ class FeComponent(Component):
 
             self.log_fe.append(binned_spectrum)
 #TODO need to verify Spectrum method name89
+            print('np.size',np.shape(binned_spectrum.flux),np.shape(binned_spectrum.wavelengths))
             self.interp_norm_flux.append(np.interp(nw, 
                                                    template.wavelengths, 
                                                    template.flux,
@@ -223,8 +224,7 @@ class FeComponent(Component):
         for i in range(1, len(self.fe_templ)+1):
             norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
             width.append(params[self.parameter_index("fe_width_{0}".format(i))])
-        print('normpriors',norm)
-
+        
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
             if self.norm_min < norm[i] < self.norm_max:
@@ -236,7 +236,7 @@ class FeComponent(Component):
                 ln_priors.append(0.)
             else:
                 ln_priors.append(-np.inf)
-
+        
         return ln_priors
 
 #-----------------------------------------------------------------------------#
@@ -256,7 +256,6 @@ class FeComponent(Component):
         """
         
         norm = []
-        conv_fes = []
 
         # The next two parameters are lists of size len(self.templates)
         norm_wl = spectrum.norm_wavelength
@@ -286,7 +285,6 @@ class FeComponent(Component):
 
             # Convolve flux (in log space) with gaussian broadening kernel
             log_conv_fe_flux = np.convolve(self.log_fe[i].flux, kernel,mode="same")
-
 #TODO need to check Spectrum.bin_spectrum()
             # Shift spectrum back into linear space.
             # the left and right statements just set the flux value 
@@ -296,19 +294,21 @@ class FeComponent(Component):
             conv_fe = Spectrum(0)
             conv_fe.flux = log_conv_fe_flux
             conv_fe.wavelengths = self.log_fe[i].wavelengths
-            print('size',np.shape(conv_fe.wavelengths),np.shape(spectrum.wavelengths))
+            
             conv_fe.rebin_spectrum(np.log(spectrum.wavelengths))
             conv_fe.wavelengths = spectrum.wavelengths # convert back into linear space
-            conv_fe_norm_flux = conv_fe.norm_wavelength_flux
-            conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
-            conv_fes.append(conv_fe)
+            
+            # norm flux is tricky as some have very short wavelenths coverage compared to data spectrum and this value may be 0.0
+            #conv_fe_norm_flux = conv_fe.norm_wavelength_flux
+            #print('conv_fe_norm_flux',conv_fe_norm_flux)
+            #conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
+            #print('conv_fe_norm_flux',conv_fe_norm_flux)
 
-            norm.append(parameters[self.parameter_index("fe_norm_{0}".format(i+1))] / conv_fe_norm_flux) 
-            norm = norm[0]
-            flux_arrays += norm[i] * conv_fes[i].flux
+            norm.append(parameters[self.parameter_index("fe_norm_{0}".format(i+1))]) #/ conv_fe_norm_flux) 
+            flux_arrays += norm[i] * conv_fe.flux
 
 
-
+            #print('flux',norm[i],np.max(conv_fe.flux))
 #            print('size_norm',np.shape(parameters[self.parameter_index("fe_norm_{0}".format(i))]),np.shape(conv_fe_norm_flux),np.shape(conv_fe[i].flux))
 #            # Scale normalization parameter to flux in template
 #            flux_arrays += (parameters[self.parameter_index("fe_norm_{0}".format(i))] / conv_fe_norm_flux) * conv_fe[i].flux
