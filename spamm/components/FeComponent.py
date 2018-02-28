@@ -8,6 +8,9 @@ from scipy import signal
 from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 from astropy.constants import c
+import glob
+import os
+import math
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
@@ -49,6 +52,8 @@ class FeComponent(Component):
         super(FeComponent, self).__init__()
 
         self.load_templates()
+        self.model_parameter_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.fe_templ)+1)]
+        self.model_parameter_names.append("fe_width") 
         self.interp_fe = []
         self.interp_norm_flux = []
         self.name = "FeForest"
@@ -75,28 +80,11 @@ class FeComponent(Component):
 
         for template_filename in template_list:
             with open(template_filename) as template_file:
-                fe = Spectrum()
-                fe.wavelengths, fe.flux = np.loadtxt(template_filename, unpack=True)
+                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+                fe = Spectrum.from_array(flux)
+                fe.dispersion = wavelengths 
+
                 self.fe_templ.append(fe)
-
-#-----------------------------------------------------------------------------#
-
-    def model_parameter_names(self):
-        """
-        Returns a list of model parameter names.
-        Since the number of parameters depends on the number of templates (only
-        known at run time), this must be provided by a method.
-
-        The parameters are normalization, one for each template, 
-        followed by FWHM of each template.
-       
-        Returns:
-            list (list): Parameter names.
-        """
-       
-        par_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.templates)+1)] 
-        par_names2 = ["fe_width_{0}".format(x) for x in range(1, len(self.templates)+1)] 
-        return par_names+par_names2
 
 #-----------------------------------------------------------------------------#
 
@@ -172,23 +160,37 @@ class FeComponent(Component):
         # so rebin to equal log bins
         self.log_fe = []
 
-        fnw = data_spectrum.norm_wavelength_flux
+        fnw = data_spectrum.norm_wavelength_flux()
 
         for i,template in enumerate(self.fe_templ):
             binned_wl = np.linspace(min(np.log(template.wavelengths)), 
                                          max(np.log(template.wavelengths)), 
                                          num=len(template.wavelengths))
 # TODO need to verify Spectrum method name
-            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths),
-                                                         template.flux,
-                                                         equal_log_bins)
+#            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths),
+#                                                         template.flux,
+#                                                         equal_log_bins)
+            equal_log_bins = np.linspace(min(np.log(template.wavelengths)), 
+                                         max(np.log(template.wavelengths)), 
+                                         num = len(template.wavelengths))
+            binned_flux = rebin_spec(np.log(template.wavelengths),
+                                     template.flux,
+                                     equal_log_bins)
 
-            binned_spectrum = Spectrum.from_array(binned_flux, dispersion=binned_wl)
+            
+            binned_spectrum = Spectrum.from_array(binned_flux)
+            binned_spectrum.dispersion = binned_wl
             self.log_fe.append(binned_spectrum)
+#            self.interp_fe.append(Spectrum.bin_spectrum(template.wavelengths,
+#                                                              template.flux,
+#                                                              data_spectrum.wavelengths))
+            
+            binned_flux2 = rebin_spec(template.wavelengths,
+                                     template.flux,
+                                     data_spectrum.wavelengths)
 
-            self.interp_fe.append(Spectrum.bin_spectrum(template.wavelengths,
-                                                              template.flux,
-                                                              data_spectrum.wavelengths))
+            self.interp_fe.append(binned_flux2)
+            
             self.interp_norm_flux.append(np.interp(fnw,
                                                    template.wavelengths,
                                                    template.flux,
@@ -212,23 +214,22 @@ class FeComponent(Component):
         ln_priors = []
 
         norm = []
-        width = []
 
         for i in range(1, len(self.fe_templ)+1):
-            norm.append(params[self.parameter_index("norm_{0}".format(i))])
-            width.append(params[self.parameter_index("fe_width_{0}".format(i))]
+            norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
+        
+        width = params[self.parameter_index("fe_width")]
 
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
-            if self.norm_min[i] < norm[i] < self.norm_max[i]:
+            if self.norm_min < norm[i] < self.norm_max:
                 ln_priors.append(0.0)
             else:
                 ln_priors.append(-np.inf)
-        for i in range(len(self.fe_templ)):
-            if self.width_min[i] < width[i] < self.width_max[i]:
-                ln_priors.append(0.)
-            else:
-                ln_priors.append(-np.inf)
+        if self.width_min < width < self.width_max:
+            ln_priors.append(0.)
+        else:
+            ln_priors.append(-np.inf)
 
         return ln_priors
 
@@ -250,13 +251,13 @@ class FeComponent(Component):
 
         stellar_disp = parameters[self.parameter_index("stellar_disp")]
         
-        # The next two parameters are lists of size len(self.templates)
+        # The next two parameters are lists of size len(self.fe_templ)
         norm_wl = spectrum.norm_wavelength
-        c_kms = constants.c.to("km/s")
+        c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
 
+        width = parameters[self.parameter_index("fe_width")]
         for i in range(len(self.fe_templ)):	
-            width = parameters[self.parameter_index("fe_width_{0}".format(i)]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
@@ -268,19 +269,21 @@ class FeComponent(Component):
             sigma_conv = np.sqrt(width**2 - self.templ_width**2) / \
                          (c_kms * 2.*np.sqrt(2.*np.log(2.)))
 
-            bin_size = spectrum.log_grid_spacing
+
+            bin_size = self.log_fe[i].wavelengths[2] - self.log_fe[i].wavelengths[1]
 #TODO cross-check with Spectrum ^^
-            sigma_norm = sigma_conv / bin_size
+            sigma_norm = int(sigma_conv / bin_size)
             sigma_size = PARS["fe_kernel_size_sigma"] * sigma_norm
             kernel = signal.gaussian(sigma_size, sigma_norm) / \
                      (np.sqrt(2 * math.pi) * sigma_norm)
-
+            
             # Check to see if length of array is even. 
             # If it is odd, remove last index
             # fftwconvolution only works on even size arrays
             if len(self.log_fe[i].flux) % 2 != 0:
                 self.log_fe[i].flux = self.log_fe[i].flux[:-1]
                 self.log_fe[i].wavelengths = self.log_fe[i].wavelengths[:-1]
+
             # Convolve flux (in log space) with gaussian broadening kernel
             log_conv_fe_flux = fftwconvolve_1d(self.log_fe[i].flux, kernel)
 
@@ -289,10 +292,16 @@ class FeComponent(Component):
             # the left and right statements just set the flux value 
             # to zero if the specified log_norm_wl is outside the 
             #bounds of self.log_fe[i].wavelengths
-            conv_fe = Spectrum.bin_spectrum(self.log_fe[i].wavelengths,
-                                                         log_conv_fe_flux,
-                                                         np.log(spectrum.wavelengths))
-            conv_fe_norm_flux = conv_fe.norm_wavelength_flux
+#            conv_fe = Spectrum.bin_spectrum(self.log_fe[i].wavelengths,
+#                                                         log_conv_fe_flux,
+#                                                         np.log(spectrum.wavelengths))
+            conv_fe = rebin_spec(self.log_fe[i].wavelengths,
+                                 log_conv_fe_flux,
+                                 np.log(spectrum.wavelengths))
+            conv_fe_spec = Spectrum.from_array(data=conv_fe)
+            conv_fe_spec.dispersion = np.log(spectrum.wavelengths)
+
+            conv_fe_norm_flux = conv_fe_spec.norm_wavelength_flux()
 
             # Find NaN errors early from dividing by zero.
 #TODO check below syntax vv
