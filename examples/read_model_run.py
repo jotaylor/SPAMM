@@ -50,7 +50,7 @@ try:
 except UnicodeDecodeError:
     model = pickle.loads(gzip.open(opts.model_filename).read(), encoding="latin1")
 
-samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
+samples = model.sampler.chain[:, 20:, :].reshape((-1, model.total_parameter_count))
 
 #rc('font', **{'family':'serif','serif':['Palatino'],'size'   : 24})
 #rc('text', usetex=True)           

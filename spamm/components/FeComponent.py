@@ -82,7 +82,6 @@ class FeComponent(Component):
                 fe = Spectrum(0)
                 fe.wavelengths, fe.flux = np.loadtxt(template_filename, unpack=True)
                 self.fe_templ.append(fe)
-
 #-----------------------------------------------------------------------------#
     @property
     def model_parameter_names(self):
@@ -299,12 +298,14 @@ class FeComponent(Component):
             conv_fe.wavelengths = spectrum.wavelengths # convert back into linear space
             
             # norm flux is tricky as some have very short wavelenths coverage compared to data spectrum and this value may be 0.0
-            #conv_fe_norm_flux = conv_fe.norm_wavelength_flux
+            conv_fe_norm_flux = np.median(conv_fe.flux[conv_fe.flux>0])
             #print('conv_fe_norm_flux',conv_fe_norm_flux)
-            #conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
+            conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
             #print('conv_fe_norm_flux',conv_fe_norm_flux)
 
-            norm.append(parameters[self.parameter_index("fe_norm_{0}".format(i+1))]) #/ conv_fe_norm_flux) 
+            norm.append(parameters[self.parameter_index("fe_norm_{0}".format(i+1))] / conv_fe_norm_flux) 
+            #plt.plot(conv_fe.wavelengths,norm[i] * conv_fe.flux)
+            #plt.show()
             flux_arrays += norm[i] * conv_fe.flux
 
 
@@ -312,5 +313,5 @@ class FeComponent(Component):
 #            print('size_norm',np.shape(parameters[self.parameter_index("fe_norm_{0}".format(i))]),np.shape(conv_fe_norm_flux),np.shape(conv_fe[i].flux))
 #            # Scale normalization parameter to flux in template
 #            flux_arrays += (parameters[self.parameter_index("fe_norm_{0}".format(i))] / conv_fe_norm_flux) * conv_fe[i].flux
-
+        #exit()
         return flux_arrays

@@ -83,6 +83,8 @@ if BC and BpC:
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
+z = 0.5
+wavelengths/=1.+z
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
 spectrum.mask=mask
 spectrum.dispersion = wavelengths#*units.angstrom
