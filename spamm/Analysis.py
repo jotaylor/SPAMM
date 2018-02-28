@@ -100,7 +100,7 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
         chain = samples[:,i]
         ax = fig.add_subplot(num_params, 1, i+1)
         ax.hist(chain, boxes)
-        if params not None:
+        if params is not None:
             ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
             ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
         ax.set_xlabel(labels[i])
@@ -136,10 +136,10 @@ def plot_spectra(model, samples):
         plt.hold(True)
         plt.plot(data_spectrum.wavelengths, model_spectrum)
 
-    plt.hold(False)
-    plt.draw()
-    plt.ioff()
-    plt.show()
+#    plt.hold(False)
+#    plt.draw()
+#    plt.ioff()
+#    plt.show()
 
 
 
