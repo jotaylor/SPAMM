@@ -277,10 +277,10 @@ class Model(object):
             pool.close()
 
         else:
-        	self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-        	                                     dim=len(walkers_matrix[0]),
-        	                                     lnpostfn=ln_posterior, args=[self],
-        	                                     threads=1)
+            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                                 dim=len(walkers_matrix[0]),
+                                                 lnpostfn=ln_posterior, args=[self],
+                                                 threads=1)
         
         #self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
         self.sampler.run_mcmc(walkers_matrix, n_iterations)
