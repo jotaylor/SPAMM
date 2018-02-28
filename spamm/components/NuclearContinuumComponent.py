@@ -34,12 +34,15 @@ class NuclearContinuumComponent(Component):
         wave_break_max ():
 
     """
-    def __init__(self):
+    def __init__(self, broken=None):
         super().__init__()
         
         self.name = "Nuclear"
 
-        self.broken_pl = PARS["broken_pl"]
+        if broken is None:
+            self.broken_pl = PARS["broken_pl"]
+        else:
+            self.broken_pl = broken
         self.model_parameter_names = list()
         
         if not self.broken_pl:
@@ -90,14 +93,14 @@ class NuclearContinuumComponent(Component):
 
         pl_init = []
         if self.norm_max == "max_flux":
-            self.norm_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+            self.norm_max = 10. * max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
 
         if self.broken_pl:
             size = 2
             if self.wave_break_min == "min_wl":
-                self.wave_break_min = min(spectrum.wavelength)
+                self.wave_break_min = min(spectrum.wavelengths)
             if self.wave_break_max == "max_wl": 
-                self.wave_break_max = max(spectrum.wavelength)
+                self.wave_break_max = max(spectrum.wavelengths)
             wave_break_init = np.random.uniform(low=self.wave_break_min, 
                                                      high=self.wave_break_max)
             pl_init.append(wave_break_init)
@@ -136,7 +139,7 @@ class NuclearContinuumComponent(Component):
 
         if self.broken_pl:
             wave_break = params[self.parameter_index("wave_break")]
-            if self.wave_break_min < wave_break < wave_break_max:
+            if self.wave_break_min < wave_break < self.wave_break_max:
                 ln_priors.append(0.)
             else:
                 ln_priors.append(-np.inf) # Arbitrarily small number
