@@ -65,7 +65,7 @@ class Component(with_metaclass(ABCMeta, object)):
 
         @param params
         '''
-
+    @property
     def native_wavelength_grid(self):
         '''
         Returns the wavelength grid native to this component.

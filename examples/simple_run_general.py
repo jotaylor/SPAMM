@@ -30,7 +30,7 @@ from spamm.components.MaskingComponent import Mask
 
 #emcee parameters
 n_walkers = 30
-n_iterations = 50
+n_iterations = 100
 
 # Use MPI to distribute the computations
 MPI = False
@@ -46,9 +46,9 @@ MPI = False
 
 PL = False#True#
 HOST = False
-FE = True#False#
-BC =  False#True#
-BpC = False#True#
+FE = False#True#False#
+BC =  True#False#
+BpC = True#False#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
@@ -83,7 +83,7 @@ if BC and BpC:
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
-z = 0.5
+z = 0.
 wavelengths/=1.+z
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
 spectrum.mask=mask
