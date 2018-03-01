@@ -28,8 +28,8 @@ nuclear_continuum:
 ## Balmer Continuum ##    
 balmer_continuum:
     bc_line_type: "gaussian" # or "lorentzian"
-    bc_lines_min: 5. #km/s
-    bc_lines_max: 400. #km/s
+    bc_lines_min: 5 #km/s
+    bc_lines_max: 400 #km/s
 
 ## Fe Component ##
 fe_forest:
