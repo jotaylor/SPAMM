@@ -55,7 +55,7 @@ class BalmerCombined(Component):
         self.model_parameter_names.append("lwidth")
         
         self.model_parameter_names.append("logNe")
-        self.model_parameter_names.append("lscale")
+#        self.model_parameter_names.append("lscale")
         
         self._norm_wavelength =  None
         
@@ -77,8 +77,8 @@ class BalmerCombined(Component):
         self.logNe_min = None
         self.logNe_max = None
         
-        self.lscale_min = None
-        self.lscale_max = None
+#        self.lscale_min = None
+#        self.lscale_max = None
         
         self.BC = BalmerContinuum
         self.BpC = BalmerPseudocContinuum
@@ -141,14 +141,14 @@ class BalmerCombined(Component):
         logNe_init = np.random.uniform(low=self.logNe_min,
                         high=self.logNe_max)
                         
-        if self.lscale_min == None or self.lscale_max == None:
-            self.lscale_min = 0
-            self.lscale_max = 2
-        lscale_init = np.random.uniform(low=self.lscale_min,
-                        high=self.lscale_max)
+#        if self.lscale_min == None or self.lscale_max == None:
+#            self.lscale_min = 0
+#            self.lscale_max = 2
+#        lscale_init = np.random.uniform(low=self.lscale_min,
+#                        high=self.lscale_max)
 
 
-        return [normalization_init, Te_init, tauBE_init,loffset_init,lwidth_init,logNe_init,lscale_init]
+        return [normalization_init, Te_init, tauBE_init,loffset_init,lwidth_init,logNe_init]#,lscale_init]
 
 #-----------------------------------------------------------------------------#
 
@@ -171,7 +171,7 @@ class BalmerCombined(Component):
         loffset       = params[self.parameter_index("loffset")]
         lwidth        = params[self.parameter_index("lwidth")]
         logNe         = params[self.parameter_index("logNe")]
-        lscale        = params[self.parameter_index("lscale")]
+#        lscale        = params[self.parameter_index("lscale")]
         
 
         
@@ -206,10 +206,10 @@ class BalmerCombined(Component):
         else:
             ln_priors.append(-np.inf)
             
-        if self.lscale_min < lscale < self.lscale_max:
-            ln_priors.append(0)
-        else:
-            ln_priors.append(-np.inf)
+#        if self.lscale_min < lscale < self.lscale_max:
+#            ln_priors.append(0)
+#        else:
+#            ln_priors.append(-np.inf)
 
         return ln_priors
         
@@ -377,7 +377,7 @@ class BalmerCombined(Component):
         loffset       = parameters[self.parameter_index("loffset")]
         lwidth        = parameters[self.parameter_index("lwidth")]
         logNe         = parameters[self.parameter_index("logNe")]
-        lscale         = parameters[self.parameter_index("lscale")]
+#        lscale         = parameters[self.parameter_index("lscale")]
     
         c_kms = c.to("km/s")
         edge_wl = balmer_edge*(1 - loffset/c_kms.value)
@@ -394,7 +394,7 @@ class BalmerCombined(Component):
         fnorm = bpc_flux[norm_index]
         bpc_flux[spectrum.wavelengths <= spectrum.wavelengths[norm_index]] = 0
         bpc_flux *= normalization/fnorm
-        bpc_flux *= lscale
+#        bpc_flux *= lscale
     
         return bpc_flux
     
