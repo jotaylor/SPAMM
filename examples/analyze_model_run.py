@@ -30,7 +30,7 @@ import numpy as np
 
 import triangle
 
-sys.path.append(os.path.abspath("../source"))
+sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
