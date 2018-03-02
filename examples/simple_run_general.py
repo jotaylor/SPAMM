@@ -29,8 +29,8 @@ from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
 
 #emcee parameters
-n_walkers = 30
-n_iterations = 100
+n_walkers = 50
+n_iterations = 200
 
 # Use MPI to distribute the computations
 MPI = False
@@ -74,17 +74,19 @@ if FE:
     #datafile = "../Fe_templates/FeSimdata_BevWills_0p05.dat"
 
 if BC:
-    datafile = "../Data/FakeData/BaC_comp/FakeBac01_deg.dat"
+    datafile = "../Data/FakeData/BaC_comp/FakeBac02_deg.dat"
 if BC and BpC:
-    datafile = "../Data/FakeData/BaC_comp/FakeBac_lines01_deg.dat"
+    datafile = "../Data/FakeData/BaC_comp/FakeBac_lines02_deg.dat"
 
 
 # do you think there will be any way to open generic fits file and you specify hdu, npix, midpix, wavelength stuff
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
-z = 0.
+z = 0.2
 wavelengths/=1.+z
+flux_err /=np.max(flux)
+flux /=np.max(flux)
 #spectrum = Spectrum(maskType="Emission lines reduced")#"Cont+Fe")#
 spectrum.mask=mask
 spectrum.dispersion = wavelengths#*units.angstrom
