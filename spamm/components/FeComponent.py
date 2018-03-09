@@ -196,7 +196,7 @@ class FeComponent(Component):
                                                    template.flux,
                                                    left=0,
                                                    right=0))
-            print("INITIALIZE: {} {}".format(min(log_fe_flux), max(log_fe_flux)))
+
 #-----------------------------------------------------------------------------#
 
     def ln_priors(self, params):
@@ -309,6 +309,4 @@ class FeComponent(Component):
 
             # Scale normalization parameter to flux in template
             self.flux_arrays += (parameters[i] / conv_fe_norm_flux) * conv_fe_flux
-            print("HERE I AM")
-            print(min(self.flux_arrays), max(self.flux_arrays))
         return self.flux_arrays
