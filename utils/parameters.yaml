@@ -40,6 +40,6 @@ fe_forest:
     fe_norm_min: 0. 
     fe_norm_max: "max_flux"
     fe_width_min: 900. # km/s (FWHM)
-    fe_width_max: 20000. # km/s (FWHM)
+    fe_width_max: 10000. # km/s (FWHM)
     fe_line_type: "gaussian" # or "lorentzian"
-    fe_kernel_size_sigma: 10 # pixels
+    fe_kernel_size_sigma: 3 # pixels
