@@ -98,7 +98,7 @@ class FeComponent(Component):
         """
        
         par_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.fe_templ)+1)] 
-        par_names2 = ["fe_width_{0}".format(x) for x in range(1, len(self.fe_templ)+1)] 
+        par_names2 = ["fe_width"] 
         return par_names+par_names2
 
 #-----------------------------------------------------------------------------#
@@ -124,7 +124,7 @@ class FeComponent(Component):
             no_parameters (int): Number of componenet parameters.
         """
 
-        no_parameters = len(self.fe_templ) * 2
+        no_parameters = len(self.fe_templ) + 1
 
         return no_parameters
 
@@ -155,10 +155,9 @@ class FeComponent(Component):
                                       size=len(self.fe_templ))
 
         width_init = np.random.uniform(low=self.width_min, 
-                                       high=self.width_max, 
-                                       size=len(self.fe_templ)) 
+                                       high=self.width_max) 
                                        
-        return norm_init.tolist() + width_init.tolist()	
+        return norm_init.tolist() + [width_init]
 
 #-----------------------------------------------------------------------------#
 
@@ -218,12 +217,11 @@ class FeComponent(Component):
         ln_priors = []
 
         norm = []
-        width = []
+        width = params[self.parameter_index("fe_width")]
 
         for i in range(1, len(self.fe_templ)+1):
             norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
-            width.append(params[self.parameter_index("fe_width_{0}".format(i))])
-        
+            
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
             if self.norm_min < norm[i] < self.norm_max:
@@ -231,7 +229,7 @@ class FeComponent(Component):
             else:
                 ln_priors.append(-np.inf)
         for i in range(len(self.fe_templ)):
-            if self.width_min < width[i] < self.width_max:
+            if self.width_min < width < self.width_max:
                 ln_priors.append(0.)
             else:
                 ln_priors.append(-np.inf)
@@ -262,10 +260,9 @@ class FeComponent(Component):
         log_norm_wl = np.log(norm_wl)
         
         flux_arrays = np.zeros(np.size(spectrum.wavelengths))
-        
+        width = parameters[self.parameter_index("fe_width")]
 
         for i in range(len(self.fe_templ)):
-            width = parameters[self.parameter_index("fe_width_{0}".format(i+1))]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 

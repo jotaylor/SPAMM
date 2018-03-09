@@ -2,7 +2,7 @@ emission_lines: ""
 ## Host Galaxy parameters##
 host_galaxy:
     boxcar_width: 5
-    hg_models: "../Data/HostModels"
+    hg_templates: "../Data/HostModels"
     hg_norm_min: 0.
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM

@@ -20,7 +20,7 @@ sys.path.append(os.path.abspath("../"))
 
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
-#from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
+from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
@@ -29,8 +29,8 @@ from spamm.components.MaskingComponent import Mask
 # TODO: astropy units for spectrum
 
 #emcee parameters
-n_walkers = 50
-n_iterations = 200
+n_walkers = 30
+n_iterations = 100
 
 # Use MPI to distribute the computations
 MPI = False
@@ -45,10 +45,10 @@ MPI = False
 #To do: implement combined - Gisella - see tickets
 
 PL = False#True#
-HOST = False
-FE = False#True#False#
-BC =  True#False#
-BpC = True#False#
+HOST = False#True#
+FE = True#False#
+BC =  False#True#
+BpC = False#True#
 Calzetti_ext = False#True#
 SMC_ext = False
 MW_ext = False
@@ -66,7 +66,7 @@ if PL:
     datafile = "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat"
 
 if HOST:
-    datafile = "../Data/FakeData/fake_host_spectrum.dat"
+    datafile = "../Data/FakeData/Host_comp/s06_werr.dat"#"../Data/FakeData/fake_host_spectrum.dat"
 
 if FE:
     #datafile = "../Data/FakeData/for_gisella/fake_host_spectrum.dat"
@@ -83,7 +83,7 @@ if BC and BpC:
 wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
 mask = Mask(wavelengths=wavelengths,maskType=maskType)
 spectrum = Spectrum.from_array(flux, uncertainty=flux_err, mask=mask)
-z = 0.2
+z = 0.5
 wavelengths/=1.+z
 flux_err /=np.max(flux)
 flux /=np.max(flux)
@@ -135,6 +135,6 @@ print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptanc
 # -------------
 # save chains & model
 # ------------
-with gzip.open('model.pickle.gz', 'wb') as model_output:
+with gzip.open('model.pickle1.gz', 'wb') as model_output:
     model_output.write(pickle.dumps(model))
 
