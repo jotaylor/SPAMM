@@ -109,7 +109,7 @@ class FeComponent(Component):
             no_parameters (int): Number of componenet parameters.
         """
 
-        no_parameters = len(self.fe_templ) * 2
+        no_parameters = len(self.fe_templ) + 1
 
         return no_parameters
 
@@ -140,8 +140,7 @@ class FeComponent(Component):
                                       size=len(self.fe_templ))
 
         width_init = np.random.uniform(low=self.width_min, 
-                                       high=self.width_max, 
-                                       size=len(self.fe_templ)) 
+                                       high=self.width_max) 
         
         return norm_init.tolist() + width_init.tolist()	
 
