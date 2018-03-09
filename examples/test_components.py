@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
+import pdb
 import os
 import sys
 import gzip
@@ -32,7 +33,8 @@ from spamm.components.MaskingComponent import Mask
 
 component_data = {"PL": "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat",
                   "HOST": "../Data/FakeData/fake_host_spectrum.dat",
-                  "FE": "../Data/FakeData/Iron_comp/fakeFe1_deg.dat",
+                  "FE": #"/user/jotaylor/git/spamm/Data/FeModels/Fe_UVtemplt_A.asc",
+                        "../Data/FakeData/Iron_comp/fakeFe1_deg.dat",
                         #"../Data/FakeData/for_gisella/fake_host_spectrum.dat",
                         #"../Fe_templates/FeSimdata_BevWills_0p05.dat",
                   "BC": "../Data/FakeData/BaC_comp/FakeBac01_deg.dat",
@@ -57,6 +59,7 @@ def perform_test(components, datafile=None, params=None):
         while datafile is None:
             if components[keys[i]] is True:
                 datafile = component_data[keys[i]]
+                print("Using data file {0}".format(datafile))
             i += 1
         try:
             wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
@@ -65,6 +68,7 @@ def perform_test(components, datafile=None, params=None):
             flux_err = flux*0.05
         finally:
             pname = None
+            flux = np.where(flux<0, 1e-19, flux)
     else:
         wavelengths = params["wl"]
         flux = params["flux"]
