@@ -143,7 +143,7 @@ class FeComponent(Component):
         width_init = np.random.uniform(low=self.width_min, 
                                        high=self.width_max) 
         
-        return [norm_init] + [width_init]
+        return norm_init.tolist() + [width_init]
 
 #-----------------------------------------------------------------------------#
 
