@@ -44,6 +44,7 @@ component_data = {"PL": "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat",
 
 def perform_test(components, datafile=None, params=None):
     # eventually need to update params to work with multiple components i.e. params["PL"]...
+    redshift = True
     
     for c in ["PL", "FE", "HOST", "BC", "BpC", "Calzetti_ext", "SMC_ext", "MW_ext", "AGN_ext", "LMC_ext"]:
         if c not in components:
@@ -74,6 +75,9 @@ def perform_test(components, datafile=None, params=None):
         flux = params["flux"]
         flux_err = params["err"]
         pname = params["pname"]
+
+    if redshift:
+        wavelengths *= 1.5
 
 #    mask = Mask(wavelengths=wavelengths,maskType=maskType)
 #    spectrum.mask=mask
@@ -114,7 +118,7 @@ def perform_test(components, datafile=None, params=None):
     # ------------
     # Run MCMC
     # ------------
-    model.run_mcmc(n_walkers=components["n_walkers"], n_iterations=components["n_iterations"])
+    model.run_mcmc(n_walkers=int(components["n_walkers"]), n_iterations=int(components["n_iterations"]))
     print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
     
     # -------------
