@@ -253,9 +253,10 @@ class FeComponent(Component):
         norm_wl = spectrum.norm_wavelength
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
-
         width = parameters[self.parameter_index("fe_width")]
+        self.flux_arrays = np.zeros(len(spectrum.wavelengths)) 
         for i in range(len(self.fe_templ)):	
+            norm_i = parameters[i]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
@@ -268,10 +269,9 @@ class FeComponent(Component):
             sigma_conv = np.sqrt(width**2 - self.templ_width**2) / \
                          (c_kms * 2.*np.sqrt(2.*np.log(2.)))
 
-
             bin_size = self.log_fe[i].wavelengths[2] - self.log_fe[i].wavelengths[1]
 #TODO cross-check with Spectrum ^^
-            sigma_norm = int(sigma_conv / bin_size)
+            sigma_norm = np.ceil(sigma_conv / bin_size)
             sigma_size = PARS["fe_kernel_size_sigma"] * sigma_norm
             kernel = signal.gaussian(sigma_size, sigma_norm) / \
                      (np.sqrt(2 * math.pi) * sigma_norm)
@@ -284,9 +284,8 @@ class FeComponent(Component):
 #                self.log_fe[i].flux = self.log_fe[i].flux[:-1]
 #                self.log_fe[i].wavelengths = self.log_fe[i].wavelengths[:-1]
 #            log_conv_fe_flux = fftwconvolve_1d(self.log_fe[i].flux, kernel)
-
+        
             log_conv_fe_flux = np.convolve(self.log_fe[i].flux, kernel,mode="same")
-
 #TODO need to check Spectrum.bin_spectrum()
             # Shift spectrum back into linear space.
             # the left and right statements just set the flux value 
@@ -302,11 +301,12 @@ class FeComponent(Component):
             
             conv_fe_nw = np.median(self.fe_templ[i].wavelengths)
             conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.wavelengths, conv_fe_flux) 
+            spectrum_norm_flux = np.interp(conv_fe_nw, spectrum.wavelengths, spectrum.flux) 
 
             # Find NaN errors early from dividing by zero.
 #TODO check below syntax vv
             conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
 
             # Scale normalization parameter to flux in template
-            self.flux_arrays += (parameters[i] / conv_fe_norm_flux) * conv_fe_flux
+            self.flux_arrays += (norm_i / conv_fe_norm_flux) * conv_fe_flux * spectrum_norm_flux
         return self.flux_arrays
