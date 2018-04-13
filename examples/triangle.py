@@ -15,6 +15,8 @@ __contributors__ = [    # Alphabetical by first name.
                    ]
 
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 from matplotlib.colors import LinearSegmentedColormap

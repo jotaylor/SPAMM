@@ -11,6 +11,8 @@ import gzip
 import dill as pickle
 
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from astropy import units
 

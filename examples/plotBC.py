@@ -3,7 +3,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
-
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import scipy as sp
 

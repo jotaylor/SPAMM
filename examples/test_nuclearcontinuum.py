@@ -12,6 +12,8 @@ import dill as pickle
 import datetime
 import argparse
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from astropy import units
 from collections import OrderedDict

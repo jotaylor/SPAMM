@@ -24,6 +24,8 @@ try:
 except ImportError:
     import pickle
 import triangle
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from matplotlib import cm,mlab,colors,ticker,rc
 from matplotlib.ticker import NullFormatter
