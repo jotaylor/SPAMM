@@ -86,7 +86,7 @@ def make_chain_plots(model_filename):
     print("\tWrote {0}".format(figname))
     
     # Fifth, plot the spectrum fits from the posterior PDF.
-    plot_spectra(model, samples)
+#    plot_spectra(model, samples)
 
 #-----------------------------------------------------------------------------#
 
