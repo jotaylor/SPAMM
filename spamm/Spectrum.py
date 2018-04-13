@@ -29,6 +29,7 @@ class Spectrum(Spectrum1DRef):
             self._norm_wavelength = np.median(self.wavelengths)
         return self._norm_wavelength
 
+    @property
     def norm_wavelength_flux(self):
         ''' Returns the flux at the normalization wavelength. '''
         if self._norm_wavelength_flux == None:
