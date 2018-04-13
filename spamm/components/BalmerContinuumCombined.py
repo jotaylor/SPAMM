@@ -8,7 +8,7 @@ from scipy.integrate import simps
 from scipy.fftpack.helper import next_fast_len
 import matplotlib.pyplot as plt
 from astropy.constants import c, h, k_B, Ryd
-from astropy.analytic_functions import blackbody_lambda
+from astropy.modeling.blackbody import blackbody_lambda
 
 #TODO this needs to be integrated into Spectrum eventually
 from utils.rebin_spec import rebin_spec
