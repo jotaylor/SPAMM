@@ -30,10 +30,11 @@ docs/_build/
 .DS_Store
 *bak
 *swp 
-#*.png
-#*.pdf
+*.png
+*.pdf
 documentation/tmp
 documentation/_build
+*pickle.gz
 
 # Fortran
 *.f90
