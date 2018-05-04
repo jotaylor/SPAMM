@@ -101,8 +101,11 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
         ax = fig.add_subplot(num_params, 1, i+1)
         ax.hist(chain, boxes)
         if params is not None:
-            ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
-            ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
+            try:
+                ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
+                ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
+            except KeyError:
+                pass
         ax.set_xlabel(labels[i])
         ax.set_ylabel("Posterior PDF")
     print("Plotting the model posterior PDFs.")
