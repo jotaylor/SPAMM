@@ -45,9 +45,10 @@ def make_chain_plots(model_filename):
     except UnicodeDecodeError:
         p_data = pickle.loads(gzip.open(model_filename).read(), encoding="latin1")
     model = p_data["model"]
-    params = p_data["params"] 
+    params = p_data["comp_params"] 
         
-    samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
+#   We can do this intelligently based on number of iterations.
+    samples = model.sampler.chain[:, 25:, :].reshape((-1, model.total_parameter_count))
     
     if np.size(samples) == 0:
         print("WARNING, size of samples is 0! Exiting analysis code now...")
