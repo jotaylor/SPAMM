@@ -308,5 +308,5 @@ class FeComponent(Component):
             conv_fe_norm_flux = np.nan_to_num(conv_fe_norm_flux)
 
             # Scale normalization parameter to flux in template
-            self.flux_arrays += (norm_i / conv_fe_norm_flux) * conv_fe_flux * spectrum_norm_flux
+            self.flux_arrays += (norm_i / conv_fe_norm_flux) * conv_fe_flux
         return self.flux_arrays
