@@ -35,11 +35,11 @@ balmer_continuum:
 ## Fe Component ##
 fe_forest:
     boxcar_width: 10
-    fe_templates: "/user/jotaylor/git/spamm/Data/FeModels"
+    fe_templates: "/user/jotaylor/git/spamm/Data/testmodels" #"/user/jotaylor/git/spamm/Data/FeModels"
     fe_template_width: 900. #km/s
     fe_norm_min: 0. 
     fe_norm_max: "max_flux"
-    fe_width_min: 900. # km/s (FWHM)
+    fe_width_min: 901. # km/s (FWHM)
     fe_width_max: 10000. # km/s (FWHM)
     fe_line_type: "gaussian" # or "lorentzian"
     fe_kernel_size_sigma: 3 # pixels
