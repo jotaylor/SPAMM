@@ -113,7 +113,7 @@ def run_test(params):
     params["err"] = y_err
 
     print(params)
-    test_components.perform_test(components={"PL": True}, params=params)
+    test_components.perform_test(components={"PL": True}, comp_params=params)
     print(params)
      
 #-----------------------------------------------------------------------------#
