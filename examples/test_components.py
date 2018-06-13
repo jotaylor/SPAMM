@@ -38,18 +38,19 @@ PARS = parse_pars()["fe_forest"]
 component_data = {"PL": "../Data/FakeData/PLcompOnly/fakepowlaw1_werr.dat",
                   "HOST": "../Data/FakeData/fake_host_spectrum.dat",
                   "FE": 
-                        "/user/jotaylor/git/spamm/examples/stitchedtemp.dat",
+#                        "/user/jotaylor/git/spamm/examples/stitchedtemp.dat",
 #                        "/user/jotaylor/git/spamm/Data/testmodels/Veron_OptFetempl_900kms.dat",
 #                        "/user/jotaylor/git/spamm/Data/testmodels/Fe_UVtemplt_A.asc",
 #                        "/user/jotaylor/git/spamm/Data/testmodels/Bev_Wills.txt",
-#                        "../Data/FakeData/Iron_comp/fakeFe1_deg.dat",
+                        "../Data/FakeData/Iron_comp/fakeFe1_deg.dat",
                         #"../Fe_templates/FeSimdata_BevWills_0p05.dat",
                   "BC": "../Data/FakeData/BaC_comp/FakeBac01_deg.dat",
                   "BpC": "../Data/FakeData/BaC_comp/FakeBac_lines01_deg.dat"}
 
 #-----------------------------------------------------------------------------#
 
-def perform_test(components, datafile=None, comp_params=None, n_walkers=300, n_iterations=50):
+def perform_test(components, datafile=None, comp_params=None, 
+                 n_walkers=30, n_iterations=500):
     """
     Args:
         components : dictionary
@@ -66,7 +67,7 @@ def perform_test(components, datafile=None, comp_params=None, n_walkers=300, n_i
                 - broken_pl (if component=PL)
     """
     # eventually need to update params to work with multiple components i.e. params["PL"]...
-    redshift = False
+    redshift = True
     template_data = False
     change_wl = False
 
