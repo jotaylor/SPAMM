@@ -113,12 +113,14 @@ def run_test(params):
     params["err"] = y_err
 
     print(params)
-    test_components.perform_test(components={"PL": True}, comp_params=params)
-    print(params)
+   
+    return params["wl"], y, y_err, params 
+    #test_components.perform_test(components={"PL": True}, comp_params=params)
+    #print(params)
      
 #-----------------------------------------------------------------------------#
 
-def test1():
+def ten_tests():
     """10 Controlled broken PL tests"""
 
     percerr = [.1, .05, .01, .005]
@@ -138,19 +140,50 @@ def test1():
             params["slope2"] = slopes2[i]
             params["slope_factor"] = 1.
             params["norm_PL"] = norms[i]
-            params["err_factor"] = percerr[i]
+            params["err_factor"] = percerr[j]
             params["broken_pl"] = True
             params["wave_break"] = wl_breaks[i]
         
-            run_test(params)
+            w, f, f_err, p = run_test(params)
+            
+    return w, f, f_err, p
 
-# POWER LAW 1 from excel file
-#    pnames = ["fakepowerlaw1_{0}err.pickle.gz".format(x) for x in percerr]
-#    for i in range(len(percerr)):
-#        run_test(factor=1., x=np.arange(1159, 2003), norms=np.array([1.8e-17]), 
-#                     slopes1_n=np.array([-2.2]), slopes1_p=None,
-#                     wave_break=1581, err=percerr[i], broken_pl=False, pname=pnames[i])
+#-----------------------------------------------------------------------------#
+
+def pl1():
+    # POWER LAW 1 from excel file
+    params["wl"] = np.arange(1159, 2003)
+    params["slope1"] = -2.2
+    params["slope_factor"] = 1.
+    params["norm_PL"] = 1.8e-17
+    params["err_factor"] = 0.05
+    params["broken_pl"] = False
+    params["wave_break"] = 1581 
+    params["pname"] = "fakepowerlaw1_05err.pickle.gz"
     
+    w, f, f_err, p = run_test(params)
+    
+    return w, f, f_err, p 
+
+#-----------------------------------------------------------------------------#
+
+def combine_pl():
+    # To combine with other componenets for complete testing.
+    params["wl"] = np.arange(1650, 12000, .75)
+    params["slope1"] = 1.7
+    params["slope_factor"] = 1.
+    params["norm_PL"] = 1.5e-14
+    params["err_factor"] = 0.05
+    params["broken_pl"] = False
+    params["wave_break"] = 2000
+    params["pname"] = "powerlaw_combine.pickle.gz"
+
+    w, f, f_err, p = run_test(params)
+    
+    return w, f, f_err, p 
+
+#-----------------------------------------------------------------------------#
+
 # POWER LAW 2 from excel file
 #    pnames = ["fakepowerlaw2_{0}err.pickle.gz".format(x) for x in percerr]
 #    for i in range(len(percerr)):
@@ -177,7 +210,7 @@ def test1():
 
 if __name__ == "__main__":
     print("Running with completely random parameters...")
-    test1()
+    ten_tests()
 
 #    for param in params:
 #        r_p = randomize(param, params)
