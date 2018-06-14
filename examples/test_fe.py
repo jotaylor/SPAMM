@@ -27,6 +27,7 @@ PARS = parse_pars()["fe_forest"]
 
 def run_test(datafile, n_walkers=30, n_iterations=500, redshift=None, 
              scale=None, subset=False, pname=None):
+    t1 = datetime.datetime.now()
     print(PARS)
     templates = glob.glob(os.path.join(PARS["fe_templates"], "*"))
     print("Using datafile: {}".format(datafile))
@@ -69,8 +70,10 @@ def run_test(datafile, n_walkers=30, n_iterations=500, redshift=None,
               "pname": pname,
               "datafile": datafile}
 
-    test_components.perform_test(components={"FE": True}, comp_params=params)
-    
+    return wavelengths, flux, flux_err, params
+#    test_components.perform_test(components={"FE": True}, comp_params=params)
+    t2 = datetime.datetime.now()    
+    print("executed in {}".format(t2-t1))
 #-----------------------------------------------------------------------------#
 
 
