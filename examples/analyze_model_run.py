@@ -48,7 +48,7 @@ def make_chain_plots(model_filename):
     params = p_data["comp_params"] 
         
 #   We can do this intelligently based on number of iterations.
-    samples = model.sampler.chain[:, 25:, :].reshape((-1, model.total_parameter_count))
+    samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_count))
     
     if np.size(samples) == 0:
         print("WARNING, size of samples is 0! Exiting analysis code now...")
