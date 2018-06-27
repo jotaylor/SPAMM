@@ -18,7 +18,6 @@ import time
 import argparse
 import glob
 
-import test_components
 from utils.parse_pars import parse_pars
 from utils import draw_from_sample
 from spamm.components.FeComponent import FeComponent
@@ -74,7 +73,6 @@ def run_test(datafile, redshift=None,
               "datafile": datafile}
 
     return wavelengths, flux, flux_err, params
-#    test_components.perform_test(components={"FE": True}, comp_params=params)
     t2 = datetime.datetime.now()    
     print("executed in {}".format(t2-t1))
 
