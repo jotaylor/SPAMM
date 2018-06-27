@@ -40,3 +40,7 @@ documentation/_build
 *.f90
 *.o
 *.mod
+
+# Stupid excel copies
+._*xlsx
+~$*xlsx
