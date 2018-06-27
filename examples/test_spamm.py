@@ -4,6 +4,7 @@ import pdb
 import numpy as np
 
 import run_spamm, run_fe, run_nc
+from utils.add_in_quadrature import add_in_quadrature
 
 # The normalizations are drawn from a gaussian sample with mu=9.06e-15,
 # sigma=3.08946e-15 (from 0->template max flux). fe_width is halfway 
@@ -16,16 +17,6 @@ FE_PARAMS = {"fe_norm_1": 1.07988504e-14,
              "no_templates": 3,
              "wl": np.arange(2000, 7000, .5)}
 LINEOUT = "#"*75
-
-#-----------------------------------------------------------------------------#
-
-def add_in_quadrature(*args):
-    sqsum = 0.
-    for arg in args:
-        sqsum += arg**2
-    err = np.sqrt(sqsum)
-
-    return err
 
 #-----------------------------------------------------------------------------#
 
