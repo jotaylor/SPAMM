@@ -20,6 +20,9 @@ import glob
 
 import test_components
 from utils.parse_pars import parse_pars
+from utils import draw_from_sample
+from spamm.components.FeComponent import FeComponent
+from spamm.Spectrum import Spectrum
 
 PARS = parse_pars()["fe_forest"]
 
@@ -74,8 +77,45 @@ def run_test(datafile, redshift=None,
 #    test_components.perform_test(components={"FE": True}, comp_params=params)
     t2 = datetime.datetime.now()    
     print("executed in {}".format(t2-t1))
+
 #-----------------------------------------------------------------------------#
 
+def create_fe(fe_params=None):
+    """
+    Args:
+        fe_params (dictionary): Iron component parameters. Required keys are:
+            - no_templates (number of templates)
+            - wl (wavelength range of Fe model, redshift must be accounted for already)
+            - fe_width (in km/s)
+            - fe_norm_{} (1,2,3 depending on number of templates)
+    """
+
+    if fe_params is None:
+        fe_params = {"no_templates": 3, "wl": np.arange(2000, 7000, 0.5)}
+        max_template_flux = 1.8119e-14
+        samples = draw_from_sample.gaussian(PARS["fe_norm_min"], max_template_flux, 3)
+        fe_params["fe_norm_1"] = samples[0]
+        fe_params["fe_norm_2"] = samples[1]
+        fe_params["fe_norm_3"] = samples[2]
+        sample = draw_from_sample.gaussian(PARS["fe_width_min"], PARS["fe_width_max"])
+        fe_params["fe_width"] = sample
+
+    print("Fe params: {}".format(fe_params))
+    fe = FeComponent()
+    # Make a Spectrum object with dummy flux
+    spectrum = Spectrum(fe_params["wl"])
+    spectrum.dispersion = fe_params["wl"]
+    fe.initialize(spectrum)
+    comp_params = [fe_params["fe_norm_{}".format(x)] for x in range(1, fe_params["no_templates"]+1)] + [fe_params["fe_width"]]
+    fe_flux = FeComponent.flux(fe, spectrum, comp_params)
+    fe_err = fe_flux * 0.05
+
+#    pl.errorbar(fe_params["wl"], fe_flux, fe_err)
+#    pl.savefig("fe_data.png")
+
+    return fe_params["wl"], fe_flux, fe_err
+
+#-----------------------------------------------------------------------------#
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
