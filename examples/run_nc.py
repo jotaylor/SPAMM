@@ -169,6 +169,7 @@ def pl1():
 
 def combine_pl_shallow():
     # To combine with other componenets for complete testing.
+    # Wavelength range of fakeFe1_deg.dat
     params["wl"] = np.arange(1650, 12000, .75)
     params["slope1"] = 1.7
     params["slope_factor"] = 1.
