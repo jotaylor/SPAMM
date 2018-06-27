@@ -18,7 +18,7 @@ import matplotlib.pyplot as pl
 from astropy import units
 from collections import OrderedDict
 
-import test_components
+from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 
 randoms = {"wl_lo": [1000, 1500, 2000, 2500, 3000],
            "wl_hi": [6000, 6500, 7000, 7500, 8000],
@@ -115,8 +115,6 @@ def run_test(params):
     print(params)
    
     return params["wl"], y, y_err, params 
-    #test_components.perform_test(components={"PL": True}, comp_params=params)
-    #print(params)
      
 #-----------------------------------------------------------------------------#
 
@@ -199,6 +197,23 @@ def combine_pl(wl):
     w, f, f_err, p = run_test(params)
     
     return w, f, f_err, p 
+
+#-----------------------------------------------------------------------------#
+
+def create_nc(nc_params):
+    nc = NuclearContinuumComponent(broken=nc_params["broken"])
+    # Make a Spectrum object with dummy flux
+    spectrum = Spectrum(nc_params["wl"])
+    spectrum.dispersion = nc_params["wl"]
+    if nc_params["broken"]:
+        comp_params = [nc_params["wave_break"], nc_params["norm_PL"],
+                       nc_parmas["slope1"], nc_params["slope2"]]
+    else:
+        comp_params = [nc_params["norm_PL"], nc_parmas["slope1"]]
+    ncflux = NuclearContinuumComponent.flux(nc, spectrum, comp_params)
+
+    return nc_params["wl"], ncflux
+
 
 #-----------------------------------------------------------------------------#
 
