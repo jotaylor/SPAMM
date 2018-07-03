@@ -44,3 +44,6 @@ documentation/_build
 # Stupid excel copies
 ._*xlsx
 ~$*xlsx
+
+# gif plots
+examples/gifplots/
