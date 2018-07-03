@@ -75,7 +75,8 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
         host_galaxy_comp = HostGalaxyComponent()    
         model.components.append(host_galaxy_comp)
     if components["BC"] or components["BpC"]:
-        balmer_comp = BalmerCombined(BalmerContinuum=BC, BalmerPseudocContinuum=BpC)
+        balmer_comp = BalmerCombined(BalmerContinuum=components["BC"], 
+                                     BalmerPseudocContinuum=components["BpC"])
         model.components.append(balmer_comp)
     if components["Calzetti_ext"] or components["SMC_ext"] or components["MW_ext"] or components["AGN_ext"] or components["LMC_ext"]:
         ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
