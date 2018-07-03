@@ -3,7 +3,7 @@
 import pdb
 import numpy as np
 
-import run_spamm, run_fe, run_nc
+import run_spamm, run_fe, run_nc, run_bc
 from utils.add_in_quadrature import add_in_quadrature
 
 # The normalizations are drawn from a gaussian sample with mu=9.06e-15,
@@ -43,7 +43,8 @@ def test_fe_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/
                      redshift=0.5):
     print("{0}\nTESTING IRON\n{0}".format(LINEOUT))
     fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test(datafile, redshift)
-    run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err)#, pname="fe.pickle.gz")
+    run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err,
+                           comp_params=fe_p)#, pname="fe.pickle.gz")
 
 #-----------------------------------------------------------------------------#
 
@@ -64,7 +65,17 @@ def test_nc():
                            #pname="nc.pickle.gz")
 
 #-----------------------------------------------------------------------------#
+
+def test_bc_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/BaC_comp/FakeBac_lines04_deg.dat", 
+                     redshift=0.2, bpc=True):
+    print("{0}\nTESTING BALMER CONTINUUM\n{0}".format(LINEOUT))
+    bc_wl, bc_flux, bc_err, bc_p = run_bc.run_test(datafile, redshift)
+    run_spamm.spamm_wlflux({"BC": True, "BpC": True}, bc_wl, bc_flux, bc_err, 
+                           comp_params=bc_p, pname="bc.pickle.gz")
+
+#-----------------------------------------------------------------------------#
 if __name__ == "__main__":
-    test_nc_fe()
+#    test_nc_fe()
 #    test_nc()
 #    test_fe()
+    test_bc_fromfile()
