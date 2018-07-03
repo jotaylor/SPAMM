@@ -29,7 +29,6 @@ PARS = parse_pars()["fe_forest"]
 
 def run_test(datafile, redshift=None, 
              scale=None, subset=False, pname=None):
-    t1 = datetime.datetime.now()
     print(PARS, "\n")
     templates = glob.glob(os.path.join(PARS["fe_templates"], "*"))
     print("Using datafile: {}\n".format(datafile))
@@ -73,8 +72,6 @@ def run_test(datafile, redshift=None,
               "datafile": datafile}
 
     return wavelengths, flux, flux_err, params
-    t2 = datetime.datetime.now()    
-    print("executed in {}".format(t2-t1))
 
 #-----------------------------------------------------------------------------#
 
@@ -111,7 +108,7 @@ def create_fe(fe_params=None):
 #    pl.errorbar(fe_params["wl"], fe_flux, fe_err)
 #    pl.savefig("fe_data.png")
 
-    return fe_params["wl"], fe_flux, fe_err
+    return fe_params["wl"], fe_flux, fe_err, fe_params
 
 #-----------------------------------------------------------------------------#
 
