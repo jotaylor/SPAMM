@@ -93,7 +93,10 @@ class NuclearContinuumComponent(Component):
 
         pl_init = []
         if self.norm_max == "max_flux":
-            self.norm_max = 10. * max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+            self.norm_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+        elif self.norm_max == "fnw":
+            fnw = spectrum.norm_wavelength_flux
+            self.norm_max = fnw
 
         if self.broken_pl:
             size = 2

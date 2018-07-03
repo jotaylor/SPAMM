@@ -136,6 +136,9 @@ class FeComponent(Component):
         if self.norm_max == "max_flux":
             flux_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"])) 
             self.norm_max = flux_max
+        elif self.norm_max == "fnw":
+            fnw = spectrum.norm_wavelength_flux
+            self.norm_max = fnw 
 
         norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, 
                                       size=len(self.fe_templ))
