@@ -21,7 +21,7 @@ nuclear_continuum:
     pl_slope_min: -3.
     pl_slope_max: 3.
     pl_norm_min: 0.
-    pl_norm_max: "max_flux" #10*max flux
+    pl_norm_max: "fnw" #max_flux or fnw
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
@@ -38,7 +38,7 @@ fe_forest:
     fe_templates: "/user/jotaylor/git/spamm/Data/FeModels" #"/user/jotaylor/git/spamm/Data/testmodels" 
     fe_template_width: 900. #km/s
     fe_norm_min: 0. 
-    fe_norm_max: "max_flux"
+    fe_norm_max: "fnw" #max_flux or fnw
     fe_width_min: 901. # km/s (FWHM)
     fe_width_max: 10000. # km/s (FWHM)
     fe_line_type: "gaussian" # or "lorentzian"
