@@ -174,7 +174,8 @@ def combine_pl_shallow():
     params["norm_PL"] = 1.5e-14
     params["err_factor"] = 0.05
     params["broken_pl"] = False
-    params["wave_break"] = 2000
+#    params["wave_break"] = 2000
+    params["wave_break"] = np.median(params["wl"])
     params["pname"] = "powerlaw_combineshallow.pickle.gz"
 
     w, f, f_err, p = run_test(params)
@@ -191,7 +192,8 @@ def combine_pl(wl):
     params["norm_PL"] = 5e-15
     params["err_factor"] = 0.05
     params["broken_pl"] = False
-    params["wave_break"] = 6000
+#    params["wave_break"] = 6000
+    params["wave_break"] = np.median(params["wl"])
     params["pname"] = "powerlaw_combine.pickle.gz"
 
     w, f, f_err, p = run_test(params)
@@ -249,4 +251,3 @@ if __name__ == "__main__":
 #        r_p = randomize(param, params)
 #        params[param] = r_p
 #    run_test(params)
-
