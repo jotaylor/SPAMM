@@ -23,15 +23,18 @@ LINEOUT = "#"*75
 def test_nc_fe(fe_params=FE_PARAMS):
     print("{0}\nTESTING NUCLEAR CONTINUUM + IRON\n{0}".format(LINEOUT))
     #fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test("/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", redshift=0.5)
-    fe_wl, fe_flux, fe_err = run_fe.create_fe(fe_params)
+    fe_wl, fe_flux, fe_err, fe_p = run_fe.create_fe(fe_params)
     nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(fe_wl)
     assert set(nc_wl-fe_wl) == {0}, "Wavelength scales do not match" 
     comb_wl = nc_wl
     comb_flux = nc_flux + fe_flux
     comb_err = add_in_quadrature(nc_err, fe_err)
 
+    comb_p = {**nc_p, **fe_p}
+
     run_spamm.spamm_wlflux({"PL": True, "FE": True}, comb_wl, comb_flux, comb_err,
-                           n_walkers=300, n_iterations=600)#, pname="nc_fe.pickle.gz")
+                           comp_params=comb_p, n_walkers=100, n_iterations=500)
+                           #, pname="nc_fe.pickle.gz")
 
 
 #-----------------------------------------------------------------------------#
@@ -40,24 +43,24 @@ def test_fe_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/
                      redshift=0.5):
     print("{0}\nTESTING IRON\n{0}".format(LINEOUT))
     fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test(datafile, redshift)
-    run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err,
-                           n_walkers=10, n_iterations=100)#, pname="fe.pickle.gz")
+    run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err)#, pname="fe.pickle.gz")
 
 #-----------------------------------------------------------------------------#
 
 def test_fe(fe_params=None):
     print("{0}\nTESTING IRON\n{0}".format(LINEOUT))
-    fe_wl, fe_flux, fe_err = run_fe.create_fe(fe_params)
+    fe_wl, fe_flux, fe_err, fe_p = run_fe.create_fe(fe_params)
     
     run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err, 
-                           comp_params=fe_params)
+                           comp_params=fe_p)
 
 #-----------------------------------------------------------------------------#
 
 def test_nc():
     print("{0}\nTESTING NUCLEAR CONTINUUM\n{0}".format(LINEOUT))
     nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl()
-    run_spamm.spamm_wlflux({"PL": True}, nc_wl, nc_flux, nc_err)#,
+    run_spamm.spamm_wlflux({"PL": True}, nc_wl, nc_flux, nc_err,
+                           comp_params=nc_p)
                            #pname="nc.pickle.gz")
 
 #-----------------------------------------------------------------------------#
