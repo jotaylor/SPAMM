@@ -1,3 +1,7 @@
+# WARNING!!!! PyYAML resolves scientific notation numbers as strings-
+# e.g. 1.6e3 is interpreted as '1.6e3', not 1600. These numbers should
+# be expanded (see bc_Te_max)
+
 emission_lines: ""
 ## Host Galaxy parameters##
 host_galaxy:
@@ -31,6 +35,19 @@ balmer_continuum:
     bc_line_type: "lorentzian" #or "gaussian" 
     bc_lines_min: 3. #km/s
     bc_lines_max: 400. #km/s
+    bc_norm_min: 0.
+    bc_norm_max: "bcmax_flux" # Balmer Continuum max flux
+    bc_Te_min: 500.
+    bc_Te_max: 100000.
+    bc_tauBE_min: 0.
+    bc_tauBE_max: 2.
+    bc_loffset_min: -10.
+    bc_loffset_max: 10.
+    bc_lwidth_min: 100.
+    bc_lwidth_max: 10000.
+    bc_logNe_min: 2
+    bc_logNe_max: 14
+
 
 ## Fe Component ##
 fe_forest:

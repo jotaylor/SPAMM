@@ -48,41 +48,37 @@ class BalmerCombined(Component):
         self.model_parameter_names.append("normalization_BC")
         self.model_parameter_names.append("Te")
         self.model_parameter_names.append("tauBE")
-
         # paramters for the lines
         self.model_parameter_names.append("loffset")
         self.model_parameter_names.append("lwidth")
-        
         self.model_parameter_names.append("logNe")
 #        self.model_parameter_names.append("lscale")
         
         self._norm_wavelength =  None
         
-        self.normalization_min = None
-        self.normalization_max = None
+        self.normalization_min = PARS["bc_norm_min"]
+        self.normalization_max = PARS["bc_norm_max"]
 
-        self.Te_min = None
-        self.Te_max = None
+        self.Te_min = PARS["bc_Te_min"]
+        self.Te_max = PARS["bc_Te_max"]
 
-        self.tauBE_min = None
-        self.tauBE_max = None
+        self.tauBE_min = PARS["bc_tauBE_min"]
+        self.tauBE_max = PARS["bc_tauBE_max"]
 
-        self.loffset_min = None
-        self.loffset_max = None
+        self.loffset_min = PARS["bc_loffset_min"]
+        self.loffset_max = PARS["bc_loffset_max"]
 
-        self.lwidth_min = None
-        self.lwidth_max = None
+        self.lwidth_min = PARS["bc_lwidth_min"]
+        self.lwidth_max = PARS["bc_lwidth_max"]
         
-        self.logNe_min = None
-        self.logNe_max = None
+        self.logNe_min = PARS["bc_logNe_min"]
+        self.logNe_max = PARS["bc_logNe_max"]
         
 #        self.lscale_min = None
 #        self.lscale_max = None
         
         self.BC = BalmerContinuum
         self.BpC = BalmerPseudocContinuum
-        
-        # etc.
         
 #-----------------------------------------------------------------------------#
 
@@ -102,41 +98,25 @@ class BalmerCombined(Component):
         if spectrum is None:
             raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
         
-        if self.normalization_min == None or self.normalization_max == None:
-            m = np.nonzero(abs(spectrum.wavelengths - balmer_edge) == np.min(abs(spectrum.wavelengths - balmer_edge)))
-            BCmax = np.max(spectrum.flux[m[0][0]-10:m[0][0]+10])
-            self.normalization_min = 0
-            self.normalization_max = BCmax
+        if self.normalization_max == "bcmax_flux":
+            be_index = find_nearest_index(spectrum.wavelengths, balmer_edge) 
+            bcmax = np.max(spectrum.flux[be_index-10:be_index+10])
+            self.normalization_max = bcmax
         normalization_init = np.random.uniform(low=self.normalization_min,
                                high=self.normalization_max)
-                               
-        if self.Te_min == None or self.Te_max == None:
-            self.Te_min = 5.e2
-            self.Te_max = 100.e3
+        
         Te_init = np.random.uniform(low=self.Te_min,
                         high=self.Te_max)
                         
-        if self.tauBE_min == None or self.tauBE_max == None:
-            self.tauBE_min = 0.0
-            self.tauBE_max = 2.0
         tauBE_init = np.random.uniform(low=self.tauBE_min,
                            high=self.tauBE_max)
 
-        if self.loffset_min == None or self.loffset_max == None:
-            self.loffset_min = -10.0
-            self.loffset_max =  10.0
         loffset_init = np.random.uniform( low=self.loffset_min,
                          high=self.loffset_max)
 
-        if self.lwidth_min == None or self.lwidth_max == None:
-            self.lwidth_min = 100.
-            self.lwidth_max = 10000.
         lwidth_init = np.random.uniform( low=self.lwidth_min,
                            high=self.lwidth_max)
                            
-        if self.logNe_min == None or self.logNe_max == None:
-            self.logNe_min = 2
-            self.logNe_max = 14
         logNe_init = np.random.uniform(low=self.logNe_min,
                         high=self.logNe_max)
                         
