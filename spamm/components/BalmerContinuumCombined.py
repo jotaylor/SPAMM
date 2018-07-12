@@ -45,13 +45,13 @@ class BalmerCombined(Component):
         self.name = "Balmer"
 
         # parameters for the continuum
-        self.model_parameter_names.append("normalization_BC")
-        self.model_parameter_names.append("Te")
-        self.model_parameter_names.append("tauBE")
+        self.model_parameter_names.append("bc_norm")
+        self.model_parameter_names.append("bc_Te")
+        self.model_parameter_names.append("bc_tauBE")
         # paramters for the lines
-        self.model_parameter_names.append("loffset")
-        self.model_parameter_names.append("lwidth")
-        self.model_parameter_names.append("logNe")
+        self.model_parameter_names.append("bc_loffset")
+        self.model_parameter_names.append("bc_lwidth")
+        self.model_parameter_names.append("bc_logNe")
 #        self.model_parameter_names.append("lscale")
         
         self._norm_wavelength =  None
@@ -144,12 +144,12 @@ class BalmerCombined(Component):
         
         
         #get the parameters
-        normalization = params[self.parameter_index("normalization_BC")]
-        Te            = params[self.parameter_index("Te")]
-        tauBE         = params[self.parameter_index("tauBE")]
-        loffset       = params[self.parameter_index("loffset")]
-        lwidth        = params[self.parameter_index("lwidth")]
-        logNe         = params[self.parameter_index("logNe")]
+        normalization = params[self.parameter_index("bc_norm")]
+        Te            = params[self.parameter_index("bc_Te")]
+        tauBE         = params[self.parameter_index("bc_tauBE")]
+        loffset       = params[self.parameter_index("bc_loffset")]
+        lwidth        = params[self.parameter_index("bc_lwidth")]
+        logNe         = params[self.parameter_index("bc_logNe")]
 #        lscale        = params[self.parameter_index("lscale")]
         
 
@@ -350,12 +350,12 @@ class BalmerCombined(Component):
         note that all constants, and the units, are absorbed in the
         parameter F(3656 A).  
         """
-        normalization = parameters[self.parameter_index("normalization_BC")]
-        Te            = parameters[self.parameter_index("Te")]
-        tauBE         = parameters[self.parameter_index("tauBE")]
-        loffset       = parameters[self.parameter_index("loffset")]
-        lwidth        = parameters[self.parameter_index("lwidth")]
-        logNe         = parameters[self.parameter_index("logNe")]
+        normalization = parameters[self.parameter_index("bc_norm")]
+        Te            = parameters[self.parameter_index("bc_Te")]
+        tauBE         = parameters[self.parameter_index("bc_tauBE")]
+        loffset       = parameters[self.parameter_index("bc_loffset")]
+        lwidth        = parameters[self.parameter_index("bc_lwidth")]
+        logNe         = parameters[self.parameter_index("bc_logNe")]
 #        lscale         = parameters[self.parameter_index("lscale")]
     
         c_kms = c.to("km/s")
@@ -409,12 +409,12 @@ class BalmerCombined(Component):
         p5 :  Determined from Hbeta, if applicable.            
         """
         #get the parameters
-        normalization = parameters[self.parameter_index("normalization_BC")]
-        Te            = parameters[self.parameter_index("Te")]
-        tauBE         = parameters[self.parameter_index("tauBE")]
-        loffset       = parameters[self.parameter_index("loffset")]
-        lwidth        = parameters[self.parameter_index("lwidth")]
-        logNe         = parameters[self.parameter_index("logNe")]
+        normalization = parameters[self.parameter_index("bc_norm")]
+        Te            = parameters[self.parameter_index("bc_Te")]
+        tauBE         = parameters[self.parameter_index("bc_tauBE")]
+        loffset       = parameters[self.parameter_index("bc_loffset")]
+        lwidth        = parameters[self.parameter_index("bc_lwidth")]
+        logNe         = parameters[self.parameter_index("bc_logNe")]
         
         # Wavelength at which Balmer components merge.
         edge_wl = balmer_edge*(1 - loffset/c.value)
@@ -458,4 +458,4 @@ class BalmerCombined(Component):
             if self.BpC:
                 flux_est = self.BpC_flux(spectrum=spectrum, parameters=parameters)
                 
-        return flux_est
+        return np.array(flux_est)
