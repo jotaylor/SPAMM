@@ -83,14 +83,13 @@ def plot_posteriors(pdfname, samples, labels, params=None):
         avg_bin = np.average(chain)
         avg = avg_bin + binsize/2.
         
-        actual = params[labels[i]]
-
-        std = np.std(chain)
-        ax.axvspan(actual-std, actual+std, facecolor="grey", alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
         ax.hist(chain, bins, color="skyblue")
         
         if params is not None:
             try:
+                actual = params[labels[i]]
+                std = np.std(chain)
+                ax.axvspan(actual-std, actual+std, facecolor="grey", alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
                 ax.axvline(params[labels[i]], color="red", linestyle="solid", linewidth=1.5, label="Actual value={:1.3e}".format(actual))
             except KeyError:
                 pass
@@ -125,51 +124,63 @@ def plot_posteriors(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, pname, ymax=None, make_gif=True):
+def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
     data_spectrum = model.data_spectrum
-    errcolor = "deepskyblue"
+    actualcolor = "deepskyblue"
     model_name = pname.split(".p")[0]
     outdir = "gifplots_" + model_name
     if not os.path.exists(outdir):
         os.mkdir(outdir)
 
-    #for i in range(len(samples)):
+    actual_comps = {}
+    for component in model.components:
+        actual_params = [params[x] for x in component.model_parameter_names]
+        actual_comp_flux = component.flux(spectrum=data_spectrum,
+                                          parameters=actual_params)
+        actual_comps[component.name] = actual_comp_flux
+
+    #for i in range(len(samples)): 
     for i in range(0, len(samples), 100):
         print("Iteration {}".format(i))
         j = 0
         for component in model.components:
             fig = plt.figure(figsize=(15,7))
             ax = fig.add_subplot(111)
-            ax.errorbar(data_spectrum.wavelengths, data_spectrum.flux,
-                        data_spectrum.flux_error, mfc=errcolor, mec=errcolor,
-                        ecolor=errcolor, fmt=".", zorder=-100) 
-        
+            ax.plot(data_spectrum.wavelengths, actual_comps[component.name],
+                    color=actualcolor, label="Actual Flux")
+            
             comp_flux = component.flux(spectrum=data_spectrum,
                                        parameters=samples[i, j:j+len(component.model_parameter_names)])
-            ax.plot(data_spectrum.wavelengths, comp_flux, color="darkviolet")
+            ax.plot(data_spectrum.wavelengths, comp_flux, color="deeppink", label="Model Flux")
+            compmax = max(actual_comps[component.name])
+            ymax = compmax + .1*compmax
             if ymax is not None:
                 ax.set_ylim(0, ymax)
             ax.set_title("{}, Iteration {}".format(component.name, i))
             ax.set_xlabel(r"Wavelength [$\AA$]")
             ax.set_ylabel(r"ergs/s/cm$^2$")
+            ax.legend(loc="upper left", framealpha=0.25)
             figname = os.path.join(outdir, "{}_iter{:06d}.png".format(component.name, i))
             fig.savefig(figname)
 #            print("Saved {}".format(figname))
-            j = len(component.model_parameter_names)
+            j += len(component.model_parameter_names)
             plt.close(fig)
 
         model_spectrum = model.model_flux(params=samples[i,:])
-        fig = plt.figure(figsize=(12,6))
+        fig = plt.figure(figsize=(15,7))
         ax = fig.add_subplot(111)
         ax.errorbar(data_spectrum.wavelengths, data_spectrum.flux,
-                    data_spectrum.flux_error, mfc=errcolor, mec=errcolor,
-                    ecolor=errcolor, fmt=".", zorder=-100) 
-        ax.plot(data_spectrum.wavelengths, model_spectrum, color="deeppink")
+                    data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
+                    ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
+        ax.plot(data_spectrum.wavelengths, model_spectrum, color="deeppink", label="Model Flux")
+        modelmax = max(data_spectrum.flux)
+        ymax = modelmax + .1*modelmax
         if ymax is not None:
             ax.set_ylim(0, ymax)
         ax.set_title("Sum Of Model Components, Iteration {}".format(i))
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"ergs/s/cm$^2$")
+        ax.legend(loc="upper left", framealpha=0.25)
         figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
         fig.savefig(figname)
 #        print("Saved {}".format(figname))
@@ -179,12 +190,12 @@ def plot_models(model, samples, pname, ymax=None, make_gif=True):
         for component in model.components:
             cname = component.name
             gifname = os.path.join(outdir, "{}.gif".format(cname))
-            subprocess.check_call(["convert", "-delay", "20", "-loop", "1", 
+            subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
                                    os.path.join(outdir, "{}*png".format(cname)), 
                                    gifname])
             print("Saved {}".format(gifname))
         gifname = os.path.join(outdir, "{}.gif".format(model_name))
-        subprocess.check_call(["convert", "-delay", "20", "-loop", "1", 
+        subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
                                os.path.join(outdir, "model*png".format(model_name)), 
                                gifname])
         print("Saved {}".format(gifname))
@@ -198,7 +209,7 @@ def make_plots(pname, gif=False, burn=50):
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
-        plot_models(model, samples, pname, ymax=1e-14)
+        plot_models(model, samples, pname, params)#, ymax=1e-14)
 
 #-----------------------------------------------------------------------------#
 
