@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import argparse
 import matplotlib
 matplotlib.use('agg')
@@ -8,6 +9,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 import pickle
 import gzip
 import numpy as np
+import subprocess
+
+#-----------------------------------------------------------------------------#
 
 def read_pickle(pname):
     try:
@@ -31,7 +35,31 @@ def read_pickle(pname):
                   'fe_norm_3': 6.91877436e-15,
                   'norm_PL': 5e-15,
                   'slope1': 2.5}
+    elif pname == "model_20180711_4746.pickle.gz":
+        params = {'bc_Te': 50250.0,
+                  'bc_lines': 201.5,
+                  'bc_loffset': 0.0,
+                  'bc_logNe': 5.5,
+                  'bc_lwidth': 5050.0,
+                  'bc_norm': 3e-14,
+                  'bc_tauBE': 1.0,
+                  'broken_pl': False,
+                  'fe_norm_1': 1.07988504e-14,
+                  'fe_norm_2': 8.68930476e-15,
+                  'fe_norm_3': 6.91877436e-15,
+                  'fe_width': 5450,
+                  'norm_PL': 5e-15,
+                  'slope1': 2.5}
+    elif pname == "model_20180711_3027.pickle.gz":
+        params['fe_norm_1'] = 1.07988504e-14
+        params['fe_norm_2'] = 8.68930476e-15
+        params['fe_norm_3'] = 6.91877436e-15
+        params['fe_width'] = 5450 
+
+    
     return model, params
+
+#-----------------------------------------------------------------------------#
 
 def plot_posteriors(pdfname, samples, labels, params=None):
     num_params = np.size(samples[0,:])                                   
@@ -43,30 +71,47 @@ def plot_posteriors(pdfname, samples, labels, params=None):
         
         chain = samples[:,i]
         hist,bins = np.histogram(chain, bins=100)
-        ind = np.argmax(hist)
-        center_bin = bins[ind] 
+
+        maxind = np.argmax(hist)
+        max_bin = bins[maxind] 
         binsize = bins[1]-bins[0]
-        center = center_bin + binsize/2.
-        med = np.median(chain)
+        maxm = max_bin + binsize/2.
+
+        med_bin = np.median(chain)
+        med = med_bin + binsize/2.
+
+        avg_bin = np.average(chain)
+        avg = avg_bin + binsize/2.
+        
+        actual = params[labels[i]]
 
         std = np.std(chain)
-        print(std)
-        ax.axvspan(center-std, center+std, facecolor="grey", alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+        ax.axvspan(actual-std, actual+std, facecolor="grey", alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
         ax.hist(chain, bins, color="skyblue")
         
-#        if 10000 <= params[labels[i]] <= .0001:
-#            sigfig = 
-
         if params is not None:
             try:
-                ax.axvline(params[labels[i]], color="red", linestyle="dotted", linewidth=1.5, label="Actual value={:1.3e}".format(params[labels[i]]))
+                ax.axvline(params[labels[i]], color="red", linestyle="solid", linewidth=1.5, label="Actual value={:1.3e}".format(actual))
             except KeyError:
                 pass
         
-        ax.set_xlim(center_bin-binsize*12, center_bin+binsize*12)
+        xlo = actual - binsize*12
+        xhi = actual + binsize*12
+        
+        vmin = min([med, avg, maxm])
+        vmax = max([med, avg, maxm])
+
+        if vmin <= xlo:
+            xlo = vmin - binsize
+        if vmax >= xhi:
+            xhi = vmax + binsize
+
+        ax.set_xlim(xlo, xhi)
         
 #        ax.axvline(center, color="red", linestyle="dotted", linewidth=1.5, label="Max")
-        ax.axvline(med, color="darkviolet", linestyle="dashed", linewidth=1.5, label="Median={:1.3e}".format(med))
+        ax.axvline(med, color="darkviolet", linestyle="--", linewidth=1.5, label="Median={:1.3e}".format(med))
+        ax.axvline(avg, color="darkblue", linestyle="--", linewidth=1.5, label="Mean={:1.3e}".format(avg))
+        ax.axvline(maxm, color="fuchsia", linestyle="--", linewidth=1.5, label="Maximum={:1.3e}".format(maxm))
         ax.legend(loc="best")
 
         ax.set_xlabel(labels[i])
@@ -80,9 +125,13 @@ def plot_posteriors(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, ymax=None):
+def plot_models(model, samples, pname, ymax=None, make_gif=True):
     data_spectrum = model.data_spectrum
     errcolor = "deepskyblue"
+    model_name = pname.split(".p")[0]
+    outdir = "gifplots_" + model_name
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
 
     #for i in range(len(samples)):
     for i in range(0, len(samples), 100):
@@ -103,7 +152,7 @@ def plot_models(model, samples, ymax=None):
             ax.set_title("{}, Iteration {}".format(component.name, i))
             ax.set_xlabel(r"Wavelength [$\AA$]")
             ax.set_ylabel(r"ergs/s/cm$^2$")
-            figname = "gifplots3/{}_iter{:06d}.png".format(component.name, i)
+            figname = os.path.join(outdir, "{}_iter{:06d}.png".format(component.name, i))
             fig.savefig(figname)
 #            print("Saved {}".format(figname))
             j = len(component.model_parameter_names)
@@ -121,10 +170,25 @@ def plot_models(model, samples, ymax=None):
         ax.set_title("Sum Of Model Components, Iteration {}".format(i))
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"ergs/s/cm$^2$")
-        figname = "gifplots3/model_iter{:06d}.png".format(i)
+        figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
         fig.savefig(figname)
 #        print("Saved {}".format(figname))
         plt.close(fig)
+
+    if make_gif is True:
+        for component in model.components:
+            cname = component.name
+            gifname = os.path.join(outdir, "{}.gif".format(cname))
+            subprocess.check_call(["convert", "-delay", "20", "-loop", "1", 
+                                   os.path.join(outdir, "{}*png".format(cname)), 
+                                   gifname])
+            print("Saved {}".format(gifname))
+        gifname = os.path.join(outdir, "{}.gif".format(model_name))
+        subprocess.check_call(["convert", "-delay", "20", "-loop", "1", 
+                               os.path.join(outdir, "model*png".format(model_name)), 
+                               gifname])
+        print("Saved {}".format(gifname))
+        
 
 #-----------------------------------------------------------------------------#
 
@@ -134,7 +198,7 @@ def make_plots(pname, gif=False, burn=50):
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
-        plot_models(model, samples, ymax=1e-13)
+        plot_models(model, samples, pname, ymax=1e-14)
 
 #-----------------------------------------------------------------------------#
 
