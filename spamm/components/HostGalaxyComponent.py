@@ -105,7 +105,7 @@ class HostGalaxyComponent(Component):
         parameter_names = []
         for i in range(1, len(self.host_gal)+1):
             parameter_names.append("hg_norm_{0}".format(i))
-        parameter_names.append("stellar_disp")
+        parameter_names.append("hg_stellar_disp")
         
         return parameter_names
 
@@ -214,7 +214,7 @@ class HostGalaxyComponent(Component):
         for i in range(1, len(self.host_gal)+1):
             norm.append(params[self.parameter_index("hg_norm_{0}".format(i))])
         
-        stellar_disp = params[self.parameter_index("stellar_disp")]
+        stellar_disp = params[self.parameter_index("hg_stellar_disp")]
         
         # Flat prior within the expected ranges.
         for i in range(len(self.host_gal)):
@@ -265,7 +265,7 @@ class HostGalaxyComponent(Component):
         log_norm_wl = np.log(norm_wl)
 # TODO, check on handling of dispersions
         tmpl_stellar_disp = PARS["hg_template_stellar_disp"] 
-        stellar_disp = parameters[self.parameter_index("stellar_disp")]
+        stellar_disp = parameters[self.parameter_index("hg_stellar_disp")]
 # TODO Gisella to check with Anthea to confirm below line vv
         sigma_conv = np.sqrt(stellar_disp**2 - tmpl_stellar_disp**2) / c_kms
             
