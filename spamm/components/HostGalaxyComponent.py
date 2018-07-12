@@ -104,7 +104,7 @@ class HostGalaxyComponent(Component):
 
         parameter_names = []
         for i in range(1, len(self.host_gal)+1):
-            parameter_names.append("norm_{0}".format(i))
+            parameter_names.append("hg_norm_{0}".format(i))
         parameter_names.append("stellar_disp")
         
         return parameter_names
@@ -212,7 +212,7 @@ class HostGalaxyComponent(Component):
         
         norm = []
         for i in range(1, len(self.host_gal)+1):
-            norm.append(params[self.parameter_index("norm_{0}".format(i))])
+            norm.append(params[self.parameter_index("hg_norm_{0}".format(i))])
         
         stellar_disp = params[self.parameter_index("stellar_disp")]
         
