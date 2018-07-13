@@ -153,9 +153,9 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
                                        parameters=samples[i, j:j+len(component.model_parameter_names)])
             ax.plot(data_spectrum.wavelengths, comp_flux, color="deeppink", label="Model Flux")
             compmax = max(actual_comps[component.name])
-            ymax = compmax + .1*compmax
-            if ymax is not None:
-                ax.set_ylim(0, ymax)
+            if ymax is None:
+                ymax = compmax + .1*compmax
+            ax.set_ylim(0, ymax)
             ax.set_title("{}, Iteration {}".format(component.name, i))
             ax.set_xlabel(r"Wavelength [$\AA$]")
             ax.set_ylabel(r"ergs/s/cm$^2$")
@@ -174,9 +174,9 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
                     ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
         ax.plot(data_spectrum.wavelengths, model_spectrum, color="deeppink", label="Model Flux")
         modelmax = max(data_spectrum.flux)
-        ymax = modelmax + .1*modelmax
-        if ymax is not None:
-            ax.set_ylim(0, ymax)
+        if ymax is None:
+            ymax = modelmax + .1*modelmax
+        ax.set_ylim(0, ymax)
         ax.set_title("Sum Of Model Components, Iteration {}".format(i))
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"ergs/s/cm$^2$")
@@ -209,7 +209,7 @@ def make_plots(pname, gif=False, burn=50):
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
-        plot_models(model, samples, pname, params)#, ymax=1e-14)
+        plot_models(model, samples, pname, params)
 
 #-----------------------------------------------------------------------------#
 
