@@ -9,6 +9,14 @@ from utils.add_in_quadrature import add_in_quadrature
 # The normalizations are drawn from a gaussian sample with mu=9.06e-15,
 # sigma=3.08946e-15 (from 0->template max flux). fe_width is halfway 
 # between range in parameters. WL is very close to template span (1075-7535)
+NC_PARAMS = {"wl": np.arange(2000, 7000, 0.5),
+             "slope1": 2.5,
+             "slope_factor": 1,
+             "norm_PL": 5e-15,
+             "err_factor": 0.05,
+             "broken_pl": False,
+             "wave_break": 4499.75}
+
 FE_PARAMS = {"fe_norm_1": 1.07988504e-14,
              "fe_norm_2": 8.68930476e-15,
              "fe_norm_3": 6.91877436e-15,
@@ -25,7 +33,19 @@ BC_PARAMS = {"bc_norm": 3e-14,
              "bc_Te": 50250.,
              "bc_lines": 201.5,
              "wl": np.arange(2000, 7000, 0.5)}
+
+# These values are just the midpoints of the parameter space in parameters.yaml
+HG_PARAMS = {"hg_norm_1": 1.07988504e-14,
+             "hg_norm_2": 8.68930476e-15,
+             "hg_norm_3": 6.91877436e-15,
+             "fe_width": 5450,
+             "no_templates": 3,
+             "wl": np.arange(2000, 7000, .5)}
+
+
 WL = np.arange(2000, 7000, 0.5)
+
+
 
 LINEOUT = "#"*75
 
@@ -128,7 +148,37 @@ def test_nc_bc_fe(bc_params=BC_PARAMS, fe_params=FE_PARAMS):
 
     print(comb_p) 
     run_spamm.spamm_wlflux({"PL": True, "BC": True, "BpC": True, "FE": True}, comb_wl, comb_flux, comb_err,
-                           comp_params=comb_p, n_walkers=100, n_iterations=500)
+                           comp_params=comb_p, n_walkers=400, n_iterations=400)
+
+#-----------------------------------------------------------------------------#
+
+def test_hg(hg_params=HG_PARAMS):
+    print("{0}\nTESTING HOST GALAXY\n{0}".format(LINEOUT))
+    hg_wl, hg_flux, hg_err, hg_p = run_hg.create_hg(hg_params)
+    
+    run_spamm.spamm_wlflux({"HOST": True}, hg_wl, hg_flux, hg_err, 
+                           comp_params=hg_p)
+
+#-----------------------------------------------------------------------------#
+
+def test_spamm(components, comp_params=None):
+    """
+    Args:
+        components (list): Components to be added to the data spectrum. 
+        Options are:
+            - PL or NC
+            - FE
+            - BC or BpC
+            - HOST
+    """
+
+    all_wls = []
+    all_fluxes = []
+    all_errs = []
+    all_params = []
+    for component in components:
+        if component == "PL" or component == "NC":
+            this = 0
 
 #-----------------------------------------------------------------------------#
 
