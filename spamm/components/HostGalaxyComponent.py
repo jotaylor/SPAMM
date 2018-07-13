@@ -11,6 +11,8 @@ from astropy.convolution import Gaussian1DKernel, convolve
 import warnings
 import math
 from astropy import constants
+import glob
+import os
 
 from utils.runningmeanfast import runningMeanFast
 from utils.gaussian_kernel import gaussian_kernel
@@ -85,8 +87,9 @@ class HostGalaxyComponent(Component):
     
         for template_filename in template_list:
             with open(template_filename) as template_file:
-                host = Spectrum()
-                host.wavelengths, host.flux = np.loadtxt(template_filename, unpack=True)
+                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+                host = Spectrum.from_array(flux)
+                host.dispersion = wavelengths
                 self.host_gal.append(host)
 
 #-----------------------------------------------------------------------------#
