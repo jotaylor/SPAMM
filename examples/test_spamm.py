@@ -3,7 +3,7 @@
 import pdb
 import numpy as np
 
-import run_spamm, run_fe, run_nc, run_bc
+import run_spamm, run_fe, run_nc, run_bc, run_hg
 from utils.add_in_quadrature import add_in_quadrature
 
 # The normalizations are drawn from a gaussian sample with mu=9.06e-15,
@@ -35,11 +35,12 @@ BC_PARAMS = {"bc_norm": 3e-14,
              "wl": np.arange(2000, 7000, 0.5)}
 
 # These values are just the midpoints of the parameter space in parameters.yaml
-HG_PARAMS = {"hg_norm_1": 1.07988504e-14,
-             "hg_norm_2": 8.68930476e-15,
-             "hg_norm_3": 6.91877436e-15,
-             "fe_width": 5450,
-             "no_templates": 3,
+HG_PARAMS = {"hg_norm_1": 5e-14,
+#             "hg_norm_2": 8.68930476e-15,
+#             "hg_norm_3": 6.91877436e-15,
+             "hg_stellar_disp": 515,
+             "no_templates": 1,
+             #"no_templates": 3,
              "wl": np.arange(2000, 7000, .5)}
 
 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 #    test_fe()
 #    test_bc()
 #    test_nc_bc()
-    test_nc_bc_fe()
-
+#    test_nc_bc_fe()
+    test_hg()
 
 
