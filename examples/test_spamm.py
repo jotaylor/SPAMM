@@ -35,16 +35,15 @@ BC_PARAMS = {"bc_norm": 3e-14,
              "wl": np.arange(2000, 7000, 0.5)}
 
 # These values are just the midpoints of the parameter space in parameters.yaml
-HG_PARAMS = {"hg_norm_1": 5e-14,
-#             "hg_norm_2": 8.68930476e-15,
-#             "hg_norm_3": 6.91877436e-15,
+HG_PARAMS = {"hg_norm_1": 1.e-14,
+             "hg_norm_2": 1.5e-14,
+             "hg_norm_3": 1.e-13,
              "hg_stellar_disp": 515,
-             "no_templates": 1,
-             #"no_templates": 3,
-             "wl": np.arange(2000, 7000, .5)}
+             "no_templates": 3,
+             "wl": np.arange(1000, 8000, .5)}
 
 
-WL = np.arange(2000, 7000, 0.5)
+WL = np.arange(1000, 10000, 0.5)
 
 
 
@@ -158,7 +157,7 @@ def test_hg(hg_params=HG_PARAMS):
     hg_wl, hg_flux, hg_err, hg_p = run_hg.create_hg(hg_params)
     
     run_spamm.spamm_wlflux({"HOST": True}, hg_wl, hg_flux, hg_err, 
-                           comp_params=hg_p)
+                           comp_params=hg_p) 
 
 #-----------------------------------------------------------------------------#
 
@@ -170,16 +169,17 @@ def test_spamm(components, comp_params=None):
             - PL or NC
             - FE
             - BC or BpC
-            - HOST
+            - HOST or HG
     """
 
-    all_wls = []
     all_fluxes = []
     all_errs = []
     all_params = []
+    comp_names = {}
     for component in components:
         if component == "PL" or component == "NC":
-            this = 0
+            comp_names["PL"] = True
+            nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
 
 #-----------------------------------------------------------------------------#
 
