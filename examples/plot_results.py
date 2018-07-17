@@ -124,7 +124,7 @@ def plot_posteriors(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
+def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_last=False):
     data_spectrum = model.data_spectrum
     actualcolor = "deepskyblue"
     model_name = pname.split(".p")[0]
@@ -139,8 +139,11 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
                                           parameters=actual_params)
         actual_comps[component.name] = actual_comp_flux
 
-    #for i in range(len(samples)): 
-    for i in range(0, len(samples), 100):
+    if only_last is True:
+        sample_range = [len(samples)-1]
+    else:
+        sample_range = range(0, len(samples), 100)
+    for i in sample_range:
         print("Iteration {}".format(i))
         j = 0
         for component in model.components:
@@ -203,13 +206,13 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True):
 
 #-----------------------------------------------------------------------------#
 
-def make_plots(pname, gif=False, burn=50):
+def make_plots(pname, gif=False, last=False, burn=50):
     model, params = read_pickle(pname)
     samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
-        plot_models(model, samples, pname, params)
+        plot_models(model, samples, pname, params, only_last=last)
 
 #-----------------------------------------------------------------------------#
 
@@ -218,6 +221,8 @@ if __name__ == "__main__":
     parser.add_argument("pname", help="SPAMM model pickle file", type=str)
     parser.add_argument("--gif", dest="gif", action="store_true", default=False,
                         help="Switch to make plots to create gif")
+    parser.add_argument("--last", dest="last", action="store_true", default=False,
+                        help="Switch to only plot last model iteration")
     args = parser.parse_args()
 
-    make_plots(args.pname, args.gif)
+    make_plots(args.pname, args.gif, args.last)
