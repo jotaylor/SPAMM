@@ -9,20 +9,19 @@ from utils.add_in_quadrature import add_in_quadrature
 # The normalizations are drawn from a gaussian sample with mu=9.06e-15,
 # sigma=3.08946e-15 (from 0->template max flux). fe_width is halfway 
 # between range in parameters. WL is very close to template span (1075-7535)
-NC_PARAMS = {"wl": np.arange(2000, 7000, 0.5),
-             "slope1": 2.5,
-             "slope_factor": 1,
+WL = np.arange(1000, 10000, 0.5)
+
+NC_PARAMS = {"wl": WL,
+             "slope1": 2.3,
              "norm_PL": 5e-15,
-             "err_factor": 0.05,
-             "broken_pl": False,
-             "wave_break": 4499.75}
+             "broken_pl": False}
 
 FE_PARAMS = {"fe_norm_1": 1.07988504e-14,
              "fe_norm_2": 8.68930476e-15,
              "fe_norm_3": 6.91877436e-15,
              "fe_width": 5450,
              "no_templates": 3,
-             "wl": np.arange(2000, 7000, .5)}
+             "wl": WL}
 
 # These values are just the midpoints of the parameter space in parameters.yaml
 BC_PARAMS = {"bc_norm": 3e-14,
@@ -32,7 +31,7 @@ BC_PARAMS = {"bc_norm": 3e-14,
              "bc_lwidth": 5050.,
              "bc_Te": 50250.,
              "bc_lines": 201.5,
-             "wl": np.arange(2000, 7000, 0.5)}
+             "wl": WL}
 
 # These values are just the midpoints of the parameter space in parameters.yaml
 HG_PARAMS = {"hg_norm_1": 1.e-14,
@@ -40,12 +39,7 @@ HG_PARAMS = {"hg_norm_1": 1.e-14,
              "hg_norm_3": 1.e-13,
              "hg_stellar_disp": 515,
              "no_templates": 3,
-             "wl": np.arange(1000, 8000, .5)}
-
-
-WL = np.arange(1000, 10000, 0.5)
-
-
+             "wl": WL}
 
 LINEOUT = "#"*75
 
@@ -179,7 +173,7 @@ def test_spamm(components, comp_params=None):
     for component in components:
         if component == "PL" or component == "NC":
             comp_names["PL"] = True
-            nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
+            nc_wl, nc_flux, nc_err, nc_p = run_nc.create_nc(NC_PARAMS)
 
 #-----------------------------------------------------------------------------#
 
