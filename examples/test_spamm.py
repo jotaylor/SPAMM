@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import pdb
+import argparse
 import numpy as np
 
 import run_spamm, run_fe, run_nc, run_bc, run_hg
@@ -34,9 +34,9 @@ BC_PARAMS = {"bc_norm": 3e-14,
              "wl": WL}
 
 # These values are just the midpoints of the parameter space in parameters.yaml
-HG_PARAMS = {"hg_norm_1": 1.e-14,
-             "hg_norm_2": 1.5e-14,
-             "hg_norm_3": 1.e-13,
+HG_PARAMS = {"hg_norm_1": 5.e-17,
+             "hg_norm_2": 5.5e-17,
+             "hg_norm_3": 5.e-16,
              "hg_stellar_disp": 515,
              "no_templates": 3,
              "wl": WL}
@@ -53,7 +53,7 @@ def test_nc_fe(fe_params=FE_PARAMS):
     assert set(nc_wl-fe_wl) == {0}, "Wavelength scales do not match" 
     comb_wl = WL
     comb_flux = nc_flux + fe_flux
-    comb_err = add_in_quadrature(nc_err, fe_err)
+    comb_err = add_in_quadrature([nc_err, fe_err])
 
     comb_p = {**nc_p, **fe_p}
 
@@ -116,7 +116,7 @@ def test_nc_bc(bc_params=BC_PARAMS):
     assert set(nc_wl-bc_wl) == {0}, "Wavelength scales do not match" 
     comb_wl = WL
     comb_flux = nc_flux + bc_flux
-    comb_err = add_in_quadrature(nc_err, bc_err)
+    comb_err = add_in_quadrature([nc_err, bc_err])
 
     comb_p = {**nc_p, **bc_p}
     
@@ -136,7 +136,7 @@ def test_nc_bc_fe(bc_params=BC_PARAMS, fe_params=FE_PARAMS):
     assert set(nc_wl-fe_wl) == {0}, "NC and Fe wavelength scales do not match" 
     comb_wl = WL
     comb_flux = nc_flux + bc_flux + fe_flux
-    comb_err = add_in_quadrature(nc_err, bc_err, fe_err)
+    comb_err = add_in_quadrature([nc_err, bc_err, fe_err])
 
     comb_p = {**nc_p, **bc_p, **fe_p}
 
@@ -155,7 +155,7 @@ def test_hg(hg_params=HG_PARAMS):
 
 #-----------------------------------------------------------------------------#
 
-def test_spamm(components, comp_params=None):
+def test_spamm(components=None, comp_params=None, n_walkers=30, n_iterations=500):
     """
     Args:
         components (list): Components to be added to the data spectrum. 
@@ -166,14 +166,61 @@ def test_spamm(components, comp_params=None):
             - HOST or HG
     """
 
+    if components is None:
+        components = ["PL", "FE", "BC", "HG"]
+        comp_params = {"PL": NC_PARAMS, "FE": FE_PARAMS, "BC": BC_PARAMS,
+                       "HOST": HG_PARAMS}
+    elif comp_params is None:
+        comp_params = {"PL": NC_PARAMS, "FE": FE_PARAMS, "BC": BC_PARAMS,
+                       "HOST": HG_PARAMS}
+    
+    all_wls = []
     all_fluxes = []
     all_errs = []
-    all_params = []
+    comb_p = {}
     comp_names = {}
     for component in components:
+        component = component.upper()
         if component == "PL" or component == "NC":
+            comp_wl, comp_flux, comp_err, comp_p = run_nc.create_nc(comp_params["PL"])
             comp_names["PL"] = True
-            nc_wl, nc_flux, nc_err, nc_p = run_nc.create_nc(NC_PARAMS)
+        elif component == "FE":
+            comp_wl, comp_flux, comp_err, comp_p = run_fe.create_fe(comp_params["FE"])
+            comp_names["FE"] = True
+        elif component == "BC" or component == "BPC":
+            comp_wl, comp_flux, comp_err, comp_p = run_bc.create_bc(comp_params["BC"])
+            comp_names["BC"] = True
+            comp_names["BpC"] = True
+        elif component == "HG" or component == "HOST":
+            comp_wl, comp_flux, comp_err, comp_p = run_hg.create_hg(comp_params["HOST"])
+            comp_names["HOST"] = True
+        all_fluxes.append(comp_flux)
+        all_wls.append(comp_wl)
+        all_errs.append(comp_err)
+        comb_p = {**comb_p, **comp_p}
+
+    comb_wl = WL #all_wls[0]
+    comb_flux = np.sum(all_fluxes, axis=0)
+    comb_err = add_in_quadrature(all_errs)
+    
+    print("{0}\nUsing components: {1}\nWith {2} walkers, {3} iterations\n{0}".format(LINEOUT, components, n_walkers, n_iterations))
+
+    return comb_wl, comb_flux, comb_err, all_fluxes
+
+    run_spamm.spamm_wlflux(comp_names, comb_wl, comb_flux, comb_err, 
+                           comp_params=comb_p, n_walkers=n_walkers,
+                           n_iterations=n_iterations)
+
+#-----------------------------------------------------------------------------#
+
+def parse_comps(argcomp):
+    if len(argcomp) == 1:
+        if "," in argcomp[0]:
+            comps = [x for x in argcomp[0].split(",")]
+    else:
+        comps = argcomp
+
+    return comps
 
 #-----------------------------------------------------------------------------#
 
@@ -185,6 +232,17 @@ if __name__ == "__main__":
 #    test_bc()
 #    test_nc_bc()
 #    test_nc_bc_fe()
-    test_hg()
+#    test_hg()
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--comp", nargs="*", 
+                        help="List of components to use: can be  PL, FE, BC, HG")
+    parser.add_argument("--n_walkers", dest="n_walkers", default=30,
+                        help="Number of walkers")
+    parser.add_argument("--n_iterations", dest="n_iterations", default=500,
+                        help="Number of iterations per walker")
+    args = parser.parse_args()
+
+    comps = parse_comps(args.comp)
+    test_spamm(components=comps, n_walkers=int(args.n_walkers), n_iterations=int(args.n_iterations))
 
