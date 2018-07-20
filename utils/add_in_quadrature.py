@@ -2,11 +2,20 @@
 
 import numpy as np
 
-def add_in_quadrature(*args):
+def add_in_quadrature(data_in):
+    """ 
+    Add arrays in quadrature.
+    Args: 
+        data_in (list, array, or tuple): Holds the arrays of individual 
+            values to be added in quadrature.
+    Returns:
+        sum_quad (array): The sum of the input arrays added in quadrature.
+    """
+
     sqsum = 0.
-    for arg in args:
-        sqsum += arg**2
-    err = np.sqrt(sqsum)
+    for data in data_ins:
+        data_arr = np.array(data_in)
+        sqsum += data_arr**2
+    sum_quad = np.sqrt(sqsum)
 
-    return err
-
+    return sum_quad
