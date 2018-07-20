@@ -72,7 +72,8 @@ class FeComponent(Component):
     def load_templates(self):
         """Read in all of the Fe templates."""
 
-        template_list = glob.glob(os.path.join(PARS["fe_templates"], "*"))
+        # Sort the templates alphabetically.
+        template_list = sorted(glob.glob(os.path.join(PARS["fe_templates"], "*")))
         assert len(template_list) != 0, \
         "No Fe templates found in specified diretory {0}".format(PARS["fe_templates"])
 
