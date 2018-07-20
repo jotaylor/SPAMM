@@ -17,8 +17,8 @@ NC_PARAMS = {"wl": WL,
              "broken_pl": False}
 
 FE_PARAMS = {"fe_norm_1": 1.07988504e-14,
-             "fe_norm_2": 8.68930476e-15,
-             "fe_norm_3": 6.91877436e-15,
+             "fe_norm_2": 6.91877436e-15,
+             "fe_norm_3": 5e-15,# 8.68930476e-15, 
              "fe_width": 5450,
              "no_templates": 3,
              "wl": WL}
@@ -64,7 +64,7 @@ def test_nc_fe(fe_params=FE_PARAMS):
 
 #-----------------------------------------------------------------------------#
 
-def test_fe_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.da.dat", 
+def test_fe_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", 
                      redshift=0.5):
     print("{0}\nTESTING IRON\n{0}".format(LINEOUT))
     fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test(datafile, redshift)
@@ -205,7 +205,7 @@ def test_spamm(components=None, comp_params=None, n_walkers=30, n_iterations=500
     
     print("{0}\nUsing components: {1}\nWith {2} walkers, {3} iterations\n{0}".format(LINEOUT, components, n_walkers, n_iterations))
 
-    return comb_wl, comb_flux, comb_err, all_fluxes
+#    return comb_wl, comb_flux, comb_err, all_fluxes
 
     run_spamm.spamm_wlflux(comp_names, comb_wl, comb_flux, comb_err, 
                            comp_params=comb_p, n_walkers=n_walkers,
@@ -217,6 +217,8 @@ def parse_comps(argcomp):
     if len(argcomp) == 1:
         if "," in argcomp[0]:
             comps = [x for x in argcomp[0].split(",")]
+        else:
+            comps = argcomp
     else:
         comps = argcomp
 
