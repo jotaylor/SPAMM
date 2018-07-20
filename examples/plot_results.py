@@ -124,7 +124,7 @@ def plot_posteriors(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_last=False):
+def plot_models(model, samples, pname, params, ymax=None, make_gif=True, step=100, only_last=False):
     data_spectrum = model.data_spectrum
     actualcolor = "deepskyblue"
     model_name = pname.split(".p")[0]
@@ -142,7 +142,7 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_la
     if only_last is True:
         sample_range = [len(samples)-1]
     else:
-        sample_range = range(0, len(samples), 100)
+        sample_range = range(0, len(samples), step)
     for i in sample_range:
         print("Iteration {}".format(i))
         j = 0
@@ -165,7 +165,8 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_la
             ax.legend(loc="upper left", framealpha=0.25)
             figname = os.path.join(outdir, "{}_iter{:06d}.png".format(component.name, i))
             fig.savefig(figname)
-#            print("Saved {}".format(figname))
+            if only_last is True:
+                print("Saved {}".format(figname))
             j += len(component.model_parameter_names)
             plt.close(fig)
 
@@ -186,7 +187,8 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_la
         ax.legend(loc="upper left", framealpha=0.25)
         figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
         fig.savefig(figname)
-#        print("Saved {}".format(figname))
+        if only_last is True:
+            print("Saved {}".format(figname))
         plt.close(fig)
 
     if make_gif is True:
@@ -206,13 +208,13 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, only_la
 
 #-----------------------------------------------------------------------------#
 
-def make_plots(pname, gif=False, last=False, burn=50):
+def make_plots(pname, gif=False, last=False, step=100, burn=50):
     model, params = read_pickle(pname)
     samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
-        plot_models(model, samples, pname, params, only_last=last)
+        plot_models(model, samples, pname, params, step=step, only_last=last)
 
 #-----------------------------------------------------------------------------#
 
@@ -223,6 +225,8 @@ if __name__ == "__main__":
                         help="Switch to make plots to create gif")
     parser.add_argument("--last", dest="last", action="store_true", default=False,
                         help="Switch to only plot last model iteration")
+    parser.add_argument("--step", dest="step", default=100,
+                        help="Step size for plotting chain iterations")
     args = parser.parse_args()
 
-    make_plots(args.pname, args.gif, args.last)
+    make_plots(args.pname, args.gif, args.last, int(args.step))
