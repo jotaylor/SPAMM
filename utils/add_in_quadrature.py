@@ -13,8 +13,8 @@ def add_in_quadrature(data_in):
     """
 
     sqsum = 0.
-    for data in data_ins:
-        data_arr = np.array(data_in)
+    for data in data_in:
+        data_arr = np.array(data)
         sqsum += data_arr**2
     sum_quad = np.sqrt(sqsum)
 
