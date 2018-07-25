@@ -105,7 +105,6 @@ def create_hg(hg_params=None):
     hg_flux = HostGalaxyComponent.flux(hg, spectrum, comp_params)
     hg_err = hg_flux * 0.05
 
-    import pdb; pdb.set_trace()
 #    pl.errorbar(hg_params["wl"], hg_flux, hg_err)
 #    pl.savefig("hg_data.png")
 
