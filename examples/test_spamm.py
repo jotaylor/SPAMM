@@ -47,7 +47,7 @@ LINEOUT = "#"*75
 
 def test_nc_fe(fe_params=FE_PARAMS):
     print("{0}\nTESTING NUCLEAR CONTINUUM + IRON\n{0}".format(LINEOUT))
-    #fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test("/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", redshift=0.5)
+    #fe_wl, fe_flux, fe_err, fe_p = run_fe.from_file("/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", redshift=0.5)
     fe_wl, fe_flux, fe_err, fe_p = run_fe.create_fe(fe_params)
     nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
     assert set(nc_wl-fe_wl) == {0}, "Wavelength scales do not match" 
@@ -67,7 +67,7 @@ def test_nc_fe(fe_params=FE_PARAMS):
 def test_fe_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", 
                      redshift=0.5):
     print("{0}\nTESTING IRON\n{0}".format(LINEOUT))
-    fe_wl, fe_flux, fe_err, fe_p = run_fe.run_test(datafile, redshift)
+    fe_wl, fe_flux, fe_err, fe_p = run_fe.from_file(datafile, redshift)
     run_spamm.spamm_wlflux({"FE": True}, fe_wl, fe_flux, fe_err,
                            comp_params=fe_p)#, pname="fe.pickle.gz")
 
@@ -94,7 +94,7 @@ def test_nc():
 def test_bc_fromfile(datafile="/user/jotaylor/git/spamm/Data/FakeData/BaC_comp/FakeBac_lines04_deg.dat", 
                      redshift=0.2, bpc=True):
     print("{0}\nTESTING BALMER CONTINUUM\n{0}".format(LINEOUT))
-    bc_wl, bc_flux, bc_err, bc_p = run_bc.run_test(datafile, redshift)
+    bc_wl, bc_flux, bc_err, bc_p = run_bc.from_file(datafile, redshift)
     run_spamm.spamm_wlflux({"BC": True, "BpC": True}, bc_wl, bc_flux, bc_err, 
                            comp_params=bc_p, pname="bc.pickle.gz")
 
