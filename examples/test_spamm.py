@@ -49,7 +49,7 @@ def test_nc_fe(fe_params=FE_PARAMS):
     print("{0}\nTESTING NUCLEAR CONTINUUM + IRON\n{0}".format(LINEOUT))
     #fe_wl, fe_flux, fe_err, fe_p = run_fe.from_file("/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat", redshift=0.5)
     fe_wl, fe_flux, fe_err, fe_p = run_fe.create_fe(fe_params)
-    nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
+    nc_wl, nc_flux, nc_err, nc_p = run_nc.create_nc(NC_PARAMS)
     assert set(nc_wl-fe_wl) == {0}, "Wavelength scales do not match" 
     comb_wl = WL
     comb_flux = nc_flux + fe_flux
@@ -112,7 +112,7 @@ def test_bc(bc_params=None):
 def test_nc_bc(bc_params=BC_PARAMS):
     print("{0}\nTESTING NUCLEAR + BALMER CONTINUUM\n{0}".format(LINEOUT))
     bc_wl, bc_flux, bc_err, bc_p = run_bc.create_bc(bc_params)
-    nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
+    nc_wl, nc_flux, nc_err, nc_p = run_nc.create_nc(NC_PARAMS)
     assert set(nc_wl-bc_wl) == {0}, "Wavelength scales do not match" 
     comb_wl = WL
     comb_flux = nc_flux + bc_flux
@@ -131,7 +131,7 @@ def test_nc_bc_fe(bc_params=BC_PARAMS, fe_params=FE_PARAMS):
     print("{0}\nTESTING NUCLEAR + BALMER CONTINUUM + IRON\n{0}".format(LINEOUT))
     fe_wl, fe_flux, fe_err, fe_p = run_fe.create_fe(fe_params)
     bc_wl, bc_flux, bc_err, bc_p = run_bc.create_bc(bc_params)
-    nc_wl, nc_flux, nc_err, nc_p = run_nc.combine_pl(WL)
+    nc_wl, nc_flux, nc_err, nc_p = run_nc.create_nc(NC_PARAMS)
     assert set(nc_wl-bc_wl) == {0}, "NC and BC wavelength scales do not match" 
     assert set(nc_wl-fe_wl) == {0}, "NC and Fe wavelength scales do not match" 
     comb_wl = WL
