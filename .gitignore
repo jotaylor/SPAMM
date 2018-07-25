@@ -46,4 +46,4 @@ documentation/_build
 ~$*xlsx
 
 # gif plots
-examples/gifplots/
+examples/gifplots*/
