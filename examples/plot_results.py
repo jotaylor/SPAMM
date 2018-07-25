@@ -210,7 +210,11 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, step=10
 
 def make_plots(pname, gif=False, last=False, step=100, burn=50):
     model, params = read_pickle(pname)
-    samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+    try:
+        samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+    except TypeError:
+        samples = model.sampler.chain[:, burn:, :].reshape((-1, 10))
+        #samples = model.sampler.chain[:, burn:, :].reshape((-1, 16))
     pdfname = "{}_posterior.pdf".format(pname)
     plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
     if gif is True:
