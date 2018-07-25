@@ -24,11 +24,13 @@ from spamm.components.FeComponent import FeComponent
 from spamm.Spectrum import Spectrum
 
 PARS = parse_pars()["fe_forest"]
+TEST_WL = parse_pars()["testing"]
+WL = np.arange(TEST_WL["wl_min"], TEST_WL["wl_max"], TEST_WL["wl_step"])
 
 #-----------------------------------------------------------------------------#
 
-def run_test(datafile, redshift=None, 
-             scale=None, subset=False, pname=None):
+def from_file(datafile, redshift=None, 
+              scale=None, subset=False, pname=None):
     print(PARS, "\n")
     templates = glob.glob(os.path.join(PARS["fe_templates"], "*"))
     print("Using datafile: {}\n".format(datafile))
@@ -86,7 +88,7 @@ def create_fe(fe_params=None):
     """
 
     if fe_params is None:
-        fe_params = {"no_templates": 3, "wl": np.arange(2000, 7000, 0.5)}
+        fe_params = {"no_templates": 3, "wl": WL}
         max_template_flux = 1.8119e-14
         samples = draw_from_sample.gaussian(PARS["fe_norm_min"], max_template_flux, 3)
         fe_params["fe_norm_1"] = samples[0]
@@ -111,27 +113,3 @@ def create_fe(fe_params=None):
     return fe_params["wl"], fe_flux, fe_err, fe_params
 
 #-----------------------------------------------------------------------------#
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--walkers", dest="n_walkers", default=30,
-                        help="Number of emcee walkers")
-    parser.add_argument("--iter", dest="n_iterations", default=500,
-                        help="Number of emcee iterations")
-    parser.add_argument("--datafile", dest="datafile",
-                        default="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat",
-                        help="Path to datafile")
-    parser.add_argument("--redshift", dest="redshift", default=None,
-                        help="If not None, correct for datafile redshift by defined number")
-    parser.add_argument("--scale", dest="scale_data", default=None,
-                        help="If not None, scale input data by defined number")
-    parser.add_argument("--subset", default=False, action="store_true",
-                        help="Switch to match datafile WL range to template WL range")
-    parser.add_argument("--pname", dest="pname", default=None,
-                        help="Name of output pickle file")
-    args = parser.parse_args()
-    
-    run_test(args.datafile, args.n_walkers, args.n_iterations, 
-             args.redshift, args.scale_data, args.subset, args.pname)
-
-    

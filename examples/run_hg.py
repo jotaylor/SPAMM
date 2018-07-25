@@ -24,11 +24,13 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.Spectrum import Spectrum
 
 PARS = parse_pars()["host_galaxy"]
+TEST_WL = parse_pars()["testing"]
+WL = np.arange(TEST_WL["wl_min"], TEST_WL["wl_max"], TEST_WL["wl_step"])
 
 #-----------------------------------------------------------------------------#
 
-def run_test(datafile, redshift=None, 
-             scale=None, subset=False, pname=None):
+def from_file(datafile, redshift=None, 
+              scale=None, subset=False, pname=None):
     print(PARS, "\n")
     templates = glob.glob(os.path.join(PARS["hg_models"], "*"))
     print("Using datafile: {}\n".format(datafile))
@@ -85,7 +87,7 @@ def create_hg(hg_params=None):
     """
 
     if hg_params is None:
-        hg_params = {"no_templates": 3, "wl": np.arange(1000, 8000, 0.5)}
+        hg_params = {"no_templates": 3, "wl": WL}
         max_template_flux = 6e-12
         samples = draw_from_sample.gaussian(PARS["hg_norm_min"], max_template_flux, 3)
         hg_params["hg_norm_1"] = samples[0]
@@ -103,33 +105,10 @@ def create_hg(hg_params=None):
     hg_flux = HostGalaxyComponent.flux(hg, spectrum, comp_params)
     hg_err = hg_flux * 0.05
 
+    import pdb; pdb.set_trace()
 #    pl.errorbar(hg_params["wl"], hg_flux, hg_err)
 #    pl.savefig("hg_data.png")
 
     return hg_params["wl"], hg_flux, hg_err, hg_params
 
 #-----------------------------------------------------------------------------#
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--walkers", dest="n_walkers", default=30,
-                        help="Number of emcee walkers")
-    parser.add_argument("--iter", dest="n_iterations", default=500,
-                        help="Number of emcee iterations")
-    parser.add_argument("--datafile", dest="datafile",
-                        default="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat",
-                        help="Path to datafile")
-    parser.add_argument("--redshift", dest="redshift", default=None,
-                        help="If not None, correct for datafile redshift by defined number")
-    parser.add_argument("--scale", dest="scale_data", default=None,
-                        help="If not None, scale input data by defined number")
-    parser.add_argument("--subset", default=False, action="store_true",
-                        help="Switch to match datafile WL range to template WL range")
-    parser.add_argument("--pname", dest="pname", default=None,
-                        help="Name of output pickle file")
-    args = parser.parse_args()
-    
-    run_test(args.datafile, args.n_walkers, args.n_iterations, 
-             args.redshift, args.scale_data, args.subset, args.pname)
-
-    

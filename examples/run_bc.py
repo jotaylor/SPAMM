@@ -24,11 +24,13 @@ from spamm.components.BalmerContinuumCombined import BalmerCombined as BCCompone
 from spamm.Spectrum import Spectrum
 
 PARS = parse_pars()["balmer_continuum"]
+TEST_WL = parse_pars()["testing"]
+WL = np.arange(TEST_WL["wl_min"], TEST_WL["wl_max"], TEST_WL["wl_step"])
 
 #-----------------------------------------------------------------------------#
 
-def run_test(datafile, redshift=None, 
-             scale=None, subset=False, pname=None):
+def from_file(datafile, redshift=None, 
+              scale=None, subset=False, pname=None):
     try:
         wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
     except ValueError:
@@ -84,7 +86,7 @@ def create_bc(bc_params=None):
     """
 
     if bc_params is None:
-        bc_params = {"wl": np.arange(2000, 7000, 0.5)}
+        bc_params = {"wl": WL}
         max_bc_flux = 6e-14
         bc_params["bc_lines"] = draw_from_sample.gaussian(PARS["bc_lines_min"], PARS["bc_lines_max"])
         bc_params["bc_norm"] = draw_from_sample.gaussian(PARS["bc_norm_min"], max_bc_flux)
@@ -111,27 +113,3 @@ def create_bc(bc_params=None):
     return bc_params["wl"], bc_flux, bc_err, bc_params
 
 #-----------------------------------------------------------------------------#
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--walkers", dest="n_walkers", default=30,
-                        help="Number of emcee walkers")
-    parser.add_argument("--iter", dest="n_iterations", default=500,
-                        help="Number of emcee iterations")
-    parser.add_argument("--datafile", dest="datafile",
-                        default="/user/jotaylor/git/spamm/Data/FakeData/Iron_comp/fakeFe1_deg.dat",
-                        help="Path to datafile")
-    parser.add_argument("--redshift", dest="redshift", default=None,
-                        help="If not None, correct for datafile redshift by defined number")
-    parser.add_argument("--scale", dest="scale_data", default=None,
-                        help="If not None, scale input data by defined number")
-    parser.add_argument("--subset", default=False, action="store_true",
-                        help="Switch to match datafile WL range to template WL range")
-    parser.add_argument("--pname", dest="pname", default=None,
-                        help="Name of output pickle file")
-    args = parser.parse_args()
-    
-    run_test(args.datafile, args.n_walkers, args.n_iterations, 
-             args.redshift, args.scale_data, args.subset, args.pname)
-
-    
