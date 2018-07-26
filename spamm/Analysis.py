@@ -78,7 +78,7 @@ def plot_chains(samples, labels):
     return fig
 
 
-def plot_posteriors(samples, labels, boxes=20):
+def plot_posteriors(samples, labels, boxes=20, params=None):
     num_params = np.size(samples[0,:])
     fig = plt.figure()
     #####
@@ -100,6 +100,12 @@ def plot_posteriors(samples, labels, boxes=20):
         chain = samples[:,i]
         ax = fig.add_subplot(num_params, 1, i+1)
         ax.hist(chain, boxes)
+        if params is not None:
+            try:
+                ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
+                ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
+            except KeyError:
+                pass
         ax.set_xlabel(labels[i])
         ax.set_ylabel("Posterior PDF")
     print("Plotting the model posterior PDFs.")
@@ -113,7 +119,6 @@ def plot_spectra(model, samples):
     plt.clf()
     plt.ion()
     for i in range(0, num_samples):
-        plt.hold(True)
         # plot the data
         plt.errorbar(data_spectrum.wavelengths, data_spectrum.flux, 
                 yerr=data_spectrum.flux_error, mfc='blue', mec='blue', ecolor='b',
@@ -125,18 +130,9 @@ def plot_spectra(model, samples):
         component_flux = component.flux(spectrum=model.data_spectrum,
                 parameters=samples[i,k:len(component.model_parameter_names)])  # flux
         k = len(component.model_parameter_names)
-        plt.hold(True)
         plt.plot(data_spectrum.wavelengths, component_flux, '-r')
 
     # plot the sum of the model components
         model_spectrum = model.model_flux(params=samples[i,:])  # flux
-        plt.hold(True)
         plt.plot(data_spectrum.wavelengths, model_spectrum)
-
-    plt.hold(False)
-    plt.draw()
-    plt.ioff()
-    plt.show()
-
-
 

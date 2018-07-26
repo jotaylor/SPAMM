@@ -19,22 +19,23 @@ class Spectrum(Spectrum1DRef):
         '''
         #self.flux_error = None
         self._norm_wavelength = None
-        self._flux_at_norm_wavelength = None
+        self._norm_wavelength_flux = None
         super(Spectrum, self).__init__(data, wcs=wcs, *args, **kwargs)
         self.wavelengths = None
 
     @property
-    def normalization_wavelength(self):
+    def norm_wavelength(self):
         if self._norm_wavelength is None:
             self._norm_wavelength = np.median(self.wavelengths)
         return self._norm_wavelength
 
-    def flux_at_normalization_wavelength(self):
+    @property
+    def norm_wavelength_flux(self):
         ''' Returns the flux at the normalization wavelength. '''
-        if self._flux_at_norm_wavelength == None:
+        if self._norm_wavelength_flux == None:
             f = scipy.interpolate.interp1d(self.wavelengths, self.flux) # returns function
-            self._flux_at_norm_wavelength = f(self.normalization_wavelength)
-        return self._flux_at_norm_wavelength
+            self._norm_wavelength_flux = f(self.norm_wavelength)
+        return self._norm_wavelength_flux
 
     def grid_spacing(self):
         ''' Return the spacing of the wavelength grid in Ångstroms. Does not support variable grid spacing. '''
@@ -76,8 +77,9 @@ class Spectrum(Spectrum1DRef):
     def flux(self, new_flux):
 #        self._flux = new_flux
         self._data = new_flux
-        self._flux_at_norm_wavelength = None
-        
-    
-    
+        self._norm_wavelength_flux = None
 
+#    def bin_spectrum(self):
+#TODO need to finalize this 
+
+#TODO need to add log_grid_spacing

@@ -24,6 +24,8 @@ try:
 except ImportError:
     import pickle
 import triangle
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from matplotlib import cm,mlab,colors,ticker,rc
 from matplotlib.ticker import NullFormatter
@@ -58,10 +60,14 @@ samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_coun
 
 pl.plot(model.data_spectrum.dispersion,model.data_spectrum.flux)
 pl.plot(model.model_spectrum.dispersion,model.model_spectrum.flux)
-pl.savefig("fit_from_pickle.eps", format='eps', dpi=1000)
+figname = "fit_from_pickle.eps"
+pl.savefig(figname, format='eps', dpi=1000)
+print("Saved {0}".format(figname))
 pl.close()
 
+figname = "triangle_from_pickle.eps"
 fig2 = triangle.corner(samples, labels=model.model_parameter_names())
-fig2.savefig("triangle_from_pickle.eps")
+fig2.savefig(figname)
+print("Saved {0}".format(figname))
 
 sys.exit(0)

@@ -6,366 +6,321 @@ import numpy as np
 import scipy.interpolate
 import numpy as np
 import scipy.integrate
+from scipy import signal
+from astropy.convolution import Gaussian1DKernel, convolve
+import warnings
+import math
+from astropy.constants import c
+import glob
+import os
+
+from utils.runningmeanfast import runningMeanFast
+from utils.gaussian_kernel import gaussian_kernel
+from utils.fftwconvolve_1d import fftwconvolve_1d
+from utils.find_nearest_index import find_nearest
+from utils.parse_pars import parse_pars
+from utils.rebin_spec import rebin_spec
 
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
 
-#NORMALIZATON = 0
-#STELLAR_DISPERSION = 1
+PARS = parse_pars()["host_galaxy"]
 
-def runningMeanFast(x, N):
-    '''
-    x = array of points
-    N = window width
-    Ref: http://stackoverflow.com/questions/13728392/moving-average-or-running-mean
-    '''
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
-
-
-########
-## TO DO: 
-##
-## - Change template loading procedure to a more flexible, class level loading.
-#
-## - Implement some kind of global variable such that code can find
-##   the location of the templates when ran from an arbitrary folder.
-#
-## - Implement stellar dispersion parameter in templates. For now, the
-##   parameter is fit for but does not affect the likelihood function,
-##   so output distribution corresponds exactly to prior.
-#
-########
+#-----------------------------------------------------------------------------#
 
 class HostGalaxyComponent(Component):
-    '''
-    Host Galaxy Component
-    \f$ F_{\lambda,\rm Host}\ =\ \sum_{1}^{N} F_{\rm Host,i} HostTempl_{\lambda,i}(\sig_*) \f$
+    """
+    Host Galaxy Component:
+    \f$ F_{\lambda,\rm Host}\ =\ \sum_{1}^{N} F_{\rm Host,i} 
+        HostTempl_{\lambda,i}(\sig_*) \f$
     This component has N templates and N+1 parameters. 
+        normalization: \f$ F_{\rm Host,i} \f$ for each of the N templates.
+        stellar line dispersion: \f$ \sig_* \f$
 
-    normalization: \f$ F_{\rm Host,i} \f$ for each of the N templates.
-
-    stellar line dispersion: \f$ \sig_* \f$
-
-    '''
-
-    #This dictionary will eventually hold the templates. Implement lazy loading. 
-    _templates = None
+    Attributes:
+        host_gal (list): List of Spectrum objects for each template file.
+        interp_host (list): 
+        interp_norm_flux (list):
+#TODO should name be in Component?
+        name (str): Name of component, i.e. "Nuclear"
+        norm_min ():
+        norm_max ():
+        stellar_disp_min ():
+        stellar_disp_max ():
+    """
 
     def __init__(self):
         super(HostGalaxyComponent, self).__init__()
 
-        self._templates = None
-        self.interpolated_templates = None # interpolated to data provided
+        self.load_templates()
+        self.model_parameter_names = ["hg_norm_{}".format(x) for x in range(1, len(self.host_gal)+1)]
+        self.model_parameter_names.append("hg_stellar_disp")
+        self.interp_host = [] 
+        self.interp_host_norm_flux = []
         self.name = "HostGalaxy"
 
-        #self.template_wave, self.template_flux, self.n_templates = self._load_host_templates()
-#        self.template_flux_model_grid = None
-        self.interpolated_normalization_flux = None
-#        for i in range(self.n_templates):
-#            self.model_parameter_names.append("normalization_host_template_{0:04d}".format(i))
+        self.norm_min = PARS["hg_norm_min"]
+        self.norm_max = PARS["hg_norm_max"]
+        self.stellar_disp_min = PARS["hg_stellar_disp_min"]
+        self.stellar_disp_max = PARS["hg_stellar_disp_max"]
+# TODO, check on handling of dispersions
+        self.templ_stellar_disp = PARS["hg_template_stellar_disp"]
+        if self.stellar_disp_min < self.templ_stellar_disp:
+            print("Specified minimum stellar dispersion too small, setting to intrinsic template stellar dispersion = {}".format(self.templ_stellar_disp))
+            self.stellar_disp_min = self.templ_stellar_disp
+         
+#-----------------------------------------------------------------------------#
 
-#        self.model_parameter_names.append("normalization") # type np.array
-#        self.model_parameter_names.append("stellar_dispersion")
-
-        self._flux_arrays = None # defined in initialize()
-        self._norm_wavelength = None
-
-        self.norm_min = None # np.array([None for i in range(self.n_templates)])
-        self.norm_max = None # np.array([None for i in range(self.n_templates)])
-
-        self.stellar_dispersion_min = None
-        self.stellar_dispersion_max = None
-
-    @property
-    def templates(self):
-        if self._templates == None:
-            self._load_host_templates()
-        return self._templates
-
-    @property
-    def model_parameter_names(self):
-        '''
-        Returns a list of model parameter names.
-        Since the number of parameters depends on the number of templates (only
-        known at run time), this must be provided by a method.
-
-        The parameters are normalization, one for each template, followed by stellar dispersion.
-        '''
-        parameter_names = list()
-        for i in range(1, len(self.templates)+1):
-            parameter_names.append("normalization_{0}".format(i))
-        parameter_names.append("stellar dispersion")
-        return parameter_names
-
-    @property
+#TODO could this be moved to Component.py?
     def is_analytic(self):
+        """ 
+        Method that stores whether component is analytic or not.
+        
+        Returns:
+            Bool (Bool): True is component is analytic.
+        """
+        
         return False
 
-    def _load_host_templates(self, template_set=None):
+#-----------------------------------------------------------------------------#
 
-        # determine the file name
-        if template_set is None:
-            template_set_file_name = "../Host_templates/default_list_of_templates.txt"
-        else:
-            raise Exception("Host galaxy template set '{0}' not found.".format(template_set))
-            #print template_set,"is not available"
-            #sys.exit()
+    def load_templates(self):
+        """Read in all of the host galaxy models."""
 
-        # get the list of filenames of the templates
-        template_filenames = list()
-        with open(template_set_file_name) as file:
-            for line in file:
-                if line.startswith("#"):
-                    continue
-                else:
-                    template_filenames.append(line.rstrip("\n"))
-
-
-        # read in all of the templates
-        self._templates = list()
-
-        for template_filename in template_filenames:
-            with open(template_filename) as template_file:
-                template = Spectrum()
-                template.wavelengths, template.flux = np.loadtxt(template_filename, unpack=True)
-                self._templates.append(template)
-
-#         try:
-#             template_filenames_file = open(template_set_file_name,"r")
-#         except IOError:
-#             print "Cannot open file '{0}'.\n".format(template_filenames_file)
-#             sys.exit()
-#         
-#         self._templates = list()
-#         for template_filename in template_filenames_file:
-#             if template_filename.startswith("#"):
-#                 continue
-#             else:
-#                 template_filename = template_filename.rstrip("\n")
-#             with open(template_filename) as template_file:
-#                 for line in template_file:
-#                     # skip comments
-#                     if line.startswith("\#"):
-#                         continue
-#                     else:
-#                         filename = line
-#         
-#                     template = Spectrum()
-#                     template.wavelengths, template.flux = np.loadtxt(filename, unpack=True)
-#         
-#                     self._templates.append(template)
-
-    def initial_values(self, spectrum=None):
-        '''
-
-        Needs to sample from prior distribution.
-        Return type must be a single list (not an np.array).
-        '''
-
-        boxcar_width = 5 # width of smoothing function
-
-        flux_max = max(runningMeanFast(spectrum.flux, boxcar_width))
-
-        self.norm_min = np.zeros(len(self.templates))
-        self.norm_max = np.zeros(len(self.templates)) + flux_max
-
-        # the size parameter will force the result to be a numpy array - not the case
-        # if the inputs are single-valued (even if in the form of an array)
-        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, size=self.norm_min.size)
-
-        self.stellar_dispersion_min = 30.0
-        self.stellar_dispersion_max = 600.0
-        stellar_dispersion_init = np.random.uniform(low=self.stellar_dispersion_min, high=self.stellar_dispersion_max)
-
-        return norm_init.tolist() + [stellar_dispersion_init]
-
-#        host_params_init = list()
-#        if isinstance(norm_init,float):
-#           host_params_init.append(norm_init)
-#       else:
-#            host_params_init.extend(norm_init)
-#        host_params_init.append(stellar_dispersion_init)
-#        
-#        return host_params_init
-
-
-    def initialize(self, data_spectrum=None):
-        '''
-        Perform any initializations where the data is optional.
-        '''
-        if data_spectrum is None:
-            raise Exception("The data spectrum must be specified to initialize" + 
-                            "{0}.".format(self.__class__.__name__))
-
-        self._flux_arrays = np.zeros(len(data_spectrum.wavelengths)) # calculate flux on this array
-
-        self.interpolated_templates = list()
-        self.interpolated_normalization_flux = list()
-
-        for template in self.templates:
-            f = scipy.interpolate.interp1d(template.wavelengths, template.flux) # returns function
-            self.interpolated_templates.append(f(data_spectrum.wavelengths))
-            # fnw = flux at normalized wavelength
-            fnw = self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
-            self.interpolated_normalization_flux.append(f(fnw))
-
-#         #Check if we have created the interpolated versions of
-#         #the templates in the model grid. If not, do it. 
-#         if self.template_flux_model_grid is None:
-#             self.template_flux_model_grid = list()
-#             self.template_flux_at_norm_wavelength = np.zeros(self.n_templates)
-#             
-#             for i in range(self.n_templates):
-#                 f = scipy.interpolate.interp1d(self.template_wave[i], self.template_flux[i]) # returns function
-#                 self.template_flux_model_grid.append(f(wavelengths))
-#                 self.template_flux_at_norm_wavelength[i] = f(self.normalization_wavelength())
-#             
-#             self.template_flux_model_grid = np.array(self.template_flux_model_grid)
-
-
-    def native_wavelength_grid(self):
-        assert False, "finish this code"
+        template_list = glob.glob(os.path.join(PARS["hg_models"], "*"))
+        assert len(template_list) != 0, \
+        "No host galaxy templates found in specified diretory {0}".format(PARS["hg_models"])
     
-    def normalization_wavelength(self, data_spectrum_wavelength=None):
-        '''
-        Returns a single value.
-        '''
-        if self._norm_wavelength is None:
-            if data_spectrum_wavelength is None:
-                raise Exception("The wavelength array of the data spectrum must be specified.")
-            self._norm_wavelength = np.median(data_spectrum_wavelength)
-        return self._norm_wavelength
+        self.host_gal = []
+    
+        for template_filename in template_list:
+            with open(template_filename) as template_file:
+                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+                flux = np.where(flux<0, 1e-19, flux)
+                host = Spectrum.from_array(flux)
+                host.dispersion = wavelengths
+                self.host_gal.append(host)
 
-    def ln_priors(self, params):
-        '''
-        Return a list of the ln of all of the priors.
-        
-        @param params
-        '''
-
-        # need to return parameters as a list in the correct order
-        ln_priors = list()
-        
-        normalization = list()
-        for i in range(1, len(self.templates)+1):
-            normalization.append(params[self.parameter_index("normalization_{0}".format(i))])
-        params[self.parameter_index("stellar dispersion")]
-
-        stellar_dispersion = params[self.parameter_index("stellar dispersion")]
-        parameters = normalization
-        parameters.append(stellar_dispersion)
-        # Normalization parameter
-
-        # Flat prior within the expected ranges.
-        ln_prior_norms = np.zeros(len(self.templates))
-        for i in range(len(self.templates)):
-            if self.norm_min[i] < normalization[i] < self.norm_max[i]:
-                ln_prior_norms[i] = 0.0
-            else:
-                ln_prior_norms[i] = -np.inf
-
-        # Stellar dispersion parameter
-        if self.stellar_dispersion_min < stellar_dispersion < self.stellar_dispersion_max:
-            ln_prior_stellar_dispersion = 0.0
-        else:
-            ln_prior_stellar_dispersion = -np.inf
-        
-        # ln_prior_norms is an array, need to return a 1D array of parameters to emcee
-        return ln_prior_norms.tolist() + [ln_prior_stellar_dispersion]
+#-----------------------------------------------------------------------------#
 
     @property
     def parameter_count(self):
-        ''' Returns the number of parameters of this component. '''
-        no_parameters = len(self.templates) + 1
-        if self.z:
-            return no_parameters + 1
+        """ 
+        Returns the number of parameters of this component. 
+        
+        Returns: 
+            no_parameters (int): Number of componenet parameters.
+        """
+
+        #TODO why is it len() +1 ?
+        no_parameters = len(self.host_gal) + 1
+        
+        return no_parameters
+    
+#-----------------------------------------------------------------------------#
+
+    def initial_values(self, spectrum):
+        """
+        Needs to sample from prior distribution.
+
+        Args:
+            spectrum (Spectrum object): ?
+
+        Returns: 
+            list (list): 
+        """
+
+        if self.norm_max == "max_flux":
+            flux_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+            self.norm_max = flux_max
+        elif self.norm_max == "fnw":
+            fnw = spectrum.norm_wavelength_flux
+            self.norm_max = fnw
+
+        # The size parameter will force the result to be a numpy array - not the case
+        # if the inputs are single-valued (even if in the form of an array)
+        norm_init = np.random.uniform(low=self.norm_min, high=self.norm_max, 
+                                      size=len(self.host_gal))
+
+        stellar_disp_init = np.random.uniform(low=self.stellar_disp_min, 
+                                              high=self.stellar_disp_max)
+
+        return norm_init.tolist() + [stellar_disp_init]
+
+#-----------------------------------------------------------------------------#
+
+    def initialize(self, data_spectrum):
+        """
+        Perform any initializations using the data spectrum.
+
+        Args:
+            data_spectrum (Spectrum object): ?
+        """
+        
+        # Calculate flux on this array
+        self.flux_arrays = np.zeros(len(data_spectrum.wavelengths)) 
+
+        # We'll eventually need to convolve these in constant 
+        # velocity space, so rebin to equal log bins
+        # log_host.wavelength is in log space but flux is not
+        self.log_host = []
+
+        nw = data_spectrum.norm_wavelength
+
+        for i,template in enumerate(self.host_gal):
+            log_host_wl = np.linspace(min(np.log(template.wavelengths)), 
+                                      max(np.log(template.wavelengths)), 
+                                      num = len(template.wavelengths))
+#TODO need to verify Spectrum method name
+            # Bin template fluxes in equal log bins
+            log_host_flux = rebin_spec(np.log(template.wavelengths), 
+                                       template.flux, 
+                                       log_host_wl)
+
+            log_host_spectrum = Spectrum.from_array(log_host_flux)
+            log_host_spectrum.dispersion = log_host_wl
+            self.log_host.append(log_host_spectrum)
+            
+            host_flux = rebin_spec(template.wavelengths,
+                                   template.flux,
+                                   data_spectrum.wavelengths)
+            self.interp_host.append(host_flux)
+
+            # This gives us the flux of the template at the normalization
+            # wavelength associated with the data spectrum. 
+            self.interp_host_norm_flux.append(np.interp(nw, 
+                                                        template.wavelengths, 
+                                                        template.flux,
+                                                        left=0,
+                                                        right=0))
+
+#-----------------------------------------------------------------------------#
+
+    def ln_priors(self, params):
+        """
+        Return a list of the ln of all of the priors.
+        
+        Args:
+            params (): ?
+
+        Returns:
+            ln_priors (list): List of the ln of all priors.
+        """
+        
+        # need to return parameters as a list in the correct order
+        ln_priors = []
+        norm = []
+        
+        for i in range(1, len(self.host_gal)+1):
+            norm.append(params[self.parameter_index("hg_norm_{}".format(i))])
+        
+        stellar_disp = params[self.parameter_index("hg_stellar_disp")]
+        
+        # Flat prior within the expected ranges.
+        for i in range(len(self.host_gal)):
+            if self.norm_min < norm[i] < self.norm_max:
+                ln_priors.append(0.0)
+            else:
+                ln_priors.append(-np.inf)
+
+#TODO why is this here? another prior is added
+# Can emcee handle another prior here? (Gisella to check)
+#        if np.sum(norm) <= np.max(self.norm_max):
+#            ln_priors.append(0.0)
+#        else:
+#            ln_priors.append(-np.inf)
+        
+        # Stellar dispersion parameter
+        if self.stellar_disp_min < stellar_disp < self.stellar_disp_max:
+            ln_priors.append(0.0)
         else:
-            return no_parameters
+            ln_priors.append(-np.inf)
+        
+        return ln_priors
 
+#-----------------------------------------------------------------------------#
 
-    def flux(self, spectrum=None, parameters=None):
-        '''
+    def flux(self, spectrum, parameters):
+        """
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
-        '''
+
+        Args:
+            spectrum (Spectrum object): 
+            parameters (): ?
+
+        Returns: 
+            flux_arrays (): ?
+        """
         
-        normalization = list()
-        for i in range(1, len(self.templates)+1):
-            normalization.append(parameters[self.parameter_index("normalization_{0}".format(i))])
-        parameters[self.parameter_index("stellar dispersion")]
+        #Convolve to increase the velocity dispersion. Need to
+        #consider it as an excess dispersion above that which
+        #is intrinsic to the template. For the moment, the
+        #implicit assumption is that each template has an
+        #intrinsic velocity dispersion = 0 km/s.
+        
+        # The next two parameters are lists of size len(self.host_gal)
+        norm_wl = spectrum.norm_wavelength
+        c_kms = c.to("km/s").value
+        log_norm_wl = np.log(norm_wl)
+# TODO, check on handling of dispersions
+        stellar_disp = parameters[self.parameter_index("hg_stellar_disp")]
+        self.flux_arrays = np.zeros(len(spectrum.wavelengths))
 
-        stellar_dispersion = parameters[self.parameter_index("stellar dispersion")]
-        parameters_host = normalization
-        parameters_host.append(stellar_dispersion)
+            
+        for i in range(len(self.host_gal)):
+            norm_i = parameters[i]
+            # Want to smooth and convolve in log space, since 
+            # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
+            # velocity width. Compare smoothing (v/c) to bin size, and that 
+            # tells you how many bins wide your Gaussian to convolve over is
+            # sigma_conv is the width to broaden over, as given in Eqn 1 
+            # of Vestergaard and Wilkes 2001 
+            # (essentially the first line below this)
+            # NOTE: log_host.wavelengths is in log space, but flux is not!
+            sigma_conv = np.sqrt(stellar_disp**2 - self.templ_stellar_disp**2) /\
+                                 (c_kms * 2.*np.sqrt(2.*np.log(2.)))
+           
+            bin_size = self.log_host[i].wavelengths[2] - self.log_host[i].wavelengths[1]
+#TODO cross-check with Spectrum ^^
+            sigma_norm = np.ceil(sigma_conv / bin_size)
+            sigma_size = PARS["hg_kernel_size_sigma"] * sigma_norm
+            kernel = signal.gaussian(sigma_size, sigma_norm) / \
+                     (np.sqrt(2 * math.pi) * sigma_norm)
 
-        assert len(parameters) == self.parameter_count, \
-                "The wrong number of indices were provided: {0}".format(parameters)
+#            # Check to see if length of array is even. 
+#            # If it is odd, remove last index
+#            # fftwconvolution only works on even size arrays
+#            if len(self.log_host[i].flux) % 2 != 0: 
+#                self.log_host[i].flux = self.log_host[i].flux[:-1]
+#                self.log_host[i].wavelengths = self.log_host[i].wavelengths[:-1]
+#            # Convolve flux (in log space) with gaussian broadening kernel
+#            log_conv_host_flux = fftwconvolve_1d(self.log_host[i].flux, kernel)
 
-                #Convolve to increase the velocity dispersion. Need to
-                #consider it as an excess dispersion above that which
-                #is intrinsic to the template. For the moment, the
-                #implicit assumption is that each template has an
-                #intrinsic velocity dispersion = 0 km/s.
-        stellar_dispersion = parameters_host[-1]
-        #Create the dispersion-convolution matrix.
-        #Kmat = self.stellar_dispersion_matrix(stellar_dispersion,spectrum)
-        Kmat = np.identity(len(spectrum.wavelengths))
+            log_conv_host_flux = np.convolve(self.log_host[i].flux, kernel, mode="same")
+#TODO need to check Spectrum.bin_spectrum()
+#            # Shift spectrum back into linear space.
+#            # the left and right statements just set the flux value 
+#            # to zero if the specified log_norm_wl is outside the 
+#            #bounds of self.log_host[i].wavelengths
+#            conv_host = Spectrum.bin_spectrum(self.log_host[i].wavelengths,
+#                                                         log_conv_host_flux,
+#                                                         np.log(spectrum.wavelengths))
+#            conv_host_norm_flux = conv_host.norm_wavelength_flux
 
-        #flux = np.zeros(wavelengths.shape)
-        #print "******* {0}".format(parameters)
-        norm = list() # parameter normalization
-        for i in range(len(self.templates)):
-            norm.append(parameters_host[i] / self.interpolated_normalization_flux[i]) # * spectrum.flux_at_normalization_wavelength())
-#        norm = parameters[0:-1] / self.interpolated_normalization_flux
-        self._flux_arrays[:] = 0.0
-        for i in range(len(self.templates)):
-            convolved_template = Kmat.dot(self.interpolated_templates[i])
-            self._flux_arrays += norm[i] * convolved_template
-            #self._flux_arrays += norm[i] * self.interpolated_templates[i]
+            conv_host_flux = rebin_spec(self.log_host[i].wavelengths,
+                                        log_conv_host_flux,
+                                        np.log(spectrum.wavelengths))
+            conv_host_nw = np.median(self.host_gal[i].wavelengths)
+            conv_host_norm_flux = np.interp(conv_host_nw, spectrum.wavelengths, conv_host_flux)
+            spectrum_norm_flux = np.interp(conv_host_nw, spectrum.wavelengths, spectrum.flux)
+            
+            # Find NaN errors early from dividing by zero.
+#TODO check below syntax vv
+            conv_host_norm_flux = np.nan_to_num(conv_host_norm_flux)
+            
+            # Scale normalization parameter to flux in template
+            self.flux_arrays += (norm_i / conv_host_norm_flux) * conv_host_flux
 
-        return self._flux_arrays
-
-    def stellar_dispersion_matrix(self, stellar_dispersion, spectrum=None):
-
-        Kmat = np.zeros((len(spectrum.wavelengths),len(spectrum.wavelengths)))
-        lam = spectrum.wavelengths
-        for k,lamk in enumerate(spectrum.wavelengths):
-            sig = stellar_dispersion * lamk/3.e5 #Assume the dispersion is provided in km/s.
-
-            #To speed things up, we'll only consider bins with central
-            #wavelengths within 5 sigma of the current spectral bin.
-
-            #Get the bin indices that are closest to +/- 5 sigma.
-            lmin = np.argmin(abs((lamk-lam)/sig - 5.))
-            lmax = np.argmin(abs((lamk-lam)/sig + 5.))
-
-            #See if we are near the bounds and determine
-            #the kernel normalization accordingly.
-            if lmin>0 and lmax<len(lam):
-                norm = sig*(2.*np.pi)**0.5
-            else:
-                if lmin==0:
-                    a = lam[lmin]-0.5*(lam[lmin+1]-lam[lmin])
-                    b = lam[lmax]+0.5*(lam[lmax+1]-lam[lmax])
-                else:
-                    a = lam[lmin]-0.5*(lam[lmin]-lam[lmin-1])
-                    b = lam[lmax]+0.5*(lam[lmax]-lam[lmax-1])
-                norm = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]
-
-            for l in range(lmin,lmax+1):
-                if l==0:
-                    a = lam[l]-0.5*(lam[l+1]-lam[l])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                elif l==len(lam)-1:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l]-lam[l-1])
-                else:
-                    a = lam[l]-0.5*(lam[l]-lam[l-1])
-                    b = lam[l]+0.5*(lam[l+1]-lam[l])
-                Kmat[k,l] = scipy.integrate.quad(self.gaussian_kernel,a,b,args=(lamk,sig))[0]/norm
-
-        return Kmat
-
-    def gaussian_kernel(self,x,mu,sig):
-        return np.exp(-0.5*((x-mu)/sig)**2)
+        return self.flux_arrays
 

@@ -34,3 +34,16 @@ docs/_build/
 *.pdf
 documentation/tmp
 documentation/_build
+*pickle.gz
+
+# Fortran
+*.f90
+*.o
+*.mod
+
+# Stupid excel copies
+._*xlsx
+~$*xlsx
+
+# gif plots
+examples/gifplots*/

@@ -15,6 +15,8 @@ __contributors__ = [    # Alphabetical by first name.
                    ]
 
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 from matplotlib.colors import LinearSegmentedColormap
@@ -207,11 +209,13 @@ def hist2d(x, y, *args, **kwargs):
     if plot_datapoints:
         ax.plot(x, y, "o", color=color, ms=1.5, zorder=-1, alpha=0.1,
                 rasterized=True)
-        V2 = np.array(list(set([V[-1], H.max()])))
+        V2 = np.array(list( set([V[-1], H.max()])) )
         V2.sort()
+        if len(V2) == 1:
+            V2 = np.array([0, V2[0]])
         ax.contourf(X1, Y1, H.T, V2,
-            cmap=LinearSegmentedColormap.from_list("cmap", ([1] * 3, [1] * 3),
-                N=2), antialiased=False)
+                    cmap=LinearSegmentedColormap.from_list("cmap", ([1] * 3, [1] * 3),
+                    N=2), antialiased=False)
 
     ax.pcolor(X, Y, H.max() - H.T, cmap=cmap)
     # Contour levels must be sorted for countour to work.
