@@ -3,7 +3,7 @@
 import os
 import yaml
 
-def parse_pars(par_file="/user/jotaylor/git/spamm/utils/parameters.yaml"):
+def parse_pars(par_file="../utils/parameters.yaml"):
     '''
     Read in SPAMM input parameters from input parameters file.
 

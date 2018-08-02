@@ -3,6 +3,7 @@
 import gzip
 import dill as pickle
 import datetime
+import numpy as np
 
 from analyze_model_run import make_chain_plots
 from spamm.Spectrum import Spectrum
@@ -15,12 +16,12 @@ from spamm.components.ReddeningLaw import Extinction
 
 #-----------------------------------------------------------------------------#
 
-def spamm_wlflux(components, wl, flux, flux_err=None, 
-                 n_walkers=30, n_iterations=500, 
+def spamm_wlflux(components, wl, flux, flux_err=None,
+                 n_walkers=30, n_iterations=500,
                  pname=None, comp_params=None):
     """
     Args:
-        components (dictionary): A dictionary with at least one component to 
+        components (dictionary): A dictionary with at least one component to
             model, e.g. {"FE": True}. Accepted key values are:
                 - PL
                 - FE
@@ -52,23 +53,23 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
 
     if flux_err is None:
         flux_err = flux*0.05
-    
+
     spectrum = Spectrum.from_array(flux, uncertainty=flux_err)
     spectrum.dispersion = wl#*units.angstrom
-    spectrum.flux_error = flux_err    
-    
+    spectrum.flux_error = flux_err
+
     if comp_params is None:
         comp_params = {}
     for k,v in zip(("wl", "flux", "err", "components"), (wl, flux, flux_err, components)):
         if k not in comp_params:
             comp_params[k] = v
-    
+
     # ------------
     # Initialize model
     # ------------
     model = Model()
     model.print_parameters = False
-    
+
     # -----------------
     # Initialize components
     # -----------------
@@ -87,10 +88,10 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
         fe_comp = FeComponent()
         model.components.append(fe_comp)
     if components["HOST"]:
-        host_galaxy_comp = HostGalaxyComponent()    
+        host_galaxy_comp = HostGalaxyComponent()
         model.components.append(host_galaxy_comp)
     if components["BC"] or components["BpC"]:
-        balmer_comp = BalmerCombined(BalmerContinuum=components["BC"], 
+        balmer_comp = BalmerCombined(BalmerContinuum=components["BC"],
                                      BalmerPseudocContinuum=components["BpC"])
         model.components.append(balmer_comp)
     if components["Calzetti_ext"] or components["SMC_ext"] or components["MW_ext"] or components["AGN_ext"] or components["LMC_ext"]:
@@ -98,19 +99,19 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
         model.components.append(ext_comp)
 
     model.data_spectrum = spectrum # add data
-    
+
     # ------------
     # Run MCMC
     # ------------
     model.run_mcmc(n_walkers=n_walkers, n_iterations=n_iterations)
     print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
-    
+
     # -------------
     # save chains & model
     # ------------
     p_data = {"model": model,
               "comp_params": comp_params}
-    
+
     if pname is None:
         now = datetime.datetime.now()
         pname = "model_{0}.pickle.gz".format(now.strftime("%Y%m%d_%M%S"))
