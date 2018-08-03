@@ -310,7 +310,6 @@ class FeComponent(Component):
 #                                                         np.log(spectrum.wavelengths))
             # log(convolute template flux) rebinned onto log space of data spectrum WL.
             if self.fast_interp:
-                print("harder better faster stronger")
                 conv_fe_flux = np.interp(np.log(spectrum.wavelengths),
                                          self.log_fe[i].wavelengths,
                                          log_conv_fe_flux,
