@@ -3,7 +3,7 @@
 import gzip
 import dill as pickle
 import datetime
-
+import numpy as np
 from analyze_model_run import make_chain_plots
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
