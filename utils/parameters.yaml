@@ -61,6 +61,9 @@ fe_forest:
     fe_line_type: "gaussian" # or "lorentzian"
     fe_kernel_size_sigma: 3 # pixels
 
+## Flux Conserving Binning ##
+rebin_spec: False
+
 ## Testing ##
 testing:
     wl_min: 1000

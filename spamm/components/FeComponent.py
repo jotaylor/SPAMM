@@ -175,9 +175,13 @@ class FeComponent(Component):
 #            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths),
 #                                                         template.flux,
 #                                                         equal_log_bins)
-            log_fe_flux = rebin_spec(np.log(template.wavelengths),
-                                     template.flux,
-                                     log_fe_wl)
+            if self.fast_interp:
+                log_fe_flux = np.interp(log_fe_wl, np.log(template.wavelengths), 
+                                        template.flux, left=0, right=0)
+            else:
+                log_fe_flux = rebin_spec(np.log(template.wavelengths),
+                                         template.flux,
+                                         log_fe_wl)
 
             
             log_fe_spectrum = Spectrum.from_array(log_fe_flux)
@@ -187,7 +191,13 @@ class FeComponent(Component):
 #                                                              template.flux,
 #                                                              data_spectrum.wavelengths))
             
-            fe_flux = rebin_spec(template.wavelengths,
+            if self.fast_interp:
+                fe_flux = np.interp(data_spectrum.wavelengths, 
+                                    template.wavelengths,
+                                    template.flux,
+                                    left=0, right=0)
+            else:
+                fe_flux = rebin_spec(template.wavelengths,
                                      template.flux,
                                      data_spectrum.wavelengths)
 
@@ -299,9 +309,17 @@ class FeComponent(Component):
 #                                                         log_conv_fe_flux,
 #                                                         np.log(spectrum.wavelengths))
             # log(convolute template flux) rebinned onto log space of data spectrum WL.
-            conv_fe_flux = rebin_spec(self.log_fe[i].wavelengths,
-                                 log_conv_fe_flux,
-                                 np.log(spectrum.wavelengths))
+            if self.fast_interp:
+                print("harder better faster stronger")
+                conv_fe_flux = np.interp(np.log(spectrum.wavelengths),
+                                         self.log_fe[i].wavelengths,
+                                         log_conv_fe_flux,
+                                         left=0,
+                                         right=0)
+            else:
+                conv_fe_flux = rebin_spec(self.log_fe[i].wavelengths,
+                                     log_conv_fe_flux,
+                                     np.log(spectrum.wavelengths))
             
             conv_fe_nw = np.median(self.fe_templ[i].wavelengths)
             conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.wavelengths, conv_fe_flux) 
