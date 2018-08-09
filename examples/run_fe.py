@@ -29,7 +29,7 @@ WL = np.arange(TEST_WL["wl_min"], TEST_WL["wl_max"], TEST_WL["wl_step"])
 
 #-----------------------------------------------------------------------------#
 
-def from_file(datafile, redshift=None, 
+def from_file(datafile, redshift=None,
               scale=None, subset=False, pname=None):
     print(PARS, "\n")
     templates = glob.glob(os.path.join(PARS["fe_templates"], "*"))
@@ -37,13 +37,13 @@ def from_file(datafile, redshift=None,
     print("Templates = {}\n".format(templates))
     print("Are the parameters in utils good? If not, ctrl+c, modify them, and rerun")
     time.sleep(5)
-    
+
     try:
         wavelengths, flux, flux_err = np.loadtxt(datafile, unpack=True)
     except ValueError:
         wavelengths, flux = np.loadtxt(datafile, unpack=True)
         flux_err = flux*0.05
-    
+
     if redshift is not None:
         print("Correcting for redshift {}\n".format(redshift))
         wavelengths /= (1+float(redshift))
@@ -97,11 +97,13 @@ def create_fe(fe_params=None):
         sample = draw_from_sample.gaussian(PARS["fe_width_min"], PARS["fe_width_max"])
         fe_params["fe_width"] = sample
 
-    print("Fe params: {}".format(fe_params))
-    fe = FeComponent()
-    # Make a Spectrum object with dummy flux
     spectrum = Spectrum(fe_params["wl"])
     spectrum.dispersion = fe_params["wl"]
+
+    print("Fe params: {}".format(fe_params))
+    fe = FeComponent(spectrum)
+    # Make a Spectrum object with dummy flux
+
     fe.initialize(spectrum)
     comp_params = [fe_params["fe_norm_{}".format(x)] for x in range(1, fe_params["no_templates"]+1)] + [fe_params["fe_width"]]
     fe_flux = FeComponent.flux(fe, spectrum, comp_params)

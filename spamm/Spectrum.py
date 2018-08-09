@@ -19,6 +19,7 @@ class Spectrum(Spectrum1DRef):
         '''
         #self.flux_error = None
         self._norm_wavelength = None
+        self.mask = None
         self._norm_wavelength_flux = None
         super(Spectrum, self).__init__(data, wcs=wcs, *args, **kwargs)
         self.wavelengths = None
@@ -58,7 +59,7 @@ class Spectrum(Spectrum1DRef):
     @property
     def wavelengths(self):
         wavelengths = self._dispersion
-        
+
         return wavelengths
 
     @wavelengths.setter
@@ -70,7 +71,8 @@ class Spectrum(Spectrum1DRef):
     def flux(self):
         self._flux = super(Spectrum, self).flux
         flux = np.array(Quantity(self._flux, unit=self.unit))
-        flux = np.ma.masked_array(flux,mask=self.mask)
+        if self.mask:
+            flux = np.ma.masked_array(flux,mask=self.mask)
         return flux
 
     @flux.setter
@@ -80,6 +82,6 @@ class Spectrum(Spectrum1DRef):
         self._norm_wavelength_flux = None
 
 #    def bin_spectrum(self):
-#TODO need to finalize this 
+#TODO need to finalize this
 
 #TODO need to add log_grid_spacing
