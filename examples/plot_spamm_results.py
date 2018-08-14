@@ -227,25 +227,13 @@ def get_samples(pname, burn=50):
         model, params = read_pickle(pname)
         samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
     else:
-        allchains = []
+        allsamples = []
         for pfile in pname:
             model, params = read_pickle(pfile)
-            chain = model.sampler.chain[:, burn:, :]
-            allchains.append(chain)
-        allsamples = np.concatenate(tuple(allchains), axis=2)
-        samples = allsamples.reshape((-1, model.total_parameter_count))
-        import pdb; pdb.set_trace()
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+            allsamples.append(sample)
+        samples = np.concatenate(tuple(allsamples))
         model_name = "concat_{}".format(len(samples))
-#    else:
-#        allsamples = []
-#        for pfile in pname:
-#            model, params = read_pickle(pfile)
-#            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
-#            allsamples.append(sample)
-#        samples = np.concatenate(tuple(allsamples))
-#        import pdb; pdb.set_trace()
-##        samples = allsamples.reshape((-1, model.total_parameter_count))
-#        model_name = "concat_{}".format(len(samples))
     
     return model, samples, params, model_name
 
