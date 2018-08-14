@@ -11,6 +11,10 @@ import gzip
 import numpy as np
 import subprocess
 
+import triangle
+from spamm.Analysis import (median_values, mean_values, plot_chains,
+    plot_posteriors)
+
 #-----------------------------------------------------------------------------#
 
 def read_pickle(pname):
@@ -61,7 +65,7 @@ def read_pickle(pname):
 
 #-----------------------------------------------------------------------------#
 
-def plot_posteriors(pdfname, samples, labels, params=None):
+def plot_posteriors_pdf(pdfname, samples, labels, params=None):
     num_params = np.size(samples[0,:])                                   
     pdf_pages = PdfPages(pdfname)    
 
@@ -124,10 +128,9 @@ def plot_posteriors(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, pname, params, ymax=None, make_gif=True, step=100, only_last=False):
+def plot_models(model, samples, model_name, params, ymax=None, make_gif=True, step=100, only_last=False):
     data_spectrum = model.data_spectrum
     actualcolor = "deepskyblue"
-    model_name = pname.split(".p")[0]
     outdir = "gifplots_" + model_name
     if not os.path.exists(outdir):
         os.mkdir(outdir)
@@ -208,17 +211,89 @@ def plot_models(model, samples, pname, params, ymax=None, make_gif=True, step=10
 
 #-----------------------------------------------------------------------------#
 
-def make_plots(pname, gif=False, last=False, step=100, burn=50):
-    model, params = read_pickle(pname)
-    try:
+def get_samples(pname, burn=50):
+    """ 
+    Some pickled model files I made were incorrectly made and a try/except
+    needs to be inserted when creating sample:
+        try:
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+        except TypeError:
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, 10))
+            #samples = model.sampler.chain[:, burn:, :].reshape((-1, 16))
+    """ 
+
+    if isinstance(pname, str):
+        model_name = pname.split(".p")[0]
+        model, params = read_pickle(pname)
         samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
-    except TypeError:
-        samples = model.sampler.chain[:, burn:, :].reshape((-1, 10))
-        #samples = model.sampler.chain[:, burn:, :].reshape((-1, 16))
-    pdfname = "{}_posterior.pdf".format(pname)
-    plot_posteriors(pdfname, samples, model.model_parameter_names(), params)
+    else:
+        allchains = []
+        for pfile in pname:
+            model, params = read_pickle(pfile)
+            chain = model.sampler.chain[:, burn:, :]
+            allchains.append(chain)
+        allsamples = np.concatenate(tuple(allchains), axis=2)
+        samples = allsamples.reshape((-1, model.total_parameter_count))
+        import pdb; pdb.set_trace()
+        model_name = "concat_{}".format(len(samples))
+#    else:
+#        allsamples = []
+#        for pfile in pname:
+#            model, params = read_pickle(pfile)
+#            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+#            allsamples.append(sample)
+#        samples = np.concatenate(tuple(allsamples))
+#        import pdb; pdb.set_trace()
+##        samples = allsamples.reshape((-1, model.total_parameter_count))
+#        model_name = "concat_{}".format(len(samples))
+    
+    return model, samples, params, model_name
+
+#-----------------------------------------------------------------------------#
+
+def make_plots(pname, gif=False, last=False, step=100, burn=50):
+    model, samples, params, model_name = get_samples(pname)
+
+    # Create the triangle plot.
+    fig = triangle.corner(samples, labels=model.model_parameter_names())
+    figname = "plots/{0}_triangle.png".format(model_name)
+    fig.savefig(figname)
+    print("\tSaved {0}".format(figname))
+
+    # Calculate the median and confidence intervals where frac is the 
+    # fraction of samples within the quoted uncertainties.  frac = 0.68 is 
+    # the default. Columns are median, -error1, +error2.
+    print(median_values(samples, frac=0.68))
+    
+    # Calculate the mean and standard deviation. Columns are mean, 
+    # standard deviation.
+    print(mean_values(samples))
+
+    # Plot the MCMC chains as a function of iteration. You can easily tell if 
+    # the chains are converged because you can no longer tell where the individual 
+    # particle chains are sliced together.
+    fig = plot_chains(samples, labels=model.model_parameter_names())
+    figname = "plots/{0}_chain.png".format(model_name)
+    fig.savefig(figname)
+    print("\tSaved {0}".format(figname))
+
+    # Plot the posterior PDFs for each parameter. These are histograms of the 
+    # MCMC chains. Boxes = 20 is the default.
+    fig = plot_posteriors(samples, labels=model.model_parameter_names(), boxes=20, params=params)
+    figname = "plots/{0}_posterior.png".format(model_name)
+    fig.savefig(figname)
+    print("\tSaved {0}".format(figname))
+
+    # Make a PDF (the plot kind!) with the histogram for each parameter a
+    # different page in the PDF for detailed analysis.
+    pdfname = "{}_posterior.pdf".format(model_name)
+    plot_posteriors_pdf(pdfname, samples, model.model_parameter_names(), params)
+
+    # Make a gif of the model spectrum as a function of iteration,
+    # or if last is True, only save the last model spectrum.
     if gif is True:
-        plot_models(model, samples, pname, params, step=step, only_last=last)
+        plot_models(model, samples, model_name, params, step=step, only_last=last)
+
 
 #-----------------------------------------------------------------------------#
 
