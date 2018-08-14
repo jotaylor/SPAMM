@@ -10,10 +10,39 @@ import pickle
 import gzip
 import numpy as np
 import subprocess
+import statistics
 
 import triangle
+from spamm.Model import Model
 from spamm.Analysis import (median_values, mean_values, plot_chains,
     plot_posteriors)
+
+#-----------------------------------------------------------------------------#
+class Samples(object):
+#class Samples(Model):
+    def __init__(self, pickle_files, burn=50):
+        self.model, self.samples, self.params, self.model_name = get_samples(pickle_files, burn)
+        self.total_parameter_count = self.model.total_parameter_count
+        self.model_parameter_names = self.model.model_parameter_names()
+        self.get_stats()
+
+#-----------------------------------------------------------------------------#
+
+    def get_stats(self, histbins=100):
+        self.means = []
+        self.medians = []
+        self.modes = []
+        self.maxs = []
+        for i in range(self.model.total_parameter_count):
+            hist, bins = np.histogram(chain, histbins)
+            binsize = bins[1]-bins[0]
+
+            # Calculate maximum, median, average, and mode
+            max_bin = np.max(bins)
+            self.maxs.append(max_bin + binsize/2.)
+            self.medians.append(np.median(chain))
+            self.means.append(np.average(chain))
+            self.modes.append(statistics.mode(chain))
 
 #-----------------------------------------------------------------------------#
 
