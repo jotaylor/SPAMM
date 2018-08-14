@@ -65,7 +65,7 @@ def read_pickle(pname):
 
 #-----------------------------------------------------------------------------#
 
-def plot_posteriors_pdf(pdfname, samples, labels, params=None):
+def plot_posteriors_pdf(pdfname, samples, labels, params=None, histbins=100):
     num_params = np.size(samples[0,:])                                   
     pdf_pages = PdfPages(pdfname)    
 
@@ -74,7 +74,7 @@ def plot_posteriors_pdf(pdfname, samples, labels, params=None):
         ax = fig.add_subplot(111)
         
         chain = samples[:,i]
-        hist,bins = np.histogram(chain, bins=100)
+        hist,bins = np.histogram(chain, histbins)
 
         maxind = np.argmax(hist)
         max_bin = bins[maxind] 
@@ -128,7 +128,8 @@ def plot_posteriors_pdf(pdfname, samples, labels, params=None):
 
 #-----------------------------------------------------------------------------#
 
-def plot_models(model, samples, model_name, params, ymax=None, make_gif=True, step=100, only_last=False):
+def plot_models(model, samples, model_name, params, ymax=None, make_gif=True, 
+                step=100, only_last=False, only_best=False):
     data_spectrum = model.data_spectrum
     actualcolor = "deepskyblue"
     outdir = "gifplots_" + model_name
