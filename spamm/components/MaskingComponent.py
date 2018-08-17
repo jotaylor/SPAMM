@@ -26,7 +26,7 @@ def defaultreadmaskregions(maskType=None,mask_FWHM_broad=5000,mask_FWHM_narrow=1
         for i in narrowlines_reduced:
             lineregions_reduced.append([x-x*2*v_c_narrow,x+x*2*v_c_narrow])
         for x in absorption:
-            absorption_list.append([x-3*dlamda,x+3*dlamda])
+            absorption_list.append([x-dlamda,x+dlamda])
         if maskType == "Continuum":
             return cont
         if maskType == "FeRegions":
