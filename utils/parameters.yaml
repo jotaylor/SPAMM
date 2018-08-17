@@ -2,11 +2,18 @@
 # e.g. 1.6e3 is interpreted as '1.6e3', not 1600. These numbers should
 # be expanded (see bc_Te_max)
 
-emission_lines: ""
+emission_lines:
+    el_narrow_min: 100 #km/s
+    el_narrow_max: 1000 #km/s
+    el_broad_min: 1000 #km/s
+    el_broad_max: 12000 #km/s
+    el_shift: 5000 #km/s
+    el_prefit: False#True#
+    el_prefit_window: 15000 #km/s
 ## Host Galaxy parameters##
 host_galaxy:
     boxcar_width: 5
-    hg_models: "/user/jotaylor/git/spamm/Data/HostModels"
+    hg_models: "../Data/HostModels"
     hg_norm_min: 0.
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM
@@ -21,7 +28,7 @@ boxcar_width: 5
 ## WARNING: If using broken power law, need to have estimation of priors otherwise model cannot converge ##
 nuclear_continuum:
     boxcar_width: 5
-    broken_pl: False 
+    broken_pl: False
     pl_slope_min: -3.
     pl_slope_max: 3.
     pl_norm_min: 0.
@@ -30,9 +37,9 @@ nuclear_continuum:
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
 
-## Balmer Continuum ##    
+## Balmer Continuum ##
 balmer_continuum:
-    bc_line_type: "lorentzian" #or "gaussian" 
+    bc_line_type: "lorentzian" #or "gaussian"
     bc_lines_min: 3. #km/s
     bc_lines_max: 400. #km/s
     bc_norm_min: 0.
@@ -52,9 +59,9 @@ balmer_continuum:
 ## Fe Component ##
 fe_forest:
     boxcar_width: 10
-    fe_templates: "/user/jotaylor/git/spamm/Data/FeModels" #"/user/jotaylor/git/spamm/Data/testmodels" 
+    fe_templates: "../Data/FeModels" #"/user/jotaylor/git/spamm/Data/testmodels"
     fe_template_width: 900. #km/s
-    fe_norm_min: 0. 
+    fe_norm_min: 0.
     fe_norm_max: "fnw" #max_flux or fnw
     fe_width_min: 901. # km/s (FWHM)
     fe_width_max: 10000. # km/s (FWHM)

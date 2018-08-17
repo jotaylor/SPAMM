@@ -1,2 +1,2 @@
 
-__all__ = ["NuclearContinuumComponent", "HostGalaxyComponent", "FeComponent", "HostGalaxyComponent"]
+__all__ = ["NuclearContinuumComponent","BroadLineComponent", "HostGalaxyComponent", "FeComponent", "HostGalaxyComponent"]
