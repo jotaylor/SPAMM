@@ -1,5 +1,5 @@
 import numpy as np
-from utils.Determine_absorption_features import Determine_absorption_features
+from utils.find_absorption import Determine_absorption_features
 
 def defaultreadmaskregions(maskType=None,mask_FWHM_broad=5000,mask_FWHM_narrow=1000,wavelengths=None,flux=None,flux_err=None):
         cont = [[1275,1295],[1315,1330],[1351,1362],[1452,1520],[1680,1735],[1786,1834],[1940,2040],[2148,2243],[4770,4800],[5100,5130],[2190,2210],[3007,3027],[2190,2210],[3600,3700]]
