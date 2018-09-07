@@ -101,8 +101,15 @@ def get_samples(pname, burn=50):
 
 #class Samples(Model):
 class Samples(object):
-    def __init__(self, pickle_files, burn=50, histbins=100):
+    def __init__(self, pickle_files, gif=False, last=False, 
+                 step=100, burn=50, histbins=100):
         self.pname = pickle_files
+        self.gif = gif
+        self.last = last
+        self.step = step
+        self.burn = burn
+        self.histbins = histbins
+        
         self.models, self.samples, self.params, self.model_name = get_samples(pickle_files, burn)
         try:
             self.model = self.models[0]
@@ -110,7 +117,6 @@ class Samples(object):
             self.model = self.models
         self.total_parameter_count = self.model.total_parameter_count
         self.model_parameter_names = self.model.model_parameter_names()
-        self.histbins = histbins
         self.get_stats()
 
 #-----------------------------------------------------------------------------#
@@ -232,7 +238,7 @@ class Samples(object):
 
 #-----------------------------------------------------------------------------#
 
-    def plot_models(self, ymax=None, make_gif=True, step=100, only_last=False):
+    def plot_models(self, ymax=None):
         data_spectrum = self.model.data_spectrum
         actualcolor = "deepskyblue"
         outdir = "gifplots_" + self.model_name
@@ -246,10 +252,10 @@ class Samples(object):
                                               parameters=actual_params)
             actual_comps[component.name] = actual_comp_flux
     
-        if only_last is True:
+        if self.last is True:
             sample_range = [len(self.samples)-1]
         else:
-            sample_range = range(0, len(self.samples), step)
+            sample_range = range(0, len(self.samples), self.step)
         for i in sample_range:
             print("Iteration {}".format(i))
             j = 0
@@ -273,7 +279,7 @@ class Samples(object):
                 ax.legend(loc="upper left", framealpha=0.25)
                 figname = os.path.join(outdir, "{}_iter{:06d}.png".format(component.name, i))
                 fig.savefig(figname)
-                if only_last is True:
+                if self.last is True:
                     print("\tSaved {}".format(figname))
                 j += len(component.model_parameter_names)
                 plt.close(fig)
@@ -296,11 +302,11 @@ class Samples(object):
             ax.legend(loc="upper left", framealpha=0.25)
             figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
             fig.savefig(figname)
-            if only_last is True:
+            if self.last is True:
                 print("\tSaved {}".format(figname))
             plt.close(fig)
     
-        if make_gif is True:
+        if self.gif is True:
             for component in model.components:
                 cname = component.name
                 gifname = os.path.join(outdir, "{}.gif".format(cname))
@@ -316,46 +322,52 @@ class Samples(object):
         
 #-----------------------------------------------------------------------------#
 
-def make_plots(self, gif=False, last=False, step=100, burn=50):
+    def make_all_plots(self):
+    
+        # Create the triangle plot.
+        fig = triangle.corner(self.samples, labels=self.model_parameter_names)
+        figname = "plots/{0}_triangle.png".format(self.model_name)
+        fig.savefig(figname)
+        print("\tSaved {0}".format(figname))
+    
+        # Plot the MCMC chains as a function of iteration. You can easily tell if 
+        # the chains are converged because you can no longer tell where the individual 
+        # particle chains are sliced together.
+        fig = plot_chains(self.samples, labels=self.model_parameter_names)
+        figname = "plots/{0}_chain.png".format(self.model_name)
+        fig.savefig(figname)
+        print("\tSaved {0}".format(figname))
+    
+        # Plot the posterior PDFs for each parameter. These are histograms of the 
+        # MCMC chains. Boxes = 20 is the default.
+        fig = plot_posteriors(self.samples, labels=self.model_parameter_names, 
+                              boxes=20, params=self.params)
+        figname = "plots/{0}_posterior.png".format(self.model_name)
+        fig.savefig(figname)
+        print("\tSaved {0}".format(figname))
+    
+        # Make a PDF (the plot kind!) with the histogram for each parameter a
+        # different page in the PDF for detailed analysis.
+        self.plot_posteriors_pdf()
+    
+        # Make a gif of the model spectrum as a function of iteration,
+        # or if last is True, only save the last model spectrum.
+        if self.gif is True:
+            self.plot_models()
 
-    # Create the triangle plot.
-    fig = triangle.corner(self.samples, labels=self.model_parameter_names)
-    figname = "plots/{0}_triangle.png".format(self.model_name)
-    fig.savefig(figname)
-    print("\tSaved {0}".format(figname))
+#-----------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 
-    # Plot the MCMC chains as a function of iteration. You can easily tell if 
-    # the chains are converged because you can no longer tell where the individual 
-    # particle chains are sliced together.
-    fig = plot_chains(self.samples, labels=self.model_parameter_names)
-    figname = "plots/{0}_chain.png".format(self.model_name)
-    fig.savefig(figname)
-    print("\tSaved {0}".format(figname))
-
-    # Plot the posterior PDFs for each parameter. These are histograms of the 
-    # MCMC chains. Boxes = 20 is the default.
-    fig = plot_posteriors(self.samples, labels=self.model_parameter_names, 
-                          boxes=20, params=self.params)
-    figname = "plots/{0}_posterior.png".format(self.model_name)
-    fig.savefig(figname)
-    print("\tSaved {0}".format(figname))
-
-    # Make a PDF (the plot kind!) with the histogram for each parameter a
-    # different page in the PDF for detailed analysis.
-    self.plot_posteriors_pdf()
-
-    # Make a gif of the model spectrum as a function of iteration,
-    # or if last is True, only save the last model spectrum.
-    if gif is True:
-        self.plot_models(step=step, only_last=last)
-
+def make_plots_from_pickle(pname, gif=False, last=False, step=100):
+    S = Samples(pname, gif=gif, last=last, step=step)
+    S.make_all_plots()
 
 #-----------------------------------------------------------------------------#
 
 def first_concat():
     models = ["model_20180807_0442.pickle.gz", "model_20180807_2917.pickle.gz", "model_20180807_3906.pickle.gz", "model_20180808_0244.pickle.gz", "model_20180810_0857.pickle.gz", "model_20180811_0849.pickle.gz", "model_20180812_2600.pickle.gz", "model_20180814_2104.pickle.gz"]
     S = Samples(models)
-    make_plots(S)
+    S.make_all_plots()
 
 #-----------------------------------------------------------------------------#
 
@@ -370,5 +382,4 @@ if __name__ == "__main__":
                         help="Step size for plotting chain iterations")
     args = parser.parse_args()
 
-    S = Samples(args.pname)
-    make_plots(S, args.gif, args.last, int(args.step))
+    make_plots_from_pickle(args.pname, args.gif, args.last, int(args.step))
