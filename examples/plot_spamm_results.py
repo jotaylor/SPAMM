@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import pickle
+import dill
 import gzip
 import numpy as np
 import subprocess
@@ -21,10 +21,10 @@ from spamm.Analysis import (median_values, mean_values, plot_chains,
 
 def read_pickle(pname):
     try:
-        p_data = pickle.loads(gzip.open(pname).read())
+        p_data = dill.loads(gzip.open(pname).read())
     except UnicodeDecodeError:
-        p_data = pickle.loads(gzip.open(pname).read(), encoding="latin1")
-
+        p_data = dill.loads(gzip.open(pname).read(), encoding="latin1")
+    
     model = p_data["model"]
     params = p_data["comp_params"]
     if pname == "model_20180627_1534.pickle.gz":
