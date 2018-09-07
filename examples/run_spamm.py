@@ -4,7 +4,7 @@ import gzip
 import dill as pickle
 import datetime
 import numpy as np
-from analyze_model_run import make_chain_plots
+from plot_spamm_results import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
@@ -117,7 +117,7 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
     with gzip.open(pname, "wb") as model_output:
         model_output.write(pickle.dumps(p_data))
         print("Saved pickle file {0}".format(pname))
-    make_chain_plots(pname)
+    make_plots_from_pickle(pname)
 
     t2 = datetime.datetime.now()
     print("executed in {}".format(t2-t1))
