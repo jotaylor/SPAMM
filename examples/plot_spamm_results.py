@@ -307,16 +307,16 @@ class Samples(object):
             plt.close(fig)
     
         if self.gif is True:
-            for component in model.components:
+            for component in self.model.components:
                 cname = component.name
                 gifname = os.path.join(outdir, "{}.gif".format(cname))
                 subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
                                        os.path.join(outdir, "{}*png".format(cname)), 
                                        gifname])
                 print("\tSaved {}".format(gifname))
-            gifname = os.path.join(outdir, "{}.gif".format(model_name))
+            gifname = os.path.join(outdir, "{}.gif".format(self.model_name))
             subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
-                                   os.path.join(outdir, "model*png".format(model_name)), 
+                                   os.path.join(outdir, "model*png".format(self.model_name)), 
                                    gifname])
             print("\tSaved {}".format(gifname))
         
