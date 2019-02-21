@@ -5,10 +5,14 @@ from __future__ import print_function
 
 from six import with_metaclass
 from future.utils import with_metaclass
-
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import sys
+
+from utils.parse_pars import parse_pars
+PARS = parse_pars()
+
+#-----------------------------------------------------------------------------#
 
 # Compatible with python 2 & 3.
 class Component(with_metaclass(ABCMeta, object)):
@@ -107,3 +111,11 @@ class Component(with_metaclass(ABCMeta, object)):
             #if comp_delta_wavelength > data_delta_wavelength:
 
 
+    @property
+    def fast_interp(self):
+        '''Determines if fast interpolation should be used instead of rebin_spec'''
+        if PARS["rebin_spec"] is False:
+            return True
+        else:
+            return False
+        

@@ -173,17 +173,27 @@ class HostGalaxyComponent(Component):
                                       num = len(template.wavelengths))
 #TODO need to verify Spectrum method name
             # Bin template fluxes in equal log bins
-            log_host_flux = rebin_spec(np.log(template.wavelengths), 
-                                       template.flux, 
-                                       log_host_wl)
+            if self.fast_interp:
+                log_host_flux = np.interp(log_host_wl,
+                                          np.log(template.wavelengths),
+                                          template.flux)
+            else:
+                log_host_flux = rebin_spec(np.log(template.wavelengths), 
+                                           template.flux, 
+                                           log_host_wl)
 
             log_host_spectrum = Spectrum.from_array(log_host_flux)
             log_host_spectrum.dispersion = log_host_wl
             self.log_host.append(log_host_spectrum)
             
-            host_flux = rebin_spec(template.wavelengths,
-                                   template.flux,
-                                   data_spectrum.wavelengths)
+            if self.fast_interp:
+                host_flux = np.interp(data_spectrum.wavelengths,
+                                      template.wavelengths,
+                                      template.flux)
+            else:
+                host_flux = rebin_spec(template.wavelengths,
+                                       template.flux,
+                                       data_spectrum.wavelengths)
             self.interp_host.append(host_flux)
 
             # This gives us the flux of the template at the normalization
@@ -308,9 +318,14 @@ class HostGalaxyComponent(Component):
 #                                                         np.log(spectrum.wavelengths))
 #            conv_host_norm_flux = conv_host.norm_wavelength_flux
 
-            conv_host_flux = rebin_spec(self.log_host[i].wavelengths,
-                                        log_conv_host_flux,
-                                        np.log(spectrum.wavelengths))
+            if self.fast_interp:
+                conv_host_flux = np.interp(np.log(spectrum.wavelengths),
+                                           self.log_host[i].wavelengths,
+                                           log_conv_host_flux)
+            else:
+                conv_host_flux = rebin_spec(self.log_host[i].wavelengths,
+                                            log_conv_host_flux,
+                                            np.log(spectrum.wavelengths))
             conv_host_nw = np.median(self.host_gal[i].wavelengths)
             conv_host_norm_flux = np.interp(conv_host_nw, spectrum.wavelengths, conv_host_flux)
             spectrum_norm_flux = np.interp(conv_host_nw, spectrum.wavelengths, spectrum.flux)

@@ -29,6 +29,7 @@ balmer_edge = 3646 # Angstroms
 
 
 class BalmerCombined(Component):
+
     """
     Model of the combined BalmerContinuum (BC) based on Grandi et
     al. (1982) and Kovacevic & Popovic (2014).It contains two components: an analytical 
@@ -40,7 +41,7 @@ class BalmerCombined(Component):
 
     def __init__(self, BalmerContinuum=False, BalmerPseudocContinuum=False):
         super().__init__()
-
+        
         self.model_parameter_names = []
         self.name = "Balmer"
 
@@ -81,7 +82,7 @@ class BalmerCombined(Component):
         self.BpC = BalmerPseudocContinuum
         
 #-----------------------------------------------------------------------------#
-
+            
     @property
     def is_analytic(self):
         return True
@@ -197,38 +198,47 @@ class BalmerCombined(Component):
     #TODO add convolution function to utils
     
     def log_conv(self,wavelength, orig_flux, width_lines): 
-       """
-       Perform convolution in log space. 
-   
-       Args:
-           wavelength (): wavelength of original spectrum
-           orig_flux (): Flux of spectrum before convolution
-           width_lines (): width of the lines wanted in v/c 
-   
-       Returns:
-           array (array):
-       """
-       
-       # Calculates convolution with lwidth in log wavelength space, 
-       # which is equivalent to uniform in velocity space.
-       ln_wave  = np.log(wavelength)
-       ln_wavenew = np.r_[ln_wave.min():ln_wave.max():1j*ln_wave.size]
-       ln_wavenew[0]  = ln_wave[0]
-       ln_wavenew[-1] = ln_wave[-1]
-   
-       #rebin spectrum in equally spaced log wavelengths
-       flux_rebin = rebin_spec(ln_wave,orig_flux, ln_wavenew)
-   
-       dpix = width_lines/(ln_wavenew[1] - ln_wavenew[0])
-       kernel_width = round(5*dpix)
-       kernel_x = np.r_[-kernel_width:kernel_width+1]
-       kernel  = np.exp(- (kernel_x)**2/(dpix)**2)
-       kernel /= abs(np.sum(kernel))
-   
-       flux_conv = np.convolve(flux_rebin, kernel,mode='same')
-       assert flux_conv.size == wavelength.size
-       #rebin spectrum to original wavelength values
-       return rebin_spec(np.exp(ln_wavenew),flux_conv,wavelength)
+        
+        """
+        Perform convolution in log space. 
+        
+        Args:
+            wavelength (): wavelength of original spectrum
+            orig_flux (): Flux of spectrum before convolution
+            width_lines (): width of the lines wanted in v/c 
+        
+        Returns:
+            array (array):
+        """
+        
+        # Calculates convolution with lwidth in log wavelength space, 
+        # which is equivalent to uniform in velocity space.
+        ln_wave  = np.log(wavelength)
+        ln_wavenew = np.r_[ln_wave.min():ln_wave.max():1j*ln_wave.size]
+        ln_wavenew[0]  = ln_wave[0]
+        ln_wavenew[-1] = ln_wave[-1]
+        
+        #rebin spectrum in equally spaced log wavelengths
+        if self.fast_interp:
+            flux_rebin = np.interp(ln_wavenew, ln_wave, orig_flux)
+        else:
+            flux_rebin = rebin_spec(ln_wave, orig_flux, ln_wavenew)
+        
+        dpix = width_lines/(ln_wavenew[1] - ln_wavenew[0])
+        kernel_width = round(5*dpix)
+        kernel_x = np.r_[-kernel_width:kernel_width+1]
+        kernel  = np.exp(- (kernel_x)**2/(dpix)**2)
+        kernel /= abs(np.sum(kernel))
+        
+        flux_conv = np.convolve(flux_rebin, kernel,mode='same')
+        assert flux_conv.size == wavelength.size
+        #rebin spectrum to original wavelength values
+        if self.fast_interp:
+            orig_wl = np.interp(wavelength, np.exp(ln_wavenew), flux_conv)
+        else:
+            orig_wl = rebin_spec(np.exp(ln_wavenew), flux_conv, wavelength)
+        
+        return orig_wl
         
 #-----------------------------------------------------------------------------#
     
