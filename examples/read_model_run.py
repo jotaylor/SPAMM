@@ -58,8 +58,8 @@ samples = model.sampler.chain[:, 50:, :].reshape((-1, model.total_parameter_coun
 #rc('text', usetex=True)           
 #nullfmt = NullFormatter() 
 
-pl.plot(model.data_spectrum.dispersion,model.data_spectrum.flux)
-pl.plot(model.model_spectrum.dispersion,model.model_spectrum.flux)
+pl.plot(model.data_spectrum.spectral_axis,model.data_spectrum.flux)
+pl.plot(model.model_spectrum.spectral_axis,model.model_spectrum.flux)
 figname = "fit_from_pickle.eps"
 pl.savefig(figname, format='eps', dpi=1000)
 print("Saved {0}".format(figname))
