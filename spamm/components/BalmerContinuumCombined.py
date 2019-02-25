@@ -100,7 +100,7 @@ class BalmerCombined(Component):
             raise Exception("Need a data spectrum from which to estimate maximum flux at 3646 A")
         
         if self.normalization_max == "bcmax_flux":
-            be_index = find_nearest_index(spectrum.wavelengths, balmer_edge) 
+            be_index = find_nearest_index(spectrum.spectral_axis, balmer_edge) 
             bcmax = np.max(spectrum.flux[be_index-10:be_index+10])
             self.normalization_max = bcmax
         normalization_init = np.random.uniform(low=self.normalization_min,
@@ -372,16 +372,16 @@ class BalmerCombined(Component):
         edge_wl = balmer_edge*(1 - loffset/c_kms.value)
         
         n_e =10.**logNe
-        bpc_flux = self.makelines(spectrum.wavelengths,
+        bpc_flux = self.makelines(spectrum.spectral_axis,
                  Te,n_e,
                  loffset/c_kms.value,lwidth/c_kms.value)
                  
         
-        norm_index = find_nearest_index(spectrum.wavelengths, edge_wl) 
+        norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
         
         
         fnorm = bpc_flux[norm_index]
-        bpc_flux[spectrum.wavelengths <= spectrum.wavelengths[norm_index]] = 0
+        bpc_flux[spectrum.spectral_axis <= spectrum.spectral_axis[norm_index]] = 0
         bpc_flux *= normalization/fnorm
 #        bpc_flux *= lscale
     
@@ -430,17 +430,17 @@ class BalmerCombined(Component):
         edge_wl = balmer_edge*(1 - loffset/c.value)
 
     #TODO need WL as quantity objects for better astropy functionality
-        blackbody = blackbody_lambda(spectrum.wavelengths, Te)
+        blackbody = blackbody_lambda(spectrum.spectral_axis, Te)
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms
-        tau = tauBE*(spectrum.wavelengths/balmer_edge)**3
+        tau = tauBE*(spectrum.spectral_axis/balmer_edge)**3
         absorption = 1 - np.exp(-tau)
         bc_flux = absorption * blackbody
-        bc_flux = self.log_conv(spectrum.wavelengths,bc_flux,lwidth/c.value)
+        bc_flux = self.log_conv(spectrum.spectral_axis,bc_flux,lwidth/c.value)
     
-        norm_index = find_nearest_index(spectrum.wavelengths, edge_wl) 
+        norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
         fnorm = bc_flux[norm_index]
-        bc_flux[spectrum.wavelengths > spectrum.wavelengths[norm_index]] = 0.
+        bc_flux[spectrum.spectral_axis > spectrum.spectral_axis[norm_index]] = 0.
         bc_flux *= normalization/fnorm
         
         return bc_flux

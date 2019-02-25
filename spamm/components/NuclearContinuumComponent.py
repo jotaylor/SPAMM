@@ -101,9 +101,9 @@ class NuclearContinuumComponent(Component):
         if self.broken_pl:
             size = 2
             if self.wave_break_min == "min_wl":
-                self.wave_break_min = min(spectrum.wavelengths)
+                self.wave_break_min = min(spectrum.spectral_axis)
             if self.wave_break_max == "max_wl": 
-                self.wave_break_max = max(spectrum.wavelengths)
+                self.wave_break_max = max(spectrum.spectral_axis)
             wave_break_init = np.random.uniform(low=self.wave_break_min, 
                                                      high=self.wave_break_max)
             pl_init.append(wave_break_init)
@@ -194,5 +194,5 @@ class NuclearContinuumComponent(Component):
             x_break = parameters[self.parameter_index("wave_break")]
             slope2 = parameters[self.parameter_index("slope2")]
             PL = BrokenPowerLaw1D(norm, x_break, slope1, slope2)
-        flux = PL(spectrum.wavelengths)
+        flux = PL(spectrum.spectral_axis)
         return flux

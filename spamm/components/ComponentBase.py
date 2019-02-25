@@ -103,8 +103,8 @@ class Component(with_metaclass(ABCMeta, object)):
             assert True, "The 'initialize' method of the component '{0}' must be defined.".format(self.__class__.__name__)
 
 
-            #self.data_wavelength_grid = np.array(data_spectrum.wavelengths)
-            #data_delta_wavelength = data_spectrum.wavelengths[1] - data_spectrum.wavelengths[0]
+            #self.data_wavelength_grid = np.array(data_spectrum.spectral_axis)
+            #data_delta_wavelength = data_spectrum.spectral_axis[1] - data_spectrum.spectral_axis[0]
             #comp_delta_wavelength = self.native_wavelength_grid[1] - native_wavelength_grid[0]
 
             # TODO - what if component grid is not uniform? currently require that it be.

@@ -83,8 +83,7 @@ class FeComponent(Component):
             with open(template_filename) as template_file:
                 wavelengths, flux = np.loadtxt(template_filename, unpack=True)
                 flux = np.where(flux<0, 1e-19, flux)
-                fe = Spectrum.from_array(flux)
-                fe.dispersion = wavelengths 
+                fe = Spectrum(spectral_axis=wavelengths, flux=flux)
 
                 self.fe_templ.append(fe)
 
@@ -158,7 +157,7 @@ class FeComponent(Component):
         interpolating them on the grid scale of the data spectrum.
         """
 
-        self.flux_arrays = np.zeros(len(data_spectrum.wavelengths)) 
+        self.flux_arrays = np.zeros(len(data_spectrum.spectral_axis)) 
 
         # We'll eventually need to convolve these in constant velocity space, 
         # so rebin to equal log bins
@@ -168,45 +167,44 @@ class FeComponent(Component):
         nw = data_spectrum.norm_wavelength
 
         for i,template in enumerate(self.fe_templ):
-            log_fe_wl = np.linspace(min(np.log(template.wavelengths)), 
-                                         max(np.log(template.wavelengths)), 
-                                         num=len(template.wavelengths))
+            log_fe_wl = np.linspace(min(np.log(template.spectral_axis)), 
+                                         max(np.log(template.spectral_axis)), 
+                                         num=len(template.spectral_axis))
 # TODO need to verify Spectrum method name
-#            binned_flux = Spectrum.bin_spectrum(np.log(template.wavelengths),
+#            binned_flux = Spectrum.bin_spectrum(np.log(template.spectral_axis),
 #                                                         template.flux,
 #                                                         equal_log_bins)
             if self.fast_interp:
-                log_fe_flux = np.interp(log_fe_wl, np.log(template.wavelengths), 
+                log_fe_flux = np.interp(log_fe_wl, np.log(template.spectral_axis), 
                                         template.flux, left=0, right=0)
             else:
-                log_fe_flux = rebin_spec(np.log(template.wavelengths),
+                log_fe_flux = rebin_spec(np.log(template.spectral_axis),
                                          template.flux,
                                          log_fe_wl)
 
             
-            log_fe_spectrum = Spectrum.from_array(log_fe_flux)
-            log_fe_spectrum.dispersion = log_fe_wl
+            log_fe_spectrum = Spectrum(spectral_axis=log_fe_wl, flux=log_fe_flux)
             self.log_fe.append(log_fe_spectrum)
-#            self.interp_fe.append(Spectrum.bin_spectrum(template.wavelengths,
+#            self.interp_fe.append(Spectrum.bin_spectrum(template.spectral_axis,
 #                                                              template.flux,
-#                                                              data_spectrum.wavelengths))
+#                                                              data_spectrum.spectral_axis))
             
             if self.fast_interp:
-                fe_flux = np.interp(data_spectrum.wavelengths, 
-                                    template.wavelengths,
+                fe_flux = np.interp(data_spectrum.spectral_axis, 
+                                    template.spectral_axis,
                                     template.flux,
                                     left=0, right=0)
             else:
-                fe_flux = rebin_spec(template.wavelengths,
+                fe_flux = rebin_spec(template.spectral_axis,
                                      template.flux,
-                                     data_spectrum.wavelengths)
+                                     data_spectrum.spectral_axis)
 
             self.interp_fe.append(fe_flux)
             
             # This gives us the flux of the template at the normalization
             # wavelength associated with the data spectrum. 
             self.interp_fe_norm_flux.append(np.interp(nw,
-                                                   template.wavelengths,
+                                                   template.spectral_axis,
                                                    template.flux,
                                                    left=0,
                                                    right=0))
@@ -268,7 +266,7 @@ class FeComponent(Component):
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
         width = parameters[self.parameter_index("fe_width")]
-        self.flux_arrays = np.zeros(len(spectrum.wavelengths)) 
+        self.flux_arrays = np.zeros(len(spectrum.spectral_axis)) 
         for i in range(len(self.fe_templ)):	
             norm_i = parameters[i]
         
@@ -279,11 +277,11 @@ class FeComponent(Component):
             # sigma_conv is the width to broaden over, as given in Eqn 1 
             # of Vestergaard and Wilkes 2001 
             # (essentially the first line below this)
-            # NOTE: log_fe.wavelengths is in log space, but flux is not!
+            # NOTE: log_fe.spectral_axis is in log space, but flux is not!
             sigma_conv = np.sqrt(width**2 - self.templ_width**2) / \
                          (c_kms * 2.*np.sqrt(2.*np.log(2.)))
 
-            bin_size = self.log_fe[i].wavelengths[2] - self.log_fe[i].wavelengths[1]
+            bin_size = self.log_fe[i].spectral_axis[2] - self.log_fe[i].spectral_axis[1]
 #TODO cross-check with Spectrum ^^
             sigma_norm = np.ceil(sigma_conv / bin_size)
             sigma_size = PARS["fe_kernel_size_sigma"] * sigma_norm
@@ -296,7 +294,7 @@ class FeComponent(Component):
 #            # fftwconvolution only works on even size arrays
 #            if len(self.log_fe[i].flux) % 2 != 0:
 #                self.log_fe[i].flux = self.log_fe[i].flux[:-1]
-#                self.log_fe[i].wavelengths = self.log_fe[i].wavelengths[:-1]
+#                self.log_fe[i].spectral_axis = self.log_fe[i].spectral_axis[:-1]
 #            log_conv_fe_flux = fftwconvolve_1d(self.log_fe[i].flux, kernel)
         
             log_conv_fe_flux = np.convolve(self.log_fe[i].flux, kernel,mode="same")
@@ -304,25 +302,25 @@ class FeComponent(Component):
             # Shift spectrum back into linear space.
             # the left and right statements just set the flux value 
             # to zero if the specified log_norm_wl is outside the 
-            #bounds of self.log_fe[i].wavelengths
-#            conv_fe = Spectrum.bin_spectrum(self.log_fe[i].wavelengths,
+            #bounds of self.log_fe[i].spectral_axis
+#            conv_fe = Spectrum.bin_spectrum(self.log_fe[i].spectral_axis,
 #                                                         log_conv_fe_flux,
-#                                                         np.log(spectrum.wavelengths))
+#                                                         np.log(spectrum.spectral_axis))
             # log(convolute template flux) rebinned onto log space of data spectrum WL.
             if self.fast_interp:
-                conv_fe_flux = np.interp(np.log(spectrum.wavelengths),
-                                         self.log_fe[i].wavelengths,
+                conv_fe_flux = np.interp(np.log(spectrum.spectral_axis),
+                                         self.log_fe[i].spectral_axis,
                                          log_conv_fe_flux,
                                          left=0,
                                          right=0)
             else:
-                conv_fe_flux = rebin_spec(self.log_fe[i].wavelengths,
+                conv_fe_flux = rebin_spec(self.log_fe[i].spectral_axis,
                                      log_conv_fe_flux,
-                                     np.log(spectrum.wavelengths))
+                                     np.log(spectrum.spectral_axis))
             
-            conv_fe_nw = np.median(self.fe_templ[i].wavelengths)
-            conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.wavelengths, conv_fe_flux) 
-            spectrum_norm_flux = np.interp(conv_fe_nw, spectrum.wavelengths, spectrum.flux) 
+            conv_fe_nw = np.median(self.fe_templ[i].spectral_axis)
+            conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.spectral_axis, conv_fe_flux) 
+            spectrum_norm_flux = np.interp(conv_fe_nw, spectrum.spectral_axis, spectrum.flux) 
 
             # Find NaN errors early from dividing by zero.
 #TODO check below syntax vv

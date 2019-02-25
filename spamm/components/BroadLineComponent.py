@@ -155,7 +155,7 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
         if data_spectrum is None:
             raise Exception("The data spectrum must be specified to initialize" + 
                                             "{0}.".format(self.__class__.__name__))
-        self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.wavelengths)
+        self.normalization_wavelength(data_spectrum_wavelength=data_spectrum.spectral_axis)
 
     def ln_priors(self, params):
         '''
@@ -256,8 +256,8 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
         assert len(parameters) == len(self.model_parameter_names), ("The wrong number " +
                                                                 "of indices were provided: {0}".format(parameters))
 
-        flux = gaussian(spectrum.wavelengths,Gauss_cenwave,Gauss_width,Gauss_amplitude)+\
-        gauss_hermite(spectrum.wavelengths,GH_cenwave,GH_width,GH_amplitude,GH_h3,GH_h4,\
+        flux = gaussian(spectrum.spectral_axis,Gauss_cenwave,Gauss_width,Gauss_amplitude)+\
+        gauss_hermite(spectrum.spectral_axis,GH_cenwave,GH_width,GH_amplitude,GH_h3,GH_h4,\
         GH_h5,GH_h6)
 
         return flux

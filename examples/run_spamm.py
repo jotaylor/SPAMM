@@ -4,7 +4,9 @@ import gzip
 import dill as pickle
 import datetime
 import numpy as np
+from astropy import units as u
 
+from utils.parse_pars import parse_pars
 from plot_spamm_results import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -13,6 +15,8 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
+
+FLUX_UNIT = parse_pars()["global"]["flux_unit"]
 
 #-----------------------------------------------------------------------------#
 
@@ -54,9 +58,8 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
     if flux_err is None:
         flux_err = flux*0.05
 
-    spectrum = Spectrum.from_array(flux, uncertainty=flux_err)
-    spectrum.dispersion = wl#*units.angstrom
-    spectrum.flux_error = flux_err
+    spectrum = Spectrum(spectral_axis=wl, flux=flux, uncertainty=flux_err)
+#    spectrum.flux_error = flux_err
 
     if comp_params is None:
         comp_params = {}

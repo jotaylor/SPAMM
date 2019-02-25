@@ -213,19 +213,19 @@ class Samples(object):
         actualcolor = "deepskyblue"
         fig = plt.figure(figsize=(15,7))
         ax = fig.add_subplot(111)
-        ax.errorbar(data_spectrum.wavelengths, data_spectrum.flux,
+        ax.errorbar(data_spectrum.spectral_axis, data_spectrum.flux,
                         data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
                         ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
-        ax.plot(data_spectrum.wavelengths,
+        ax.plot(data_spectrum.spectral_axis,
                 self.model.model_flux(params=self.means),
                 color="darkblue", label="Mean")
-        ax.plot(data_spectrum.wavelengths,
+        ax.plot(data_spectrum.spectral_axis,
                 self.model.model_flux(params=self.medians),
                 color="darkviolet", label="Median")
-        ax.plot(data_spectrum.wavelengths,
+        ax.plot(data_spectrum.spectral_axis,
                 self.model.model_flux(params=self.modes),
                 color="blue", label="Mode")
-        ax.plot(data_spectrum.wavelengths,
+        ax.plot(data_spectrum.spectral_axis,
                 self.model.model_flux(params=self.maxs),
                 color="fuchsia", label="Max")
         ax.set_title("Best Fits")
@@ -262,12 +262,12 @@ class Samples(object):
             for component in self.model.components:
                 fig = plt.figure(figsize=(15,7))
                 ax = fig.add_subplot(111)
-                ax.plot(data_spectrum.wavelengths, actual_comps[component.name],
+                ax.plot(data_spectrum.spectral_axis, actual_comps[component.name],
                         color=actualcolor, label="Actual Flux")
                 
                 comp_flux = component.flux(spectrum=data_spectrum,
                                            parameters=self.samples[i, j:j+len(component.model_parameter_names)])
-                ax.plot(data_spectrum.wavelengths, comp_flux, color="deeppink", 
+                ax.plot(data_spectrum.spectral_axis, comp_flux, color="deeppink", 
                         label="Model Flux")
                 compmax = max(actual_comps[component.name])
                 if ymax is None:
@@ -287,10 +287,10 @@ class Samples(object):
             model_spectrum = self.model.model_flux(params=self.samples[i,:])
             fig = plt.figure(figsize=(15,7))
             ax = fig.add_subplot(111)
-            ax.errorbar(data_spectrum.wavelengths, data_spectrum.flux,
+            ax.errorbar(data_spectrum.spectral_axis, data_spectrum.flux,
                         data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
                         ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
-            ax.plot(data_spectrum.wavelengths, model_spectrum, 
+            ax.plot(data_spectrum.spectral_axis, model_spectrum, 
                     color="deeppink", label="Model Flux")
             modelmax = max(data_spectrum.flux)
             if ymax is None:

@@ -4,6 +4,8 @@ import sys
 import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+from astropy import units as u
+
 import emcee
 
 from .Spectrum import Spectrum
@@ -117,8 +119,8 @@ class Model(object):
         #self.sampler_output = None
 
         wl_init = np.arange(wavelength_start, wavelength_end, wavelength_delta)
-        self.model_spectrum = Spectrum.from_array(np.zeros(len(wl_init)),
-                                                  dispersion=wl_init)
+        self.model_spectrum = Spectrum(spectral_axis = wl_init,
+                                       flux = np.zeros(len(wl_init)))
 
         # Flag to allow Model to interpolate components' wavelength grid to 
         # match data if component grid is more course than data.
@@ -142,7 +144,7 @@ class Model(object):
 #            print("Attempting to read the bad pixel mask before a spectrum was defined.")
 #            sys.exit(1)
 #        if self._mask is None:
-#            self._mask = np.ones(len(self.data_spectrum.dispersion))
+#            self._mask = np.ones(len(self.data_spectrum.spectral_axis))
 #
 #        return self._mask
 #
@@ -183,8 +185,8 @@ class Model(object):
             raise Exception("Components must be added before defining the data spectrum.")
 
         # The data spectrum defines the model wavelength grid.
-        self.model_spectrum.dispersion = np.array(new_data_spectrum.dispersion)
-        self.model_spectrum.flux = np.zeros(len(self.model_spectrum.dispersion))
+        self.model_spectrum.spectral_axis = np.array(new_data_spectrum.spectral_axis)
+        self.model_spectrum.flux = np.zeros(len(self.model_spectrum.spectral_axis))
 
         # Check that all components are on the same wavelength grid.
         # If they are not, *and* the flag to interpolate them has been set, 
@@ -215,13 +217,13 @@ class Model(object):
             # resulting grid will be different than the input data.
             elif self.downsample_data_if_needed:
                 downsampled_spectrum = new_data_spectrum.copy()
-                downsampled_spectrum.dispersion = np.arange(new_data_spectrum[0], 
+                downsampled_spectrum.spectral_axis = np.arange(new_data_spectrum[0], 
                                                             new_data_spectrum[-1], 
                                                             gs)
-                downsampled_spectrum.flux = interp1d(x=downsampled_spectrum.dispersion,
+                downsampled_spectrum.flux = interp1d(x=downsampled_spectrum.spectral_axis,
                                                      y=new_data_spectrum.flux,
                                                      kind="linear")
-                self.model_spectrum.dispersion = np.array(downsampled_spectrum.dispersion)
+                self.model_spectrum.spectral_axis = np.array(downsampled_spectrum.spectral_axis)
 
                 # Reinitialize all components with new data.
                 for component in self.components:
@@ -344,7 +346,7 @@ class Model(object):
         # Note: np.copy does a deepcopy
         params2 = np.copy(params)
 
-        self.model_spectrum.flux = np.zeros(len(self.model_spectrum.dispersion))
+        self.model_spectrum.flux = np.zeros(len(self.model_spectrum.spectral_axis))
 
         # Extract parameters from full array for each component.
         for component in self.components:
@@ -391,7 +393,7 @@ class Model(object):
         extinct_spectra= np.array(self.model_spectrum.flux)*extinction
         self.model_spectrum.flux = extinct_spectra
 
-        #for j in range(len(self.data_spectrum.wavelengths)):
+        #for j in range(len(self.data_spectrum.spectral_axis)):
         #    self.model_spectrum.flux[j] *= extinction[j]
 
 #-----------------------------------------------------------------------------#
@@ -427,12 +429,12 @@ class Model(object):
         """
 
         # Create an interpolation function.
-        f = interp1d(self.model_spectrum.dispersion,
+        f = interp1d(self.model_spectrum.spectral_axis,
                                  self.model_spectrum.flux)
 
         # It is much more efficient to not use a for loop here.
         # interp_model_flux = [f(x) for x in self.data_spectrum.wavelength]
-        interp_model_flux = f(self.data_spectrum.dispersion)
+        interp_model_flux = f(self.data_spectrum.spectral_axis)
 
         ln_l = np.power(( (self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2) + np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
         #ln_l *= self.mask

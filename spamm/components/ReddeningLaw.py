@@ -7,10 +7,10 @@ from .ComponentBase import Component
 def Calzetti_ext(spectrum=None, parameters=None):
     if spectrum is None:
         raise Exception("Need a data spectrum")
-    ext= [1.]*len(spectrum.wavelengths)
+    ext= [1.]*len(spectrum.spectral_axis)
     Rv = 4.05
-    for j in range(len(spectrum.wavelengths)):
-        wavelengths_um = spectrum.wavelengths[j]/10000.
+    for j in range(len(spectrum.spectral_axis)):
+        wavelengths_um = spectrum.spectral_axis[j]/10000.
         if (wavelengths_um >= 0.12) & (wavelengths_um < 0.63):
             k = 2.659*(-1.857+1.040/wavelengths_um)+4.05
             ext[j] = pow(10,-0.4*parameters[0]*k)
@@ -23,7 +23,7 @@ def LMC_Fitzpatrick_ext(spectrum=None, parameters=None): #Fitzpatrick 1986
     '''Large Magellanic Cloud extinction curve defined in Fitzpatrick 1986'''
     if spectrum is None:
         raise Exception("Need a data spectrum")
-    ext= [1.]*len(spectrum.wavelengths)
+    ext= [1.]*len(spectrum.spectral_axis)
     C1 = -0.69
     C2 = 0.89 #micrometres
     C3 = 2.55 #micrometres^-2
@@ -31,8 +31,8 @@ def LMC_Fitzpatrick_ext(spectrum=None, parameters=None): #Fitzpatrick 1986
     gamma = 0.994 #micrometres^-1
     Rv = 3.1
     
-    for j in range(len(spectrum.wavelengths)):
-        wavelengths_um = spectrum.wavelengths[j]/10000.
+    for j in range(len(spectrum.spectral_axis)):
+        wavelengths_um = spectrum.spectral_axis[j]/10000.
         x = pow(wavelengths_um,-1)
         x2 = pow(x,2)
         D = x2/(pow(x2-pow(x_0,2),2)+x2*pow(gamma,2))
@@ -49,7 +49,7 @@ def MW_Seaton_ext(spectrum=None, parameters=None): #Seaton 1979
     '''Milky Way extinction curve defined in Seaton 1979'''
     if spectrum is None:
         raise Exception("Need a data spectrum")
-    ext= [1.]*len(spectrum.wavelengths)
+    ext= [1.]*len(spectrum.spectral_axis)
     C1 = -0.38
     C2 = 0.74 #micrometres
     C3 = 3.96 #micrometres^-2
@@ -57,8 +57,8 @@ def MW_Seaton_ext(spectrum=None, parameters=None): #Seaton 1979
     x_0 = 4.595 #micrometres^-1
     gamma = 1.051 #micrometres^-1
     Rv = 3.1
-    for j in range(len(spectrum.wavelengths)):
-        wavelengths_um = spectrum.wavelengths[j]/10000.
+    for j in range(len(spectrum.spectral_axis)):
+        wavelengths_um = spectrum.spectral_axis[j]/10000.
         x = pow(wavelengths_um,-1)
         x2 = pow(x,2)
         D = x2/(pow(x2-pow(x_0,2),2)+x2*pow(gamma,2))
@@ -75,7 +75,7 @@ def SMC_Gordon_ext(spectrum=None, parameters=None): #Gordon 2003
     '''Small Magellanic Cloud extinction curve defined in Gordon 2003'''
     if spectrum is None:
         raise Exception("Need a data spectrum")
-    ext= [1.]*len(spectrum.wavelengths)
+    ext= [1.]*len(spectrum.spectral_axis)
     C1 = -4.96
     C2 = 2.26 #micrometres
     C3 = 0.39 #micrometres^-2
@@ -83,8 +83,8 @@ def SMC_Gordon_ext(spectrum=None, parameters=None): #Gordon 2003
     x_0 = 4.6 #micrometres^-1
     gamma = 1.0 #micrometres^-1
     Rv = 2.74
-    for j in range(len(spectrum.wavelengths)):
-        wavelengths_um = spectrum.wavelengths[j]/10000.
+    for j in range(len(spectrum.spectral_axis)):
+        wavelengths_um = spectrum.spectral_axis[j]/10000.
         x = pow(wavelengths_um,-1)
         x2 = pow(x,2)
         D = x2/(pow(x2-pow(x_0,2),2)+x2*pow(gamma,2))
@@ -102,7 +102,7 @@ def AGN_Gaskell_ext(spectrum=None, parameters=None): #Gaskell and Benker 2007
             Much flatter than galactic extinction curves.'''
     if spectrum is None:
         raise Exception("Need a data spectrum")
-    ext = [1.]*len(spectrum.wavelengths)
+    ext = [1.]*len(spectrum.spectral_axis)
     A = 0.000843
     B = -0.02496
     C = 0.2919
@@ -110,13 +110,13 @@ def AGN_Gaskell_ext(spectrum=None, parameters=None): #Gaskell and Benker 2007
     E = 6.83
     F = -7.92
     Rv = 5.0
-    #for j in range(len(spectrum.wavelengths)):
-    #    wavelengths_um = spectrum.wavelengths[j]/10000.
+    #for j in range(len(spectrum.spectral_axis)):
+    #    wavelengths_um = spectrum.spectral_axis[j]/10000.
     #    x = pow(wavelengths_um,-1)
     #    if (x>=1.5) & (x<8):
     #        k = A*pow(x,5)+B*pow(x,4)+C*pow(x,3)+D*pow(x,2)+E*x+F+Rv
     #        ext[j] = pow(10,-0.4*parameters[0]*k)
-    wavelengths_um = np.array(spectrum.wavelengths/10000.)
+    wavelengths_um = np.array(spectrum.spectral_axis/10000.)
     x = pow(wavelengths_um,-1)
     k = A*x**5+B*x**4+C*x**3+D*x**2+E*x+F+Rv
     ext = pow(10,-0.4*parameters[0]*k)
@@ -190,7 +190,7 @@ class Extinction(Component):
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
         '''
-        flux = [0.]*len(spectrum.wavelengths)
+        flux = [0.]*len(spectrum.spectral_axis)
         return flux
         
     
@@ -211,6 +211,6 @@ class Extinction(Component):
         if self.Calzetti:
             ext = Calzetti_ext(spectrum=spectrum, parameters=parameters)
         if (not self.MW) & (not self.AGN) & (not self.LMC) & (not self.SMC) & (not self.Calzetti):
-            ext = [1.]*len(spectrum.wavelengths)
+            ext = [1.]*len(spectrum.spectral_axis)
         return ext
 

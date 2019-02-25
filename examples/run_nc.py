@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import matplotlib.pyplot as pl
+from astropy import units as u
 
 from utils.parse_pars import parse_pars
 from utils import draw_from_sample
@@ -30,8 +31,7 @@ def create_nc(nc_params=None):
     nc = NuclearContinuumComponent(nc_params["broken_pl"])
     
     # Make a Spectrum object with dummy flux
-    spectrum = Spectrum(nc_params["wl"])
-    spectrum.dispersion = nc_params["wl"]
+    spectrum = Spectrum(nc_params["wl"], nc_params["wl"])
     nc.initialize(spectrum)
     if nc_params["broken_pl"] == True:
         comp_params = [nc_params["wave_break"], nc_params["norm_PL"],

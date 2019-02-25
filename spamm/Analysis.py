@@ -120,7 +120,7 @@ def plot_spectra(model, samples):
     plt.ion()
     for i in range(0, num_samples):
         # plot the data
-        plt.errorbar(data_spectrum.wavelengths, data_spectrum.flux, 
+        plt.errorbar(data_spectrum.spectral_axis, data_spectrum.flux, 
                 yerr=data_spectrum.flux_error, mfc='blue', mec='blue', ecolor='b',
                 fmt='.')
 
@@ -130,9 +130,9 @@ def plot_spectra(model, samples):
         component_flux = component.flux(spectrum=model.data_spectrum,
                 parameters=samples[i,k:len(component.model_parameter_names)])  # flux
         k = len(component.model_parameter_names)
-        plt.plot(data_spectrum.wavelengths, component_flux, '-r')
+        plt.plot(data_spectrum.spectral_axis, component_flux, '-r')
 
     # plot the sum of the model components
         model_spectrum = model.model_flux(params=samples[i,:])  # flux
-        plt.plot(data_spectrum.wavelengths, model_spectrum)
+        plt.plot(data_spectrum.spectral_axis, model_spectrum)
 
