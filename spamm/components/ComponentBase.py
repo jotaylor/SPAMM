@@ -3,9 +3,7 @@
 
 from __future__ import print_function
 
-from six import with_metaclass
-from future.utils import with_metaclass
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import numpy as np
 import sys
 
@@ -15,7 +13,7 @@ PARS = parse_pars()
 #-----------------------------------------------------------------------------#
 
 # Compatible with python 2 & 3.
-class Component(with_metaclass(ABCMeta, object)):
+class Component(ABC):
     '''
     Description of Component class here.
 
