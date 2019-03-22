@@ -63,7 +63,7 @@ balmer_continuum:
 ## Fe Component ##
 fe_forest:
     boxcar_width: 10
-    fe_templates: os.path.abspath("../Data/FeModels") 
+    fe_templates: "../Data/FeModels"
     fe_template_width: 900. #km/s
     fe_norm_min: 0.
     fe_norm_max: "fnw" #max_flux or fnw
