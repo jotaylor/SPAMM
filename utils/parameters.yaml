@@ -1,9 +1,20 @@
-# WARNING!!!! PyYAML resolves scientific notation numbers as strings-
+# !!!!!!!!!!!!!!!!!!!!!!!
+# !!!!    WARNING    !!!!
+# !!!!!!!!!!!!!!!!!!!!!!!
+#PyYAML resolves scientific notation numbers as strings-
 # e.g. 1.6e3 is interpreted as '1.6e3', not 1600. These numbers should
 # be expanded (see bc_Te_max)
 
+## Basic Parameters ##
+## Units MUST exactly match astropy.units counterparts
+## http://docs.astropy.org/en/stable/units/
+global:
+    flux_unit: "erg cm-2 s-1 AA-1"
+    wl_unit: "AA"
+
 emission_lines: ""
-## Host Galaxy parameters##
+
+## Host Galaxy ##
 host_galaxy:
     boxcar_width: 5
     hg_models: os.path.abspath("../Data/HostModels")

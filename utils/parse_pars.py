@@ -2,8 +2,9 @@
 
 import os
 import yaml
+from astropy import units as u
 
-def parse_pars(par_file="../utils/parameters.yaml"):
+def parse_pars(par_file="/user/jotaylor/git/spamm/utils/parameters.yaml"):
     '''
     Read in SPAMM input parameters from input parameters file.
 
@@ -18,5 +19,8 @@ def parse_pars(par_file="../utils/parameters.yaml"):
 
     with open(par_file, "r") as f:
         pars = yaml.load(f)
-
+    
+    pars["global"]["wl_unit"] = u.Unit(pars["global"]["wl_unit"])
+    pars["global"]["flux_unit"] = u.Unit(pars["global"]["flux_unit"])
+    
     return pars
