@@ -158,8 +158,6 @@ class Samples(object):
             avg = self.means[i] + binsize/2.
             mode = self.modes[i] + binsize/2.
             
-            ax.hist(chain, bins, color="skyblue")
-            
             if self.params is not None:
                 try:
                     actual = self.params[self.model_parameter_names[i]]
@@ -172,6 +170,8 @@ class Samples(object):
                                label="Actual value={:1.3e}".format(actual))
                 except KeyError:
                     pass
+            
+            ax.hist(chain, bins, color="skyblue")
 
             xlo = actual - binsize*12
             xhi = actual + binsize*12
