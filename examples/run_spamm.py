@@ -20,7 +20,7 @@ FLUX_UNIT = parse_pars()["global"]["flux_unit"]
 
 #-----------------------------------------------------------------------------#
 
-def spamm_wlflux(components, wl, flux, flux_err=None,
+def spamm_wlflux(components, wl, flux, flux_error=None,
                  n_walkers=30, n_iterations=500,
                  pname=None, comp_params=None):
     """
@@ -39,7 +39,7 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
                 - LMC_ext
         wl (array-like): Wavelength of input data spectrum.
         flux (array-like): Flux of input data spectrum.
-        flux_err (array-like): Error on flux measurement.
+        flux_error (array-like): Error on flux measurement.
         n_walkers (int): Number of walkers, or chains, to use in emcee.
         n_iterations (int): Number of iterations for each walker/chain.
         pname (str): Name of output pickle file. If None, name will be
@@ -55,15 +55,14 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
         if c not in components:
             components[c] = False
 
-    if flux_err is None:
-        flux_err = flux*0.05
+    if flux_error is None:
+        flux_error = flux*0.05
 
-    spectrum = Spectrum(spectral_axis=wl, flux=flux, uncertainty=flux_err)
-#    spectrum.flux_error = flux_err
+    spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
     if comp_params is None:
         comp_params = {}
-    for k,v in zip(("wl", "flux", "err", "components"), (wl, flux, flux_err, components)):
+    for k,v in zip(("wl", "flux", "err", "components"), (wl, flux, flux_error, components)):
         if k not in comp_params:
             comp_params[k] = v
 
@@ -125,3 +124,5 @@ def spamm_wlflux(components, wl, flux, flux_err=None,
 
     t2 = datetime.datetime.now()
     print("executed in {}".format(t2-t1))
+
+    return p_data
