@@ -16,20 +16,28 @@ WL_UNIT = parse_pars()["global"]["wl_unit"]
 
 class Spectrum(Spectrum1D):
     '''
-    Inherit from Spectrum1DRef in specutils.
+    Inherit from Spectrum1DRef in specutils. Wavelength (spectral_axis) and
+    flux are unit-less in this child class. Units are instead stored as 
+    attributes.
     '''
-    def __init__(self, spectral_axis=None, flux=None, spectral_axis_unit=WL_UNIT, 
+    def __init__(self, spectral_axis, flux, flux_error=None, spectral_axis_unit=WL_UNIT, 
                  flux_unit=FLUX_UNIT, *args, **kwargs):
-        self.flux_unit = flux_unit
-        # Not sure these are needed
-        self._norm_wavelength = None
-        self._norm_wavelength_flux = None
-        # Set equal to None in order to inherit from Spectrum while overriding
-        # ability to set/get in child class here.
-        self._spectral_axis = None
-        self._flux = None
+
         super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
                                        flux=flux*flux_unit, *args, **kwargs)
+        # flux_unit is not an attribute of specutils.Spectrum1D, so it's added
+        # to this childclass. spectral_axis_unit is.
+        self.flux_unit = flux_unit
+        self.flux_error = flux_error
+        self.uncertainty = flux_error
+        self._norm_wavelength = None
+        self._norm_wavelength_flux = None
+        if type(spectral_axis) is Quantity:
+            spectral_axis = spectral_axis.value
+        if type(flux) is Quantity:
+            flux = flux.value
+        self._spectral_axis = spectral_axis
+        self._flux = flux
 
     @property
     def norm_wavelength(self):
@@ -42,7 +50,7 @@ class Spectrum(Spectrum1D):
         ''' Returns the flux at the normalization wavelength. '''
         if self._norm_wavelength_flux == None:
             f = scipy.interpolate.interp1d(self.spectral_axis, self.flux) # returns function
-            self._norm_wavelength_flux = Quantity(f(self.norm_wavelength), self.flux_unit)
+            self._norm_wavelength_flux = f(self.norm_wavelength)
         return self._norm_wavelength_flux
 
     def grid_spacing(self):
@@ -52,26 +60,26 @@ class Spectrum(Spectrum1D):
     @property
     def spectral_axis(self):
         # This is necessary to override parent class inability to set/get
-        if self._spectral_axis == None:
+        if self._spectral_axis is None:
             self._spectral_axis = super(Spectrum, self).spectral_axis
         return self._spectral_axis
 
     @spectral_axis.setter
     def spectral_axis(self, new_wl):
-        spectral_axis = Quantity(new_wl, unit=self.spectral_axis_unit)
+        spectral_axis = new_wl
         self._spectral_axis = spectral_axis
         self._norm_wavelength = None
 
     @property
     def flux(self):
         # This is necessary to override parent class inability to set/get
-        if self._flux == None:
+        if self._flux is None:
             self._flux = super(Spectrum, self).flux
         return self._flux
 
     @flux.setter
     def flux(self, new_flux):
-        flux = Quantity(new_flux, unit=self.flux_unit)
+        flux = new_flux
         self._flux = flux
         self._norm_wavelength_flux = None
 
