@@ -101,9 +101,11 @@ def test_spamm(components=None, comp_params=None, n_walkers=30, n_iterations=500
 
 #    return comb_wl, comb_flux, comb_err, all_fluxes
 
-    run_spamm.spamm_wlflux(comp_names, comb_wl, comb_flux, comb_err, 
-                           comp_params=comb_p, n_walkers=n_walkers,
-                           n_iterations=n_iterations)
+    p_data = run_spamm.spamm_wlflux(comp_names, comb_wl, comb_flux, comb_err, 
+                                    comp_params=comb_p, n_walkers=n_walkers,
+                                    n_iterations=n_iterations)
+
+    return p_data
 
 #-----------------------------------------------------------------------------#
 
