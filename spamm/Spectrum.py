@@ -5,6 +5,7 @@
 
 import scipy
 import numpy as np
+from specutils.wcs.wcs_wrapper import WCSWrapper 
 from specutils import Spectrum1D
 from astropy.units import Quantity
 
@@ -22,22 +23,33 @@ class Spectrum(Spectrum1D):
     '''
     def __init__(self, spectral_axis, flux, flux_error=None, spectral_axis_unit=WL_UNIT, 
                  flux_unit=FLUX_UNIT, *args, **kwargs):
-
-        super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
-                                       flux=flux*flux_unit, *args, **kwargs)
-        # flux_unit is not an attribute of specutils.Spectrum1D, so it's added
-        # to this childclass. spectral_axis_unit is.
-        self.flux_unit = flux_unit
-        self.flux_error = flux_error
-        self.uncertainty = flux_error
-        self._norm_wavelength = None
-        self._norm_wavelength_flux = None
+        
+        # If wavelength and flux have units, strip them off. This must be done
+        # first so units don't get multipled in super().
         if type(spectral_axis) is Quantity:
             spectral_axis = spectral_axis.value
         if type(flux) is Quantity:
             flux = flux.value
-        self._spectral_axis = spectral_axis
+        
+        super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
+                                       flux=flux*flux_unit, *args, **kwargs)
+        self.flux_unit = flux_unit
+        self.flux_error = flux_error
+        self.uncertainty = flux_error
         self._flux = flux
+        self._norm_wavelength = None
+        self._norm_wavelength_flux = None
+        self._spectral_axis = spectral_axis
+        self._spectral_axis_unit = spectral_axis_unit
+
+    def __getstate__(self):
+        odict = self.__dict__
+        del odict["_wcs"]
+        return odict
+
+    def __setstate__(self, d):
+        d["_wcs"] = WCSWrapper.from_array(d["_spectral_axis"] * d["_spectral_axis_unit"]) 
+        self.__dict__ = d
 
     @property
     def norm_wavelength(self):
