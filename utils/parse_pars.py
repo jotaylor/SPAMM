@@ -3,8 +3,9 @@
 import os
 import yaml
 from astropy import units as u
+ABSPATH = os.path.dirname(os.path.realpath(__file__))
 
-def parse_pars(par_file="/user/jotaylor/git/spamm/utils/parameters.yaml"):
+def parse_pars(par_file=os.path.join(ABSPATH, "parameters.yaml")):
     '''
     Read in SPAMM input parameters from input parameters file.
 
