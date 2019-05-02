@@ -8,7 +8,6 @@ Test the Iron Component code. This code can be run from teh command line:
 """
 
 import os
-import dill as pickle
 import datetime
 import matplotlib
 matplotlib.use('agg')
