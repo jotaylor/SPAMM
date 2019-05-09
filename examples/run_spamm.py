@@ -19,8 +19,8 @@ from spamm.components.ReddeningLaw import Extinction
 
 #-----------------------------------------------------------------------------#
 
-def spamm_wlflux(components, inspectrum, par_file=None, n_walkers=30, 
-                 n_iterations=500, pname=None, comp_params=None):
+def spamm(components, inspectrum, par_file=None, n_walkers=30, 
+          n_iterations=500, pname=None, comp_params=None):
     """
     Args:
         components (dictionary): A dictionary with at least one component to
