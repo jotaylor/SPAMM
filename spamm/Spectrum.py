@@ -20,6 +20,13 @@ class Spectrum(Spectrum1D):
     Inherit from Spectrum1DRef in specutils. Wavelength (spectral_axis) and
     flux are unit-less in this child class. Units are instead stored as 
     attributes.
+
+    Args:
+        spectral_axis (array-like or :obj:`astropy.units.Quantity`): Wavelength values.
+        flux (array-like or :obj:`astropy.units.Quantity`) : Flux values.
+        flux_error (array-like or :obj:`astropy.units.Quantity`, optional) : Error on `flux` values.
+        spectral_axis_unit (:obj:`astropy.units.Unit`, optional) : Wavelength unit
+        flux_unit (:obj:`astropy.units.Unit`, optional) : Flux unit. 
     '''
     def __init__(self, spectral_axis, flux, flux_error=None, spectral_axis_unit=WL_UNIT, 
                  flux_unit=FLUX_UNIT, *args, **kwargs):
@@ -84,6 +91,9 @@ class Spectrum(Spectrum1D):
 
     @property
     def flux(self):
+        """
+        Unit-less flux values of Spectrum instance.
+        """
         # This is necessary to override parent class inability to set/get
         if self._flux is None:
             self._flux = super(Spectrum, self).flux
