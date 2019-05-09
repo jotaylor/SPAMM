@@ -5,6 +5,7 @@ import dill as pickle
 import datetime
 import numpy as np
 from astropy import units as u
+from specutils import Spectrum1D
 
 from utils.parse_pars import parse_pars
 from plot_spamm_results import make_plots_from_pickle
@@ -16,13 +17,10 @@ from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
 
-FLUX_UNIT = parse_pars()["global"]["flux_unit"]
-
 #-----------------------------------------------------------------------------#
 
-def spamm_wlflux(components, wl, flux, flux_error=None,
-                 n_walkers=30, n_iterations=500,
-                 pname=None, comp_params=None):
+def spamm_wlflux(components, inspectrum, par_file=None, n_walkers=30, 
+                 n_iterations=500, pname=None, comp_params=None):
     """
     Args:
         components (dictionary): A dictionary with at least one component to
@@ -37,9 +35,11 @@ def spamm_wlflux(components, wl, flux, flux_error=None,
                 - MW_ext
                 - AGN_ext
                 - LMC_ext
-        wl (array-like): Wavelength of input data spectrum.
-        flux (array-like): Flux of input data spectrum.
-        flux_error (array-like): Error on flux measurement.
+        inspectrum (:obj:`spamm.Spectrum`, :obj:`specutils.Spectrum1D`, or tuple): 
+            A SPAMM Spectrum object, specutils Spectrum object, or a tuple. 
+            If tuple, it must be at least length 2: ((wavelength,), (flux,)). 
+            It may also contain a 3rd element, the error on the flux.
+        par_file (str): Location of parameters file.
         n_walkers (int): Number of walkers, or chains, to use in emcee.
         n_iterations (int): Number of iterations for each walker/chain.
         pname (str): Name of output pickle file. If None, name will be
@@ -51,14 +51,28 @@ def spamm_wlflux(components, wl, flux, flux_error=None,
     """
 
     t1 = datetime.datetime.now()
+    if par_file is None:
+        pars = parse_pars()
+    else:
+        pars = parse_pars(par_file)
+
     for c in ["PL", "FE", "HOST", "BC", "BpC", "Calzetti_ext", "SMC_ext", "MW_ext", "AGN_ext", "LMC_ext"]:
         if c not in components:
             components[c] = False
 
     if flux_error is None:
         flux_error = flux*0.05
-
-    spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
+    if isinstance(inspectrum, Spectrum):
+        spectrum = inspectrum
+    elif isinstance(inspectrum, Spectrum1D):
+        spectrum = Spectrum(spectral_axis=inspectrum.wavelength, flux=inspectrum.flux)
+    else:
+        try:
+            wl, flux, flux_error = inspectrum
+        except ValueError:
+            wl, flux = inspectrum
+            flux_error = None
+        spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
     if comp_params is None:
         comp_params = {}
@@ -84,16 +98,18 @@ def spamm_wlflux(components, wl, flux, flux_error=None,
         except:
             brokenPL = False
         finally:
-            nuclear_comp = NuclearContinuumComponent(broken=brokenPL)
+            nuclear_comp = NuclearContinuumComponent(broken=brokenPL,
+                                                     pars=pars["nuclear_continuum"])
             model.components.append(nuclear_comp)
     if components["FE"]:
-        fe_comp = FeComponent()
+        fe_comp = FeComponent(pars=pars["fe_forest"])
         model.components.append(fe_comp)
     if components["HOST"]:
-        host_galaxy_comp = HostGalaxyComponent()
+        host_galaxy_comp = HostGalaxyComponent(pars=pars["host_galaxy"])
         model.components.append(host_galaxy_comp)
     if components["BC"] or components["BpC"]:
-        balmer_comp = BalmerCombined(BalmerContinuum=components["BC"],
+        balmer_comp = BalmerCombined(pars=pars["balmer_continuum"],
+                                     BalmerContinuum=components["BC"],
                                      BalmerPseudocContinuum=components["BpC"])
         model.components.append(balmer_comp)
     if components["Calzetti_ext"] or components["SMC_ext"] or components["MW_ext"] or components["AGN_ext"] or components["LMC_ext"]:
