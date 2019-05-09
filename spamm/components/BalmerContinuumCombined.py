@@ -17,8 +17,6 @@ from utils.find_nearest_index import find_nearest_index
 from utils.parse_pars import parse_pars
 #import line_profiler
 
-PARS = parse_pars()["balmer_continuum"]
-
 # Constants are in cgs.  
 c = c.cgs
 h = h.cgs
@@ -26,7 +24,6 @@ k = k_B.cgs
 R = Ryd.to("1/Angstrom")
 E0 = 2.179e-11
 balmer_edge = 3646 # Angstroms
-
 
 class BalmerCombined(Component):
 
@@ -39,7 +36,7 @@ class BalmerCombined(Component):
     When initialising set which components to use"""
 
 
-    def __init__(self, BalmerContinuum=False, BalmerPseudocContinuum=False):
+    def __init__(self, pars=None, BalmerContinuum=False, BalmerPseudocContinuum=False):
         super().__init__()
         
         self.model_parameter_names = []
@@ -57,23 +54,28 @@ class BalmerCombined(Component):
         
         self._norm_wavelength =  None
         
-        self.normalization_min = PARS["bc_norm_min"]
-        self.normalization_max = PARS["bc_norm_max"]
+        if pars is None:
+            self.inputpars = parse_pars()["balmer_continuum"]
+        else:
+            self.inputpars = pars
 
-        self.Te_min = PARS["bc_Te_min"]
-        self.Te_max = PARS["bc_Te_max"]
+        self.normalization_min = self.inputpars["bc_norm_min"]
+        self.normalization_max = self.inputpars["bc_norm_max"]
 
-        self.tauBE_min = PARS["bc_tauBE_min"]
-        self.tauBE_max = PARS["bc_tauBE_max"]
+        self.Te_min = self.inputpars["bc_Te_min"]
+        self.Te_max = self.inputpars["bc_Te_max"]
 
-        self.loffset_min = PARS["bc_loffset_min"]
-        self.loffset_max = PARS["bc_loffset_max"]
+        self.tauBE_min = self.inputpars["bc_tauBE_min"]
+        self.tauBE_max = self.inputpars["bc_tauBE_max"]
 
-        self.lwidth_min = PARS["bc_lwidth_min"]
-        self.lwidth_max = PARS["bc_lwidth_max"]
+        self.loffset_min = self.inputpars["bc_loffset_min"]
+        self.loffset_max = self.inputpars["bc_loffset_max"]
+
+        self.lwidth_min = self.inputpars["bc_lwidth_min"]
+        self.lwidth_max = self.inputpars["bc_lwidth_max"]
         
-        self.logNe_min = PARS["bc_logNe_min"]
-        self.logNe_max = PARS["bc_logNe_max"]
+        self.logNe_min = self.inputpars["bc_logNe_min"]
+        self.logNe_max = self.inputpars["bc_logNe_max"]
         
 #        self.lscale_min = None
 #        self.lscale_max = None
@@ -306,13 +308,13 @@ class BalmerCombined(Component):
             width (int or float): Width of emission line. 
         """
 
-        line_orders = np.arange(PARS["bc_lines_min"],PARS["bc_lines_max"]) 
+        line_orders = np.arange(self.inputpars["bc_lines_min"],self.inputpars["bc_lines_max"]) 
         lcenter =  self.balmerseries(line_orders)
     
         lcenter -= shift*lcenter
         LL = sp_wavel - lcenter.reshape(lcenter.size, 1) #(is this simply x-x0)
         lwidth =  width*lcenter.reshape(lcenter.size,1)
-        ltype = PARS["bc_line_type"]
+        ltype = self.inputpars["bc_line_type"]
         if ltype == "gaussian":
             lines = np.exp(- LL**2 /lwidth**2)
         elif ltype == "lorentzian":

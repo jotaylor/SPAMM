@@ -22,8 +22,6 @@ from utils.rebin_spec import rebin_spec
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
 
-PARS = parse_pars()["fe_forest"]
-
 #-----------------------------------------------------------------------------#
 
 class FeComponent(Component):
@@ -48,7 +46,7 @@ class FeComponent(Component):
         ...
     """
 
-    def __init__(self):
+    def __init__(self, pars=None):
         super(FeComponent, self).__init__()
 
         self.load_templates()
@@ -58,11 +56,15 @@ class FeComponent(Component):
         self.interp_fe_norm_flux = []
         self.name = "FeForest"
         
-        self.norm_min = PARS["fe_norm_min"]
-        self.norm_max = PARS["fe_norm_max"]
-        self.width_min = PARS["fe_width_min"]
-        self.width_max = PARS["fe_width_max"]
-        self.templ_width= PARS["fe_template_width"]
+        if pars is None:
+            self.inputpars = parse_pars()["fe_forest"]
+        else:
+            self.inputpars = pars
+        self.norm_min = self.inputpars["fe_norm_min"]
+        self.norm_max = self.inputpars["fe_norm_max"]
+        self.width_min = self.inputpars["fe_width_min"]
+        self.width_max = self.inputpars["fe_width_max"]
+        self.templ_width= self.inputpars["fe_template_width"]
         if self.width_min < self.templ_width:
             print("Specified minimum Fe width too small, setting Fe width minimum to intrinsic template width = {0}".format(self.templ_width))
             self.width_min = self.templ_width
@@ -73,9 +75,9 @@ class FeComponent(Component):
         """Read in all of the Fe templates."""
 
         # Sort the templates alphabetically.
-        template_list = sorted(glob.glob(os.path.join(PARS["fe_templates"], "*")))
+        template_list = sorted(glob.glob(os.path.join(self.inputpars["fe_templates"], "*")))
         assert len(template_list) != 0, \
-        "No Fe templates found in specified diretory {0}".format(PARS["fe_templates"])
+        "No Fe templates found in specified diretory {0}".format(self.inputpars["fe_templates"])
 
         self.fe_templ = []
 
@@ -134,7 +136,7 @@ class FeComponent(Component):
         """
 
         if self.norm_max == "max_flux":
-            flux_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"])) 
+            flux_max = max(runningMeanFast(spectrum.flux, self.inputpars["boxcar_width"])) 
             self.norm_max = flux_max
         elif self.norm_max == "fnw":
             fnw = spectrum.norm_wavelength_flux
@@ -284,7 +286,7 @@ class FeComponent(Component):
             bin_size = self.log_fe[i].spectral_axis[2] - self.log_fe[i].spectral_axis[1]
 #TODO cross-check with Spectrum ^^
             sigma_norm = np.ceil(sigma_conv / bin_size)
-            sigma_size = PARS["fe_kernel_size_sigma"] * sigma_norm
+            sigma_size = self.inputpars["fe_kernel_size_sigma"] * sigma_norm
             kernel = signal.gaussian(sigma_size, sigma_norm) / \
                      (np.sqrt(2 * math.pi) * sigma_norm)
             

@@ -8,8 +8,6 @@ from .ComponentBase import Component
 from utils.runningmeanfast import runningMeanFast
 from utils.parse_pars import parse_pars
 
-PARS = parse_pars()["nuclear_continuum"]
-
 #-----------------------------------------------------------------------------#
 
 class NuclearContinuumComponent(Component):
@@ -34,13 +32,18 @@ class NuclearContinuumComponent(Component):
         wave_break_max ():
 
     """
-    def __init__(self, broken=None):
+    def __init__(self, pars=None, broken=None):
         super().__init__()
         
         self.name = "Nuclear"
 
+        if pars is None:
+            self.inputpars = parse_pars()["nuclear_continuum"]
+        else:
+            self.inputpars = pars
+
         if broken is None:
-            self.broken_pl = PARS["broken_pl"]
+            self.broken_pl = self.inputpars["broken_pl"]
         else:
             self.broken_pl = broken
         self.model_parameter_names = list()
@@ -54,12 +57,12 @@ class NuclearContinuumComponent(Component):
             self.model_parameter_names.append("slope1")
             self.model_parameter_names.append("slope2")
 
-        self.norm_min = PARS["pl_norm_min"]
-        self.norm_max = PARS["pl_norm_max"]
-        self.slope_min = PARS["pl_slope_min"]
-        self.slope_max = PARS["pl_slope_max"]
-        self.wave_break_min = PARS["pl_wave_break_min"]
-        self.wave_break_max = PARS["pl_wave_break_max"]
+        self.norm_min = self.inputpars["pl_norm_min"]
+        self.norm_max = self.inputpars["pl_norm_max"]
+        self.slope_min = self.inputpars["pl_slope_min"]
+        self.slope_max = self.inputpars["pl_slope_max"]
+        self.wave_break_min = self.inputpars["pl_wave_break_min"]
+        self.wave_break_max = self.inputpars["pl_wave_break_max"]
 
 #-----------------------------------------------------------------------------#
 
@@ -93,7 +96,7 @@ class NuclearContinuumComponent(Component):
 
         pl_init = []
         if self.norm_max == "max_flux":
-            self.norm_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+            self.norm_max = max(runningMeanFast(spectrum.flux, self.inputpars["boxcar_width"]))
         elif self.norm_max == "fnw":
             fnw = spectrum.norm_wavelength_flux
             self.norm_max = fnw

@@ -24,8 +24,6 @@ from utils.rebin_spec import rebin_spec
 from .ComponentBase import Component
 from ..Spectrum import Spectrum
 
-PARS = parse_pars()["host_galaxy"]
-
 #-----------------------------------------------------------------------------#
 
 class HostGalaxyComponent(Component):
@@ -49,7 +47,7 @@ class HostGalaxyComponent(Component):
         stellar_disp_max ():
     """
 
-    def __init__(self):
+    def __init__(self, pars=None):
         super(HostGalaxyComponent, self).__init__()
 
         self.load_templates()
@@ -59,12 +57,16 @@ class HostGalaxyComponent(Component):
         self.interp_host_norm_flux = []
         self.name = "HostGalaxy"
 
-        self.norm_min = PARS["hg_norm_min"]
-        self.norm_max = PARS["hg_norm_max"]
-        self.stellar_disp_min = PARS["hg_stellar_disp_min"]
-        self.stellar_disp_max = PARS["hg_stellar_disp_max"]
+        if pars is None:
+            self.inputpars = parse_pars()["host_galaxy"]
+        else:
+            self.inputpars = pars
+        self.norm_min = self.inputpars["hg_norm_min"]
+        self.norm_max = self.inputpars["hg_norm_max"]
+        self.stellar_disp_min = self.inputpars["hg_stellar_disp_min"]
+        self.stellar_disp_max = self.inputpars["hg_stellar_disp_max"]
 # TODO, check on handling of dispersions
-        self.templ_stellar_disp = PARS["hg_template_stellar_disp"]
+        self.templ_stellar_disp = self.inputpars["hg_template_stellar_disp"]
         if self.stellar_disp_min < self.templ_stellar_disp:
             print("Specified minimum stellar dispersion too small, setting to intrinsic template stellar dispersion = {}".format(self.templ_stellar_disp))
             self.stellar_disp_min = self.templ_stellar_disp
@@ -87,9 +89,9 @@ class HostGalaxyComponent(Component):
     def load_templates(self):
         """Read in all of the host galaxy models."""
 
-        template_list = glob.glob(os.path.join(PARS["hg_models"], "*"))
+        template_list = glob.glob(os.path.join(self.inputpars["hg_models"], "*"))
         assert len(template_list) != 0, \
-        "No host galaxy templates found in specified diretory {0}".format(PARS["hg_models"])
+        "No host galaxy templates found in specified diretory {0}".format(self.inputpars["hg_models"])
     
         self.host_gal = []
     
@@ -130,7 +132,7 @@ class HostGalaxyComponent(Component):
         """
 
         if self.norm_max == "max_flux":
-            flux_max = max(runningMeanFast(spectrum.flux, PARS["boxcar_width"]))
+            flux_max = max(runningMeanFast(spectrum.flux, self.inputpars["boxcar_width"]))
             self.norm_max = flux_max
         elif self.norm_max == "fnw":
             fnw = spectrum.norm_wavelength_flux
@@ -292,7 +294,7 @@ class HostGalaxyComponent(Component):
             bin_size = self.log_host[i].spectral_axis[2] - self.log_host[i].spectral_axis[1]
 #TODO cross-check with Spectrum ^^
             sigma_norm = np.ceil(sigma_conv / bin_size)
-            sigma_size = PARS["hg_kernel_size_sigma"] * sigma_norm
+            sigma_size = self.inputpars["hg_kernel_size_sigma"] * sigma_norm
             kernel = signal.gaussian(sigma_size, sigma_norm) / \
                      (np.sqrt(2 * math.pi) * sigma_norm)
 
