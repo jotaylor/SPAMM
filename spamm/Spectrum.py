@@ -35,9 +35,15 @@ class Spectrum(Spectrum1D):
         # first so units don't get multipled in super().
         if type(spectral_axis) is Quantity:
             spectral_axis = spectral_axis.value
+            spectral_axis_unit = spectral_axis.unit
         if type(flux) is Quantity:
             flux = flux.value
+            flux_unit = flux.unit
         
+        assert len(wavelength) == len(flux), "Wavelength and flux arrays must be the same length"
+        if flux_error is not None:
+            assert len(flux) == len(flux_error), "Flux and flux error arrays must be the same length"
+
         super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
                                        flux=flux*flux_unit, *args, **kwargs)
         self.flux_unit = flux_unit
