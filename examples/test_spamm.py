@@ -4,7 +4,8 @@ import argparse
 import numpy as np
 
 from utils.parse_pars import parse_pars
-import spamm, run_fe, run_nc, run_bc, run_hg
+from spamm import spamm
+import run_fe, run_nc, run_bc, run_hg
 from utils.add_in_quadrature import add_in_quadrature
 
 # This should be a wavelength range from 1000-10,000A, every 0.5A
@@ -101,7 +102,7 @@ def test_spamm(components=None, comp_params=None, n_walkers=30, n_iterations=500
 
 #    return comb_wl, comb_flux, comb_err, all_fluxes
 
-    p_data = spamm.spamm(comp_names, comb_wl, comb_flux, comb_err, 
+    p_data = spamm.spamm(comp_names, (comb_wl, comb_flux, comb_err), 
                                     comp_params=comb_p, n_walkers=n_walkers,
                                     n_iterations=n_iterations)
 
