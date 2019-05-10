@@ -24,7 +24,7 @@ def create_nc(nc_params=None):
         max_template_flux = 1e-13 
         nc_params["norm_PL"] = draw_from_sample.gaussian(PARS["pl_norm_min"], max_template_flux)
     print("NC params: {}".format(nc_params))
-    nc = NuclearContinuumComponent(nc_params["broken_pl"])
+    nc = NuclearContinuumComponent(broken=nc_params["broken_pl"])
     
     # Make a Spectrum object with dummy flux
     spectrum = Spectrum(nc_params["wl"], nc_params["wl"])
