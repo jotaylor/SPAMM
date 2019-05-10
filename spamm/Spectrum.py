@@ -40,7 +40,7 @@ class Spectrum(Spectrum1D):
             flux = flux.value
             flux_unit = flux.unit
         
-        assert len(wavelength) == len(flux), "Wavelength and flux arrays must be the same length"
+        assert len(spectral_axis) == len(flux), "Wavelength and flux arrays must be the same length"
         if flux_error is not None:
             assert len(flux) == len(flux_error), "Flux and flux error arrays must be the same length"
 
