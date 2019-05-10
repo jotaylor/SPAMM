@@ -120,7 +120,8 @@ class Model(object):
 
         wl_init = np.arange(wavelength_start, wavelength_end, wavelength_delta)
         self.model_spectrum = Spectrum(spectral_axis = wl_init,
-                                       flux = np.zeros(len(wl_init)))
+                                       flux = np.zeros(len(wl_init)),
+                                       flux_error=np.zeros(len(wl_init)))
 
         # Flag to allow Model to interpolate components' wavelength grid to 
         # match data if component grid is more course than data.

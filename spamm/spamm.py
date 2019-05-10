@@ -67,18 +67,15 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
         flux = inspectrum.flux
         flux_error = None
     elif isinstance(inspectrum, Spectrum1D):
-        spectrum = Spectrum(spectral_axis=inspectrum.spectral_axis, flux=inspectrum.flux)
+        spectrum = Spectrum(spectral_axis=inspectrum.spectral_axis, 
+                            flux=inspectrum.flux, flux_error=inspectrum.uncertainty)
         wl = inspectrum.spectral_axis.value
         flux = inspectrum.flux.value
         flux_error = None
     else:
-        try:
-            wl, flux, flux_error = inspectrum
-        except ValueError:
-            wl, flux = inspectrum
-            flux_error = None
+        wl, flux, flux_error = inspectrum
 # This is just for testing    
-#           flux_error = flux*0.05
+#       flux_error = flux*0.05
         spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
     if comp_params is None:
