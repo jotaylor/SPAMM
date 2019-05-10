@@ -8,6 +8,7 @@ import numpy as np
 from specutils.wcs.wcs_wrapper import WCSWrapper 
 from specutils import Spectrum1D
 from astropy.units import Quantity
+from astropy.nddata import NDUncertainty, StdDevUncertainty
 
 from utils.parse_pars import parse_pars
 FLUX_UNIT = parse_pars()["global"]["flux_unit"]
@@ -24,31 +25,46 @@ class Spectrum(Spectrum1D):
     Args:
         spectral_axis (array-like or :obj:`astropy.units.Quantity`): Wavelength values.
         flux (array-like or :obj:`astropy.units.Quantity`) : Flux values.
-        flux_error (array-like or :obj:`astropy.units.Quantity`, optional) : Error on `flux` values.
+        flux_error (array-like or :obj:`astropy.nddata.NDUncertainty`, or :obj:`astropy.units.Quantity) : 
+            Error on `flux` values.
         spectral_axis_unit (:obj:`astropy.units.Unit`, optional) : Wavelength unit
         flux_unit (:obj:`astropy.units.Unit`, optional) : Flux unit. 
     '''
-    def __init__(self, spectral_axis, flux, flux_error=None, spectral_axis_unit=WL_UNIT, 
+
+    def __init__(self, spectral_axis, flux, flux_error, spectral_axis_unit=WL_UNIT, 
                  flux_unit=FLUX_UNIT, *args, **kwargs):
         
         # If wavelength and flux have units, strip them off. This must be done
         # first so units don't get multipled in super().
-        if type(spectral_axis) is Quantity:
+        if isinstance(spectral_axis, Quantity):
             spectral_axis_unit = spectral_axis.unit
             spectral_axis = spectral_axis.value
-        if type(flux) is Quantity:
+        
+        if isinstance(flux, Quantity):
             flux_unit = flux.unit
             flux = flux.value
         
+        if isinstance(flux_error, NDUncertainty):
+            uncertainty = flux_error
+            if flux_error.unit is not None:
+                assert flux_error.unit == flux_unit, "Flux and flux error units must match" 
+            flux_error = flux_error.array
+        elif isinstance(flux_error, Quantity):
+            uncertainty = StdDevUncertainty(flux_error)
+            assert flux_error.unit == flux_unit, "Flux and flux error units must match" 
+            flux_error = flux_error.value
+        else:
+            uncertainty = StdDevUncertainty(flux_error, unit=flux_unit)
+
         assert len(spectral_axis) == len(flux), "Wavelength and flux arrays must be the same length"
-        if flux_error is not None:
-            assert len(flux) == len(flux_error), "Flux and flux error arrays must be the same length"
+        assert len(flux) == len(flux_error), "Flux and flux error arrays must be the same length"
 
         super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
-                                       flux=flux*flux_unit, *args, **kwargs)
+                                       flux=flux*flux_unit, uncertainty=uncertainty,
+                                       *args, **kwargs)
+        self.uncertainty = uncertainty
         self.flux_unit = flux_unit
         self.flux_error = flux_error
-        self.uncertainty = flux_error
         self._flux = flux
         self._norm_wavelength = None
         self._norm_wavelength_flux = None
