@@ -158,10 +158,11 @@ class Samples(object):
             avg = self.means[i] + binsize/2.
             mode = self.modes[i] + binsize/2.
             
+            std = np.std(chain)
+            
             if self.params is not None:
                 try:
                     actual = self.params[self.model_parameter_names[i]]
-                    std = np.std(chain)
 #                    print("new limits for {}:\n{:0.20f}\n{:0.20f}\n".format(self.model_parameter_names[i], maxm-(1.5*std), maxm+(1.5*std)))
                     ax.axvspan(actual-std, actual+std, facecolor="grey", 
                                alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
@@ -169,8 +170,10 @@ class Samples(object):
                                color="red", linestyle="solid", linewidth=1.5, 
                                label="Actual value={:1.3e}".format(actual))
                 except KeyError:
-                    pass
-            
+                    actual = maxm
+                    ax.axvspan(actual-std, actual+std, facecolor="grey", 
+                               alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+                     
             ax.hist(chain, bins, color="skyblue")
 
             xlo = actual - binsize*12
