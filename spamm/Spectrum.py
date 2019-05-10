@@ -34,11 +34,11 @@ class Spectrum(Spectrum1D):
         # If wavelength and flux have units, strip them off. This must be done
         # first so units don't get multipled in super().
         if type(spectral_axis) is Quantity:
-            spectral_axis = spectral_axis.value
             spectral_axis_unit = spectral_axis.unit
+            spectral_axis = spectral_axis.value
         if type(flux) is Quantity:
-            flux = flux.value
             flux_unit = flux.unit
+            flux = flux.value
         
         assert len(spectral_axis) == len(flux), "Wavelength and flux arrays must be the same length"
         if flux_error is not None:
