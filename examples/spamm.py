@@ -17,24 +17,26 @@ from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
 
+ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
+
 #-----------------------------------------------------------------------------#
 
-def spamm(components, inspectrum, par_file=None, n_walkers=30, 
+def spamm(complist, inspectrum, par_file=None, n_walkers=30, 
           n_iterations=500, pname=None, comp_params=None):
     """
     Args:
-        components (dictionary): A dictionary with at least one component to
-            model, e.g. {"FE": True}. Accepted key values are:
+        complist (list): A list with at least one component to model. 
+            Accepted component names are listed below. They are case insensitive:
                 - PL
                 - FE
                 - HOST
                 - BC
-                - BpC
-                - Calzetti_ext
-                - SMC_ext
-                - MW_ext
-                - AGN_ext
-                - LMC_ext
+                - BPC
+                - CALZETTI_EXT
+                - SMC_EXT
+                - MW_EXT
+                - AGN_EXT
+                - LMC_EXT
         inspectrum (:obj:`spamm.Spectrum`, :obj:`specutils.Spectrum1D`, or tuple): 
             A SPAMM Spectrum object, specutils Spectrum object, or a tuple. 
             If tuple, it must be at least length 2: ((wavelength,), (flux,)). 
@@ -56,9 +58,7 @@ def spamm(components, inspectrum, par_file=None, n_walkers=30,
     else:
         pars = parse_pars(par_file)
 
-    for c in ["PL", "FE", "HOST", "BC", "BpC", "Calzetti_ext", "SMC_ext", "MW_ext", "AGN_ext", "LMC_ext"]:
-        if c not in components:
-            components[c] = False
+    components = {k:True if k.upper in ACCEPTED_COMPS else k:False for k in complist} 
 
     if flux_error is None:
         flux_error = flux*0.05
