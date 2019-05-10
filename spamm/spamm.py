@@ -58,10 +58,9 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
     else:
         pars = parse_pars(par_file)
 
-    components = {k:True if k.upper in ACCEPTED_COMPS else k:False for k in complist} 
-
-    if flux_error is None:
-        flux_error = flux*0.05
+    complist = [x.upper() for x in complist]
+    components = {k:(True if k in complist else False) for k in ACCEPTED_COMPS}
+    
     if isinstance(inspectrum, Spectrum):
         spectrum = inspectrum
     elif isinstance(inspectrum, Spectrum1D):
@@ -72,6 +71,8 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
         except ValueError:
             wl, flux = inspectrum
             flux_error = None
+# This is just for testing    
+#           flux_error = flux*0.05
         spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
     if comp_params is None:
@@ -107,12 +108,12 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
     if components["HOST"]:
         host_galaxy_comp = HostGalaxyComponent(pars=pars["host_galaxy"])
         model.components.append(host_galaxy_comp)
-    if components["BC"] or components["BpC"]:
+    if components["BC"] or components["BPC"]:
         balmer_comp = BalmerCombined(pars=pars["balmer_continuum"],
                                      BalmerContinuum=components["BC"],
-                                     BalmerPseudocContinuum=components["BpC"])
+                                     BalmerPseudocContinuum=components["BPC"])
         model.components.append(balmer_comp)
-    if components["Calzetti_ext"] or components["SMC_ext"] or components["MW_ext"] or components["AGN_ext"] or components["LMC_ext"]:
+    if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
         ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
         model.components.append(ext_comp)
 
