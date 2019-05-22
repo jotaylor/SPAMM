@@ -12,7 +12,7 @@ from spamm.Model import Model
 
 #class Samples(Model):
 class Samples(object):
-    def __init__(self, pickle_files, outdir, gif=False, last=False, 
+    def __init__(self, pickle_files, outdir=None, gif=False, last=False, 
                  step=100, burn=50, histbins=100):
         self.pname = pickle_files
         self.gif = gif
@@ -20,7 +20,6 @@ class Samples(object):
         self.step = step
         self.burn = burn
         self.histbins = histbins
-        self.outdir = outdir  
          
         self.models, self.samples, self.params, self.model_name = get_samples(pickle_files, burn)
         try:
@@ -30,7 +29,12 @@ class Samples(object):
         self.total_parameter_count = self.model.total_parameter_count
         self.model_parameter_names = self.model.model_parameter_names()
         self.get_stats()
-
+        
+        if outdir is None:
+            outdir = os.path.dirname(self.model_name)
+            if outdir == "":
+                outdir = "."
+        self.outdir = outdir
 
     def get_stats(self):
         self.means = []
@@ -51,6 +55,38 @@ class Samples(object):
             self.modes.append(statistics.mode(chain))
 
 #-----------------------------------------------------------------------------#
+
+def get_samples(pname, burn=50):
+    """ 
+    Some pickled model files I made were incorrectly made and a try/except
+    needs to be inserted when creating sample:
+        try:
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+        except TypeError:
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, 10))
+            #samples = model.sampler.chain[:, burn:, :].reshape((-1, 16))
+    """ 
+
+    if isinstance(pname, str):
+        model_name = os.path.basename(pname).split(".")[0]
+        model, params = read_pickle(pname)
+        samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+        allmodels = model
+    else:
+        allmodels = []
+        allsamples = []
+        for pfile in pname:
+            model, params = read_pickle(pfile)
+            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
+            allsamples.append(sample)
+            allmodels.append(model)
+        samples = np.concatenate(tuple(allsamples))
+        model_name = "concat_{}".format(len(samples))
+    
+    return allmodels, samples, params, model_name
+
+#-----------------------------------------------------------------------------#
+
 
 def read_pickle(pname):
     try:
@@ -99,35 +135,3 @@ def read_pickle(pname):
     return model, params
 
 #-----------------------------------------------------------------------------#
-
-def get_samples(pname, burn=50):
-    """ 
-    Some pickled model files I made were incorrectly made and a try/except
-    needs to be inserted when creating sample:
-        try:
-            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
-        except TypeError:
-            sample = model.sampler.chain[:, burn:, :].reshape((-1, 10))
-            #samples = model.sampler.chain[:, burn:, :].reshape((-1, 16))
-    """ 
-
-    if isinstance(pname, str):
-        model_name = os.path.basename(pname).split(".")[0]
-        model, params = read_pickle(pname)
-        samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
-        allmodels = model
-    else:
-        allmodels = []
-        allsamples = []
-        for pfile in pname:
-            model, params = read_pickle(pfile)
-            sample = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
-            allsamples.append(sample)
-            allmodels.append(model)
-        samples = np.concatenate(tuple(allsamples))
-        model_name = "concat_{}".format(len(samples))
-    
-    return allmodels, samples, params, model_name
-
-#-----------------------------------------------------------------------------#
-
