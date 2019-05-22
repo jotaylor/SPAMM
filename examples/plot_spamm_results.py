@@ -79,7 +79,7 @@ def get_samples(pname, burn=50):
     """ 
 
     if isinstance(pname, str):
-        model_name = pname.split(".p")[0]
+        model_name = os.path.basename(pname).split(".")[0]
         model, params = read_pickle(pname)
         samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
         allmodels = model
@@ -101,7 +101,7 @@ def get_samples(pname, burn=50):
 
 #class Samples(Model):
 class Samples(object):
-    def __init__(self, pickle_files, gif=False, last=False, 
+    def __init__(self, pickle_files, outdir, gif=False, last=False, 
                  step=100, burn=50, histbins=100):
         self.pname = pickle_files
         self.gif = gif
@@ -109,7 +109,8 @@ class Samples(object):
         self.step = step
         self.burn = burn
         self.histbins = histbins
-        
+        self.outdir = outdir  
+         
         self.models, self.samples, self.params, self.model_name = get_samples(pickle_files, burn)
         try:
             self.model = self.models[0]
@@ -142,7 +143,7 @@ class Samples(object):
 #-----------------------------------------------------------------------------#
 
     def plot_posteriors_pdf(self):
-        pdfname = "{}_posterior.pdf".format(self.model_name)
+        pdfname = os.path.join(self.outdir, "{}_posterior.pdf".format(self.model_name))
         pdf_pages = PdfPages(pdfname)    
     
         for i in range(self.total_parameter_count):
@@ -236,7 +237,7 @@ class Samples(object):
         ax.set_ylabel(r"ergs/s/cm$^2$")
         ax.legend(loc="upper left", framealpha=0.25)
         figname = "{}_best.png"
-        fig.savefig(figname)
+        fig.savefig(os.path.join(self.outdir, figname))
         print("\tSaved {}".format(figname))
 
 #-----------------------------------------------------------------------------#
@@ -244,9 +245,9 @@ class Samples(object):
     def plot_models(self, ymax=None):
         data_spectrum = self.model.data_spectrum
         actualcolor = "deepskyblue"
-        outdir = "gifplots_" + self.model_name
-        if not os.path.exists(outdir):
-            os.mkdir(outdir)
+        gifdir = os.path.join(self.outdir, "gifplots_" + self.model_name)
+        if not os.path.exists(gifdir):
+            os.mkdir(gifdir)
     
         actual_comps = {}
         for component in self.model.components:
@@ -280,8 +281,8 @@ class Samples(object):
                 ax.set_xlabel(r"Wavelength [$\AA$]")
                 ax.set_ylabel(r"ergs/s/cm$^2$")
                 ax.legend(loc="upper left", framealpha=0.25)
-                figname = os.path.join(outdir, "{}_iter{:06d}.png".format(component.name, i))
-                fig.savefig(figname)
+                figname = os.path.join(gifdir, "{}_iter{:06d}.png".format(component.name, i))
+                fig.savefig(os.path.join(self.outdir, figname))
                 if self.last is True:
                     print("\tSaved {}".format(figname))
                 j += len(component.model_parameter_names)
@@ -304,7 +305,7 @@ class Samples(object):
             ax.set_ylabel(r"ergs/s/cm$^2$")
             ax.legend(loc="upper left", framealpha=0.25)
             figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
-            fig.savefig(figname)
+            fig.savefig(os.path.join(self.outdir, figname))
             if self.last is True:
                 print("\tSaved {}".format(figname))
             plt.close(fig)
@@ -329,24 +330,24 @@ class Samples(object):
     
         # Create the triangle plot.
         fig = triangle.corner(self.samples, labels=self.model_parameter_names)
-        figname = "plots/{0}_triangle.png".format(self.model_name)
-        fig.savefig(figname)
+        figname = "{0}_triangle.png".format(self.model_name)
+        fig.savefig(os.path.join(self.outdir, figname))
         print("\tSaved {0}".format(figname))
     
         # Plot the MCMC chains as a function of iteration. You can easily tell if 
         # the chains are converged because you can no longer tell where the individual 
         # particle chains are sliced together.
         fig = plot_chains(self.samples, labels=self.model_parameter_names)
-        figname = "plots/{0}_chain.png".format(self.model_name)
-        fig.savefig(figname)
+        figname = "{0}_chain.png".format(self.model_name)
+        fig.savefig(os.path.join(self.outdir, figname))
         print("\tSaved {0}".format(figname))
     
         # Plot the posterior PDFs for each parameter. These are histograms of the 
         # MCMC chains. Boxes = 20 is the default.
         fig = plot_posteriors(self.samples, labels=self.model_parameter_names, 
                               boxes=20, params=self.params)
-        figname = "plots/{0}_posterior.png".format(self.model_name)
-        fig.savefig(figname)
+        figname = "{0}_posterior.png".format(self.model_name)
+        fig.savefig(os.path.join(self.outdir, figname))
         print("\tSaved {0}".format(figname))
     
         # Make a PDF (the plot kind!) with the histogram for each parameter a
@@ -361,8 +362,8 @@ class Samples(object):
 #-----------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------#
 
-def make_plots_from_pickle(pname, gif=False, last=False, step=100):
-    S = Samples(pname, gif=gif, last=last, step=step)
+def make_plots_from_pickle(pname, outdir, gif=False, last=False, step=100):
+    S = Samples(pname, outdir=outdir, gif=gif, last=last, step=step)
     S.make_all_plots()
 
 #-----------------------------------------------------------------------------#
@@ -377,6 +378,8 @@ def first_concat():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("pname", help="SPAMM model pickle file", type=str)
+    parser.add_argument("--o", dest="outdir", default="plots", 
+                        help="Name of output directory to save plots in")
     parser.add_argument("--gif", dest="gif", action="store_true", default=False,
                         help="Switch to make plots to create gif")
     parser.add_argument("--last", dest="last", action="store_true", default=False,
@@ -385,4 +388,4 @@ if __name__ == "__main__":
                         help="Step size for plotting chain iterations")
     args = parser.parse_args()
 
-    make_plots_from_pickle(args.pname, args.gif, args.last, int(args.step))
+    make_plots_from_pickle(args.pname, args.outdir, args.gif, args.last, int(args.step))
