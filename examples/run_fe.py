@@ -98,8 +98,8 @@ def create_fe(fe_params=None):
 
     print("Fe params: {}".format(fe_params))
     fe = FeComponent()
-    # Make a Spectrum object with dummy flux
-    spectrum = Spectrum(fe_params["wl"], fe_params["wl"])
+    # Make a Spectrum object with dummy flux and flux error
+    spectrum = Spectrum(fe_params["wl"], fe_params["wl"], fe_params["wl"])
     fe.initialize(spectrum)
     comp_params = [fe_params["fe_norm_{}".format(x)] for x in range(1, fe_params["no_templates"]+1)] + [fe_params["fe_width"]]
     fe_flux = FeComponent.flux(fe, spectrum, comp_params)

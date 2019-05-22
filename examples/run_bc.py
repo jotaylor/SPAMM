@@ -97,8 +97,8 @@ def create_bc(bc_params=None):
 
     print("BC params: {}".format(bc_params))
     bc = BCComponent(BalmerContinuum=True, BalmerPseudocContinuum=True)
-    # Make a Spectrum object with dummy flux
-    spectrum = Spectrum(bc_params["wl"], bc_params["wl"])
+    # Make a Spectrum object with dummy flux and flux error
+    spectrum = Spectrum(bc_params["wl"], bc_params["wl"], bc_params["wl"])
     bc.initialize(spectrum)
     comp_params = [bc_params[x] for x in ["bc_norm", "bc_Te", "bc_tauBE", "bc_loffset", "bc_lwidth", "bc_logNe"]]
     bc_flux = BCComponent.flux(bc, spectrum, comp_params)
