@@ -28,7 +28,7 @@ class Samples(object):
             self.model = self.models
         self.total_parameter_count = self.model.total_parameter_count
         self.model_parameter_names = self.model.model_parameter_names()
-        self.get_stats()
+        self._get_stats()
         
         if outdir is None:
             outdir = os.path.dirname(self.model_name)
@@ -36,7 +36,7 @@ class Samples(object):
                 outdir = "."
         self.outdir = outdir
 
-    def get_stats(self):
+    def _get_stats(self):
         self.means = []
         self.medians = []
         self.modes = []
