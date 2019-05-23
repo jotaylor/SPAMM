@@ -9,7 +9,8 @@ from astropy import units as u
 from specutils import Spectrum1D
 
 from utils.parse_pars import parse_pars
-from plot_spamm_results import make_plots_from_pickle
+from spamm.analysis import make_plots_from_pickle
+#from plot_spamm_results import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
