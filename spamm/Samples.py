@@ -70,6 +70,8 @@ def get_samples(pname, burn=50):
     if isinstance(pname, str):
         model_name = os.path.basename(pname).split(".")[0]
         model, params = read_pickle(pname)
+        assert burn < np.shape(model.sampler.chain)[1], \
+            "Chain burn value, {}, must be smaller than number of iterations, {}.\nRerun with lower burn value or more iterations".format(burn, np.shape(model.sampler.chain)[1]) 
         samples = model.sampler.chain[:, burn:, :].reshape((-1, model.total_parameter_count))
         allmodels = model
     else:
