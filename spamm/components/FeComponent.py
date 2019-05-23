@@ -49,6 +49,11 @@ class FeComponent(Component):
     def __init__(self, pars=None):
         super(FeComponent, self).__init__()
 
+        if pars is None:
+            self.inputpars = parse_pars()["fe_forest"]
+        else:
+            self.inputpars = pars
+        
         self.load_templates()
         self.model_parameter_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.fe_templ)+1)]
         self.model_parameter_names.append("fe_width") 
@@ -56,10 +61,6 @@ class FeComponent(Component):
         self.interp_fe_norm_flux = []
         self.name = "FeForest"
         
-        if pars is None:
-            self.inputpars = parse_pars()["fe_forest"]
-        else:
-            self.inputpars = pars
         self.norm_min = self.inputpars["fe_norm_min"]
         self.norm_max = self.inputpars["fe_norm_max"]
         self.width_min = self.inputpars["fe_width_min"]
@@ -85,7 +86,7 @@ class FeComponent(Component):
             with open(template_filename) as template_file:
                 wavelengths, flux = np.loadtxt(template_filename, unpack=True)
                 flux = np.where(flux<0, 1e-19, flux)
-                fe = Spectrum(spectral_axis=wavelengths, flux=flux)
+                fe = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
 
                 self.fe_templ.append(fe)
 
@@ -185,7 +186,8 @@ class FeComponent(Component):
                                          log_fe_wl)
 
             
-            log_fe_spectrum = Spectrum(spectral_axis=log_fe_wl, flux=log_fe_flux)
+            log_fe_spectrum = Spectrum(spectral_axis=log_fe_wl, flux=log_fe_flux, 
+                                       flux_error=log_fe_flux)
             self.log_fe.append(log_fe_spectrum)
 #            self.interp_fe.append(Spectrum.bin_spectrum(template.spectral_axis,
 #                                                              template.flux,

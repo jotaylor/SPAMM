@@ -39,6 +39,11 @@ class BalmerCombined(Component):
     def __init__(self, pars=None, BalmerContinuum=False, BalmerPseudocContinuum=False):
         super().__init__()
         
+        if pars is None:
+            self.inputpars = parse_pars()["balmer_continuum"]
+        else:
+            self.inputpars = pars
+
         self.model_parameter_names = []
         self.name = "Balmer"
 
@@ -54,11 +59,6 @@ class BalmerCombined(Component):
         
         self._norm_wavelength =  None
         
-        if pars is None:
-            self.inputpars = parse_pars()["balmer_continuum"]
-        else:
-            self.inputpars = pars
-
         self.normalization_min = self.inputpars["bc_norm_min"]
         self.normalization_max = self.inputpars["bc_norm_max"]
 

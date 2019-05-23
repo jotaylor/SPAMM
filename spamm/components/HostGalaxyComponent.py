@@ -50,6 +50,11 @@ class HostGalaxyComponent(Component):
     def __init__(self, pars=None):
         super(HostGalaxyComponent, self).__init__()
 
+        if pars is None:
+            self.inputpars = parse_pars()["host_galaxy"]
+        else:
+            self.inputpars = pars
+        
         self.load_templates()
         self.model_parameter_names = ["hg_norm_{}".format(x) for x in range(1, len(self.host_gal)+1)]
         self.model_parameter_names.append("hg_stellar_disp")
@@ -57,10 +62,6 @@ class HostGalaxyComponent(Component):
         self.interp_host_norm_flux = []
         self.name = "HostGalaxy"
 
-        if pars is None:
-            self.inputpars = parse_pars()["host_galaxy"]
-        else:
-            self.inputpars = pars
         self.norm_min = self.inputpars["hg_norm_min"]
         self.norm_max = self.inputpars["hg_norm_max"]
         self.stellar_disp_min = self.inputpars["hg_stellar_disp_min"]
