@@ -440,7 +440,8 @@ class Model(object):
         ln_l = np.power(( (self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2) + np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
         #ln_l *= self.mask
         ln_l = -0.5 * np.sum(ln_l)
-
+        ln_l = np.nan_to_num(ln_l)
+        
         return ln_l
 
 #-----------------------------------------------------------------------------#
