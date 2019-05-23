@@ -100,7 +100,7 @@ class HostGalaxyComponent(Component):
             with open(template_filename) as template_file:
                 wavelengths, flux = np.loadtxt(template_filename, unpack=True)
                 flux = np.where(flux<0, 1e-19, flux)
-                host = Spectrum(spectral_axis=wavelengths, flux=flux)
+                host = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
                 self.host_gal.append(host)
 
 #-----------------------------------------------------------------------------#
@@ -184,7 +184,7 @@ class HostGalaxyComponent(Component):
                                            template.flux, 
                                            log_host_wl)
 
-            log_host_spectrum = Spectrum(spectral_axis=log_host_wl, flux=log_host_flux)
+            log_host_spectrum = Spectrum(spectral_axis=log_host_wl, flux=log_host_flux, flux_error=log_host_flux)
             self.log_host.append(log_host_spectrum)
             
             if self.fast_interp:
