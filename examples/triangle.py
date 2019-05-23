@@ -54,6 +54,8 @@ def corner(xs, labels=None, extents=None, truths=None, truth_color="#4682b4",
         is visible?
 
     """
+    
+    print("Plotting the sample projections.")
 
     # Deal with 1D sample lists.
     xs = np.atleast_1d(xs)
