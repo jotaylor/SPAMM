@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import matplotlib.pyplot as pl
 from astropy import units as u
 
 from utils.parse_pars import parse_pars

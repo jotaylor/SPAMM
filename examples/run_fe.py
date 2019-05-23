@@ -9,10 +9,7 @@ Test the Iron Component code. This code can be run from teh command line:
 
 import os
 import datetime
-import matplotlib
-matplotlib.use('agg')
 import numpy as np
-import matplotlib.pyplot as pl
 import time
 import argparse
 import glob
