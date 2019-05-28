@@ -138,16 +138,22 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
     p_data = {"model": model,
               "comp_params": comp_params}
 
+    nowdt = datetime.datetime.now()
+    now = nowdt.strftime("%Y%m%d_%M%S")
     if picklefile is None:
-        nowdt = datetime.datetime.now()
-        now = nowdt.strftime("%Y%m%d_%M%S")
         picklefile = "model_{0}.pickle.gz".format(now)
-    if not picklefile.endswith(".gz"):
-        picklefile += ".gz"
+    else:
+        picklefile = os.path.basename(picklefile)
+        if picklefile.endswith(".gz") is False:
+            if picklefile.endswith(".pickle") is True or picklefile.endswith(".p") is True:
+                picklefile += ".gz"
+            else:
+                picklefile += ".pickle.gz"
+
     if outdir is None:
         outdir = now
     if not os.path.exists(outdir):
-        os.mkdir(outdir)
+        os.makedirs(outdir)
     pname = os.path.join(outdir, picklefile)
     
     with gzip.open(pname, "wb") as model_output:
