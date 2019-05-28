@@ -11,4 +11,3 @@ dependencies:
 - pyfftw
 - pip: 
   - emcee==2.2.1
-
