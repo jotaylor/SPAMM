@@ -3,7 +3,6 @@
 import os
 import argparse
 import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MaxNLocator
@@ -22,9 +21,13 @@ This code is for analyzing the final posterior samples.
 #-----------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------#
 
-def plot_posteriors_pdf(S):
+def plot_posteriors_pdf(S, interactive=False):
+    if interactive is False:
+        matplotlib.use('agg')
+    
     pdfname = os.path.join(S.outdir, "{}_posterior.pdf".format(S.model_name))
     pdf_pages = PdfPages(pdfname)    
+    figs = []
 
     for i in range(S.total_parameter_count):
         fig = plt.figure(figsize=(11,8))
@@ -85,10 +88,14 @@ def plot_posteriors_pdf(S):
         ax.set_ylabel("Posterior PDF")
         ax.set_title(S.model_parameter_names[i])
 
+        figs.append(fig)
         pdf_pages.savefig(fig)
+        plt.close(fig)
 
     pdf_pages.close()
     print("Saved {}".format(pdfname))
+
+    return figs
 
 #--------------------------------------------------------------------------#
 
@@ -118,6 +125,7 @@ def plot_best_models(S):
     ax.legend(loc="upper left", framealpha=0.25)
     figname = "{}_best.png"
     fig.savefig(os.path.join(S.outdir, figname))
+    plt.close(fig)
     print("\tSaved {}".format(figname))
 
 #--------------------------------------------------------------------------#
@@ -212,6 +220,7 @@ def make_all_plots(S):
     fig = corner(S.samples, labels=S.model_parameter_names)
     figname = "{0}_triangle.png".format(S.model_name)
     fig.savefig(os.path.join(S.outdir, figname))
+    plt.close(fig)
     print("\tSaved {0}".format(figname))
 
     # Plot the MCMC chains as a function of iteration. You can easily tell if 
@@ -220,6 +229,7 @@ def make_all_plots(S):
     fig = plot_chains(S.samples, labels=S.model_parameter_names)
     figname = "{0}_chain.png".format(S.model_name)
     fig.savefig(os.path.join(S.outdir, figname))
+    plt.close(fig)
     print("\tSaved {0}".format(figname))
 
     # Plot the posterior PDFs for each parameter. These are histograms of the 
@@ -228,11 +238,12 @@ def make_all_plots(S):
                           boxes=20, params=S.params)
     figname = "{0}_posterior.png".format(S.model_name)
     fig.savefig(os.path.join(S.outdir, figname))
+    plt.close(fig)
     print("\tSaved {0}".format(figname))
 
     # Make a PDF (the plot kind!) with the histogram for each parameter a
     # different page in the PDF for detailed analysis.
-    plot_posteriors_pdf(S)
+    figs = plot_posteriors_pdf(S)
 
     # Make a gif of the model spectrum as a function of iteration,
     # or if last is True, only save the last model spectrum.
@@ -255,7 +266,7 @@ def first_concat():
 #-----------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------#
 
-def corner(xs, labels=None, extents=None, truths=None, truth_color="#4682b4",
+def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_color="#4682b4",
            scale_hist=False, quantiles=[], **kwargs):
     """
     Make a *sick* corner plot showing the projections of a set of samples
@@ -294,6 +305,9 @@ def corner(xs, labels=None, extents=None, truths=None, truth_color="#4682b4",
         is visible?
 
     """
+    
+    if interactive is False:
+        matplotlib.use('agg')
     
     print("Plotting the sample projections.")
 
@@ -538,7 +552,10 @@ def mean_values(samples):
     return result
 
 
-def plot_chains(samples, labels):
+def plot_chains(samples, labels, interactive=False):
+    if interactive is False:
+        matplotlib.use('agg')
+    
     num_params = np.size(samples[0,:])
     fig = plt.figure()
     #####
