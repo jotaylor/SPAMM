@@ -37,6 +37,7 @@ docs/source/_templates
 documentation/tmp
 documentation/_build
 *pickle.gz
+examples/.ipynb_checkpoints/
 
 # Fortran
 *.f90
@@ -47,5 +48,14 @@ documentation/_build
 ._*xlsx
 ~$*xlsx
 
-# gif plots
-examples/gifplots*/
+# pickle files and plots
+examples/all_gifplots/
+examples/pickle_files/
+examples/2019*/
+examples/2018*/
+
+# Testing files/dirs
+Data/testing_host/
+Data/testmodels/
+utils/parameters_1.5sigma.yaml
+utils/parameters_orig.yaml
