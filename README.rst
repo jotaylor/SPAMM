@@ -8,7 +8,7 @@ SPAMM
     :target: https://spamm.readthedocs.io/en/documentation/?badge=master
     :alt: Documentation Status
 
-**SPAMM** (**S**\ pectral **P**\ roperties of **A**\ GN **M**\ odeled through **M**\ CMC) is an AGN spectral decomposition package that utilizes Bayesian methods, specifically the MCMC algorithm `emcee`_.
+**SPAMM** (**S**\ pectral **P**\ roperties of **A**\ GN **M**\ odeled through **M**\ CMC) is an AGN spectral decomposition package that utilizes Bayesian methods, specifically the MCMC algorithm `emcee`_ (`Foreman-Mackey, Hogg, Lang & Goodman (2012)) <https://arxiv.org/abs/1202.3665>`_.
 
 Getting Started
 ===============
