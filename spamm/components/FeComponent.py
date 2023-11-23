@@ -55,7 +55,7 @@ class FeComponent(Component):
             self.inputpars = pars
         
         self.load_templates()
-        self.model_parameter_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.fe_templ)+1)]
+        self.model_parameter_names = [f"fe_norm_{x}" for x in range(1, len(self.fe_templ)+1)]
         self.model_parameter_names.append("fe_width") 
         self.interp_fe = []
         self.interp_fe_norm_flux = []
@@ -67,7 +67,7 @@ class FeComponent(Component):
         self.width_max = self.inputpars["fe_width_max"]
         self.templ_width= self.inputpars["fe_template_width"]
         if self.width_min < self.templ_width:
-            print("Specified minimum Fe width too small, setting Fe width minimum to intrinsic template width = {0}".format(self.templ_width))
+            print(f"Specified minimum Fe width too small, setting Fe width minimum to intrinsic template width = {self.templ_width}")
             self.width_min = self.templ_width
 
 #-----------------------------------------------------------------------------#
@@ -78,17 +78,16 @@ class FeComponent(Component):
         # Sort the templates alphabetically.
         template_list = sorted(glob.glob(os.path.join(self.inputpars["fe_templates"], "*")))
         assert len(template_list) != 0, \
-        "No Fe templates found in specified diretory {0}".format(self.inputpars["fe_templates"])
+        f"No Fe templates found in specified diretory {self.inputpars['fe_templates']}"
 
         self.fe_templ = []
 
         for template_filename in template_list:
-            with open(template_filename) as template_file:
-                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
-                flux = np.where(flux<0, 1e-19, flux)
-                fe = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
+            wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+            flux = np.where(flux<0, 1e-19, flux)
+            fe = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
 
-                self.fe_templ.append(fe)
+            self.fe_templ.append(fe)
 
 #-----------------------------------------------------------------------------#
 
@@ -156,7 +155,7 @@ class FeComponent(Component):
     def initialize(self, data_spectrum):
         """
         Perform all necessary initializations for the iron component, 
-        such as reading in teh templates, rebinning them, and 
+        such as reading in the templates, rebinning them, and 
         interpolating them on the grid scale of the data spectrum.
         """
 

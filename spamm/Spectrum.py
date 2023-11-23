@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-'''   '''
-
 import scipy
 import numpy as np
-from specutils.wcs.wcs_wrapper import WCSWrapper 
+
+# old version of specutils
+#from specutils.wcs.wcs_wrapper import WCSWrapper
+
+# new version requires this instead in conjunction with the change made further below:
+from astropy.wcs import WCS
+
 from specutils import Spectrum1D
 from astropy.units import Quantity
 from astropy.nddata import NDUncertainty, StdDevUncertainty
@@ -35,7 +39,7 @@ class Spectrum(Spectrum1D):
                  flux_unit=FLUX_UNIT, *args, **kwargs):
         
         # If wavelength and flux have units, strip them off. This must be done
-        # first so units don't get multipled in super().
+        # first so units don't get multiplied in super().
         if isinstance(spectral_axis, Quantity):
             spectral_axis_unit = spectral_axis.unit
             spectral_axis = spectral_axis.value
@@ -49,10 +53,12 @@ class Spectrum(Spectrum1D):
             if flux_error.unit is not None:
                 assert flux_error.unit == flux_unit, "Flux and flux error units must match" 
             flux_error = flux_error.array
+
         elif isinstance(flux_error, Quantity):
             uncertainty = StdDevUncertainty(flux_error)
             assert flux_error.unit == flux_unit, "Flux and flux error units must match" 
             flux_error = flux_error.value
+            
         else:
             uncertainty = StdDevUncertainty(flux_error, unit=flux_unit)
 
@@ -73,11 +79,24 @@ class Spectrum(Spectrum1D):
 
     def __getstate__(self):
         odict = self.__dict__
-        del odict["_wcs"]
+        if "_wcs" in odict:
+            del odict["_wcs"]
         return odict
 
+    # Newest version of specutils necessitated the change of the below code
+
+    # old version:
+    # def __setstate__(self, d):
+    #     d["_wcs"] = WCSWrapper.from_array(d["_spectral_axis"] * d["_spectral_axis_unit"]) 
+    #     self.__dict__ = d
+
+    # new version:
     def __setstate__(self, d):
-        d["_wcs"] = WCSWrapper.from_array(d["_spectral_axis"] * d["_spectral_axis_unit"]) 
+        d["_wcs"] = WCS(naxis=1)
+        d["_wcs"].wcs.crpix = [0]
+        d["_wcs"].wcs.crval = [d["_spectral_axis"][0]]
+        d["_wcs"].wcs.cdelt = [d["_spectral_axis"][1] - d["_spectral_axis"][0]]
+        d["_wcs"].wcs.ctype = ["WAVE"]
         self.__dict__ = d
 
     @property

@@ -18,7 +18,7 @@ setup(
                         'astropy',
                         'matplotlib',
                         'scipy>=0.17.1',
-                        'emcee==2.2.1',
+                        'emcee>=3.1.4',
                         'pysynphot']
     )
 

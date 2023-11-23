@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Test the Iron Component code. This code can be run from teh command line:
+Test the Host galaxy code. This code can be run from teh command line:
 > python test_fe.py --datafile /user/jotaylor/git/spamm//Data/FakeData/Iron_comp/fakeFe1_deg.dat
 --redshift 0.5
 
@@ -91,12 +91,13 @@ def create_hg(hg_params=None):
         hg_params["hg_norm_3"] = samples[2]
         hg_params["hg_stellar_disp"] = draw_from_sample.gaussian(PARS["hg_stellar_disp_min"], PARS["hg_stellar_disp_max"])
 
-    print("HG params: {}".format(hg_params))
+    print(f"HG params: {hg_params}")
     hg = HostGalaxyComponent()
     # Make a Spectrum object with dummy flux and flux error
     spectrum = Spectrum(hg_params["wl"], hg_params["wl"], hg_params["wl"])
     hg.initialize(spectrum)
-    comp_params = [hg_params["hg_norm_{}".format(x)] for x in range(1, hg_params["no_templates"]+1)] + [hg_params["hg_stellar_disp"]]
+    comp_params = [hg_params[f"hg_norm_{x}"] for x in range(1, hg_params["no_templates"]+1)] + [hg_params["hg_stellar_disp"]]
+    print("comp_params:", comp_params)
     hg_flux = HostGalaxyComponent.flux(hg, spectrum, comp_params)
     hg_err = hg_flux * 0.05
 

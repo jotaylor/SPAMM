@@ -3,7 +3,7 @@ channels:
 - defaults
 - astropy
 dependencies:
-- python=3.7
+- python=3.11
 - astropy>=3.1.2
 - dill>=0.2.9
 - matplotlib>=3.0.3
@@ -12,5 +12,5 @@ dependencies:
 - scipy>=1.2.1
 - specutils>=0.5.2
 - yaml>=0.1.7
-- pip: 
-  - emcee==2.2.1
+- emcee>=3.1.4
+- tqdm>=4.66.1

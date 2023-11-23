@@ -5,6 +5,7 @@ import dill
 import gzip
 import numpy as np
 import statistics
+os.environ["OMP_NUM_THREADS"] = "1"
 
 from spamm.Model import Model
 
@@ -50,9 +51,10 @@ class Samples(object):
             maxind = np.argmax(hist)
             max_bin = bins[maxind]
             self.maxs.append(max_bin + binsize/2.)
-            self.medians.append(np.median(chain))
-            self.means.append(np.average(chain))
-            self.modes.append(statistics.mode(chain))
+            self.medians.append(np.median(chain) + binsize/2.)
+            self.means.append(np.average(chain) + binsize/2.)
+            mode_bin = bins[np.argmax(hist)]
+            self.modes.append(mode_bin + binsize/2.)
 
 #-----------------------------------------------------------------------------#
 

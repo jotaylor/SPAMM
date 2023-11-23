@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Test the Iron Component code. This code can be run from teh command line:
+Test the Balmer Component code. This code can be run from the command line:
 > python test_bc.py --datafile /user/jotaylor/git/spamm/Data/FakeData/BaC_comp/FakeBac_lines04_deg.dat
 --redshift 0.2
 

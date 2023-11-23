@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
+
 import gzip
 import dill as pickle
 import datetime
@@ -19,12 +22,14 @@ from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.ReddeningLaw import Extinction
 
+# List of accepted component names for the model
 ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
 
 #-----------------------------------------------------------------------------#
 
-def spamm(complist, inspectrum, par_file=None, n_walkers=30, 
-          n_iterations=500, outdir=None, picklefile=None, comp_params=None):
+# Main function to run SPAMM analysis
+def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500, 
+          outdir=None, picklefile=None, comp_params=None):
     """
     Args:
         complist (list): A list with at least one component to model. 
@@ -57,14 +62,19 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
     """
 
     t1 = datetime.datetime.now()
+
+    # Parse parameter file 
     if par_file is None:
         pars = parse_pars()
     else:
         pars = parse_pars(par_file)
 
+    # Convert component list to uppercase and create a dictionary of components
     complist = [x.upper() for x in complist]
     components = {k:(True if k in complist else False) for k in ACCEPTED_COMPS}
     
+    # Process input spectrum and extract relevant data
+    # Handles Spectrum, Spectrum1D objects, and tuple formats
     if isinstance(inspectrum, Spectrum):
         spectrum = inspectrum
         wl = inspectrum.spectral_axis
@@ -78,91 +88,97 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30,
         flux_error = None
     else:
         wl, flux, flux_error = inspectrum
-# This is just for testing    
-#       flux_error = flux*0.05
         spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
+    # If comp_params is not provided, initialize it as an empty dictionary
     if comp_params is None:
         comp_params = {}
-    for k,v in zip(("wl", "flux", "err", "components"), (wl, flux, flux_error, components)):
-        if k not in comp_params:
-            comp_params[k] = v
 
-    # ------------
-    # Initialize model
-    # ------------
+    # Populate comp_params with values from the input spectrum, 
+    # but only for those parameters that are not already present
+    for param_name, param_value in zip(("wl", "flux", "err", "components"), (wl, flux, flux_error, components)):
+        if param_name not in comp_params:
+            comp_params[param_name] = param_value
+            print(f"Adding {param_name} to comp_params.\n")
+
+    # Initialize the model
     model = Model()
     model.print_parameters = False
 
-    # -----------------
-    # Initialize components
-    # -----------------
+    # Initialize the components of the model. Checks if each component should
+    # be included in the model and adds it to the model's components if so
     if components["PL"]:
-        try:
-            if comp_params["broken_pl"] is True:
-                brokenPL = True
-            else:
-                brokenPL = False
-        except:
-            brokenPL = False
-        finally:
-            nuclear_comp = NuclearContinuumComponent(broken=brokenPL,
-                                                     pars=pars["nuclear_continuum"])
-            model.components.append(nuclear_comp)
+        # Get the 'broken_pl' parameter from comp_params, default to False if not present
+        is_broken = comp_params.get("broken_pl", False)
+
+        nuclear_comp = NuclearContinuumComponent(broken=is_broken, pars=pars["nuclear_continuum"])
+        model.components.append(nuclear_comp)
+
     if components["FE"]:
         fe_comp = FeComponent(pars=pars["fe_forest"])
         model.components.append(fe_comp)
+
     if components["HOST"]:
         host_galaxy_comp = HostGalaxyComponent(pars=pars["host_galaxy"])
         model.components.append(host_galaxy_comp)
+
     if components["BC"] or components["BPC"]:
         balmer_comp = BalmerCombined(pars=pars["balmer_continuum"],
                                      BalmerContinuum=components["BC"],
                                      BalmerPseudocContinuum=components["BPC"])
         model.components.append(balmer_comp)
+
     if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
         ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
         model.components.append(ext_comp)
 
-    model.data_spectrum = spectrum # add data
+    # Add the data spectrum to the model
+    model.data_spectrum = spectrum
 
-    # ------------
-    # Run MCMC
-    # ------------
+    # Run mcmc
     model.run_mcmc(n_walkers=n_walkers, n_iterations=n_iterations)
-    print("Mean acceptance fraction: {0:.3f}".format(np.mean(model.sampler.acceptance_fraction)))
+    print(f"Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
 
-    # -------------
-    # save chains & model
-    # ------------
-    p_data = {"model": model,
-              "comp_params": comp_params}
-
+    # Save the model and component parameters to a pickle file
+    p_data = {"model": model, "comp_params": comp_params}
+    
+    # Get the current date and time and format as a string
     nowdt = datetime.datetime.now()
     now = nowdt.strftime("%Y%m%d_%M%S")
-    if picklefile is None:
-        picklefile = "model_{0}.pickle.gz".format(now)
-    else:
-        picklefile = os.path.basename(picklefile)
-        if picklefile.endswith(".gz") is False:
-            if picklefile.endswith(".pickle") is True or picklefile.endswith(".p") is True:
-                picklefile += ".gz"
-            else:
-                picklefile += ".pickle.gz"
 
+    # If no picklefile name is provided, create one using the current date and time
+    if not picklefile:
+        picklefile = f"model_{now}.pickle.gz"
+    else:
+        # If a picklefile name is provided, ensure it has the correct extension
+        picklefile = os.path.basename(picklefile)
+        if not picklefile.endswith((".pickle", ".p", ".gz")):
+            picklefile += ".pickle.gz"
+        elif picklefile.endswith((".pickle", ".p")):
+            picklefile += ".gz"
+
+    # If no output directory is provided, create one using the current date and time
     if outdir is None:
         outdir = now
+
+    # If the output directory does not exist, create it
     if not os.path.exists(outdir):
         os.makedirs(outdir)
+
+    # Create the full path for the pickle file
     pname = os.path.join(outdir, picklefile)
     
+    # Save the model and component parameters to a gzipped pickle file
     with gzip.open(pname, "wb") as model_output:
         model_output.write(pickle.dumps(p_data))
-        print("Saved pickle file {0}".format(pname))
+        print(f"Saved pickle file {pname}")
+
+    # Generate plots from the saved pickle file
     make_plots_from_pickle(pname, outdir)
 
+    # Calculate and print the total execution time
     t2 = datetime.datetime.now()
-    print("executed in {}".format(t2-t1))
+    print(f"executed in {t2-t1}")
 
     return p_data
 

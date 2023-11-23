@@ -29,22 +29,23 @@ from ..Spectrum import Spectrum
 class HostGalaxyComponent(Component):
     """
     Host Galaxy Component:
-    \f$ F_{\lambda,\rm Host}\ =\ \sum_{1}^{N} F_{\rm Host,i} 
-        HostTempl_{\lambda,i}(\sig_*) \f$
-    This component has N templates and N+1 parameters. 
-        normalization: \f$ F_{\rm Host,i} \f$ for each of the N templates.
-        stellar line dispersion: \f$ \sig_* \f$
+
+    Represents the host galaxy's flux in a spectral model, defined by:
+
+        F_{λ, Host} = Σ_{i=1}^{N} F_{Host,i} * HostTempl_{λ,i}(σ_*)
+
+    This component has N templates and N+1 parameters:
+    - F_{Host,i}: The normalization for each of the N templates.
+    - σ_*: The stellar line dispersion.
 
     Attributes:
-        host_gal (list): List of Spectrum objects for each template file.
-        interp_host (list): 
-        interp_norm_flux (list):
+        host_gal (list): Spectrum objects for each template.
+        interp_host (list): Interpolated host galaxy spectra.
+        interp_norm_flux (list): Interpolated normalized fluxes.
 #TODO should name be in Component?
-        name (str): Name of component, i.e. "Nuclear"
-        norm_min ():
-        norm_max ():
-        stellar_disp_min ():
-        stellar_disp_max ():
+        name (str): Component name, e.g., "Nuclear".
+        norm_min/max: Min/max allowed values for normalization.
+        stellar_disp_min/max: Min/max allowed values for stellar line dispersion.
     """
 
     def __init__(self, pars=None):
@@ -56,8 +57,10 @@ class HostGalaxyComponent(Component):
             self.inputpars = pars
         
         self.load_templates()
-        self.model_parameter_names = ["hg_norm_{}".format(x) for x in range(1, len(self.host_gal)+1)]
+
+        self.model_parameter_names = [f"hg_norm_{x}" for x in range(1, len(self.host_gal)+1)]
         self.model_parameter_names.append("hg_stellar_disp")
+
         self.interp_host = [] 
         self.interp_host_norm_flux = []
         self.name = "HostGalaxy"
@@ -69,7 +72,7 @@ class HostGalaxyComponent(Component):
 # TODO, check on handling of dispersions
         self.templ_stellar_disp = self.inputpars["hg_template_stellar_disp"]
         if self.stellar_disp_min < self.templ_stellar_disp:
-            print("Specified minimum stellar dispersion too small, setting to intrinsic template stellar dispersion = {}".format(self.templ_stellar_disp))
+            print(f"Specified minimum stellar dispersion too small, setting to intrinsic template stellar dispersion = {self.templ_stellar_disp}")
             self.stellar_disp_min = self.templ_stellar_disp
          
 #-----------------------------------------------------------------------------#
@@ -92,16 +95,16 @@ class HostGalaxyComponent(Component):
 
         template_list = glob.glob(os.path.join(self.inputpars["hg_models"], "*"))
         assert len(template_list) != 0, \
-        "No host galaxy templates found in specified diretory {0}".format(self.inputpars["hg_models"])
+        f"No host galaxy templates found in specified diretory {self.inputpars['hg_models']}"
     
         self.host_gal = []
     
         for template_filename in template_list:
-            with open(template_filename) as template_file:
-                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
-                flux = np.where(flux<0, 1e-19, flux)
-                host = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
-                self.host_gal.append(host)
+            wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+            flux = np.where(flux<0, 1e-19, flux)
+            host = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
+
+            self.host_gal.append(host)
 
 #-----------------------------------------------------------------------------#
 
@@ -114,7 +117,6 @@ class HostGalaxyComponent(Component):
             no_parameters (int): Number of componenet parameters.
         """
 
-        #TODO why is it len() +1 ?
         no_parameters = len(self.host_gal) + 1
         
         return no_parameters
@@ -223,7 +225,7 @@ class HostGalaxyComponent(Component):
         norm = []
         
         for i in range(1, len(self.host_gal)+1):
-            norm.append(params[self.parameter_index("hg_norm_{}".format(i))])
+            norm.append(params[self.parameter_index(f"hg_norm_{i}")])
         
         stellar_disp = params[self.parameter_index("hg_stellar_disp")]
         
@@ -271,10 +273,15 @@ class HostGalaxyComponent(Component):
         #intrinsic velocity dispersion = 0 km/s.
         
         # The next two parameters are lists of size len(self.host_gal)
+
         norm_wl = spectrum.norm_wavelength
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
 # TODO, check on handling of dispersions
+
+        # print("parameters:",  parameters)
+        # print(len(parameters), len(parameters))
+        # print("self.parameter_index('hg_stellar_disp')", self.parameter_index('hg_stellar_disp'))
         stellar_disp = parameters[self.parameter_index("hg_stellar_disp")]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis))
 

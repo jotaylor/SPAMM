@@ -1,17 +1,19 @@
 #!/usr/bin/python
 
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import sys
 import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from astropy import units as u
-
+import pickle
 import emcee
+from multiprocessing import Pool
 
 from .Spectrum import Spectrum
-
-iteration_count = 0
-
+import time
 #-----------------------------------------------------------------------------#
 
 class MCMCDidNotConverge(Exception):
@@ -53,18 +55,14 @@ def ln_posterior(new_params, *args):
     Returns:
         list (list): List of model likelihoods and priors.
     """
-
-    global iteration_count
-    iteration_count = iteration_count + 1
-    if iteration_count % 20 == 0:
-        print("iteration count: {0}".format(iteration_count))
-
+    # t0 = time.time()
     # Make sure "model" is passed in - this needs access to the Model object
     # since it contains all of the information about the components.
     model = args[0] # TODO: return an error if this is not the case
 
-    # Calculate the log prior.
+    # # Calculate the log prior.
     ln_prior = model.prior(params=new_params)
+
     if not np.isfinite(ln_prior):
         return -np.inf
     
@@ -72,30 +70,42 @@ def ln_posterior(new_params, *args):
     # bounds of priors to save computation time.
     # Compare the model spectrum to the data, generate model spectrum given 
     # model parameters, and calculate the log likelihood.
-    else:    
-        model_spectrum_flux = model.model_flux(params=new_params)
-        ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
-    
-        return ln_likelihood + ln_prior 
+    model_spectrum_flux = model.model_flux(params=new_params)
+    ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
+
+    # for simulating cpu-bound process. multiprocessing testing purposes only
+    # t = time.time() + np.random.uniform(0.1, 0.001)
+    # while True:
+    #     if time.time() >= t:
+    #         break
+
+    # calculate total time of posterior
+    # t3 = time.time()
+    # print(f"ln_posterior took {t3-t0} seconds to run.\n")
+
+    return ln_prior + ln_likelihood
 
 #-----------------------------------------------------------------------------#
 
 #TODO do we need all these commented attributes??
 class Model(object):
     """
-    A class to describe model objects..
+    The Model class holds the data spectrum and a list of components that make up the model. 
+    It provides methods for setting the data spectrum, adding components, and running 
+    an MCMC process to fit the model to the data. It also provides methods for calculating 
+    the likelihood and prior probabilities used in the MCMC process.
 
     Attributes:
-        _mask ():
-        _data_spectrum():
-        z ():
-        components ():
-        mpi (): 
-        sampler ():
-        model_spectrum (Spectrum object): 
-        downsample_data_if_needed (Bool):
-        upsample_components_if_needed (Bool):
-        print_parameters (Bool): Used for debugging.
+        _mask (np.array): Mask for the data spectrum.
+        _data_spectrum (Spectrum object): Observed data spectrum.
+        z (float): Redshift of the model.
+        components (list): List of Component objects in the model.
+        mpi (bool): Flag for using MPI for parallel processing.
+        sampler (emcee.EnsembleSampler object): MCMC sampler.
+        model_spectrum (Spectrum object): Generated model spectrum.
+        downsample_data_if_needed (bool): Flag for downsampling data spectrum.
+        upsample_components_if_needed (bool): Flag for upsampling components.
+        print_parameters (bool): Flag for printing parameters during MCMC.
     """
     
     def __init__(self, wavelength_start=1000, wavelength_end=10000, 
@@ -121,7 +131,7 @@ class Model(object):
         wl_init = np.arange(wavelength_start, wavelength_end, wavelength_delta)
         self.model_spectrum = Spectrum(spectral_axis = wl_init,
                                        flux = np.zeros(len(wl_init)),
-                                       flux_error=np.zeros(len(wl_init)))
+                                       flux_error = np.zeros(len(wl_init)))
 
         # Flag to allow Model to interpolate components' wavelength grid to 
         # match data if component grid is more course than data.
@@ -138,9 +148,9 @@ class Model(object):
 #        self.mcmc_param_vector = None
 #    @property
 #    def mask(self):
-#        '''
+#        """
 #
-#        '''
+#        """
 #        if self.data_spectrum is None:
 #            print("Attempting to read the bad pixel mask before a spectrum was defined.")
 #            sys.exit(1)
@@ -151,11 +161,11 @@ class Model(object):
 #
 #    @mask.setter
 #    def mask(self, new_mask):
-#        '''
+#        """
 #        Document me.
 #
 #        :params mask: A numpy array representing the mask.
-#        '''
+#        """
 #        self._mask = new_mask
 
 #-----------------------------------------------------------------------------#
@@ -196,48 +206,46 @@ class Model(object):
         need_to_downsample_data = False
         components_to_upsample = {}
 
-        gs = 0 # grid spacing
-        worst_component = None # holds component with most course wavelength grid spacing
+        # Keep track of the maximum grid spacing found so far
+        # and the component with that grid spacing
+        max_gs = 0
+        worst_component = None
 
         for component in self.components:
             component.initialize(data_spectrum=new_data_spectrum)
-             
-            if component.grid_spacing() and component.grid_spacing() > gs:
-                gs = component.grid_spacing()
+            
+            # Get the grid spacing of the component.
+            component_gs = component.grid_spacing() 
+            
+            # If the component's grid spacing is not None and is greater than the current 
+            # maximum, update the maximum grid spacing and the worst component
+            if (component_gs is not None) and (component_gs > max_gs):
+                max_gs = component_gs
                 worst_component = component
 
-        if gs > new_data_spectrum.grid_spacing():
-
-            # The code will interpolate to the data anyway,
-            # AND the user has allowed this for coursely sampled components
-            # to be upsampled to the data. This was done above.
-            if self.upsample_components_if_needed:
-                pass
-            
-            # We will downsample the data to the "worst" component. The 
-            # resulting grid will be different than the input data.
-            elif self.downsample_data_if_needed:
+        if max_gs > new_data_spectrum.grid_spacing():
+            if self.downsample_data_if_needed:
                 downsampled_spectrum = new_data_spectrum.copy()
-                downsampled_spectrum.spectral_axis = np.arange(new_data_spectrum[0], 
-                                                            new_data_spectrum[-1], 
-                                                            gs)
-                downsampled_spectrum.flux = interp1d(x=downsampled_spectrum.spectral_axis,
-                                                     y=new_data_spectrum.flux,
+
+                # Adjust the spectral axis of the downsampled spectrum to the maximum grid spacing
+                downsampled_spectrum.spectral_axis = np.arange(new_data_spectrum[0], new_data_spectrum[-1], 
+                                                               max_gs)
+                
+                # Interpolate the flux of the downsampled spectrum to the new spectral axis                                                 
+                downsampled_spectrum.flux = interp1d(x=downsampled_spectrum.spectral_axis, y=new_data_spectrum.flux, 
                                                      kind="linear")
+                
+                # Update the spectral axis of the model spectrum to match the downsampled spectrum
                 self.model_spectrum.spectral_axis = np.array(downsampled_spectrum.spectral_axis)
 
-                # Reinitialize all components with new data.
+                # Reinitialize all components with the downsampled data spectrum
                 for component in self.components:
                     component.initialize(data_spectrum=downsampled_spectrum)
-
             else:
-                # TODO WHY IS THIS AN ASSERT
-                assert True, (
-                "The component '{0}' has courser wavelength grid spacing ".
-                format(worst_component) + "than the data. Either increase the "
-                "spacing of the component or use one of the flags on the "
-                "Model class ('upsample_components_if_needed', "
-                "'downsample_data_if_needed') to override this.")
+                raise ValueError(f"""Component '{worst_component}' has coarser grid spacing than data. 
+                                     Increase component spacing or use 'upsample_components_if_needed' 
+                                     or 'downsample_data_if_needed' flags in Model class.""")
+        
 
 #-----------------------------------------------------------------------------#
 
@@ -251,42 +259,41 @@ class Model(object):
         """
 
         # Initialize walker matrix with initial parameters
-        walkers_matrix = [] # must be a list, not an np.array
-        for walker in range(n_walkers):
+        walkers_matrix = []
+        for _ in range(n_walkers):
             walker_params = []
             for component in self.components:
-                walker_params = walker_params + component.initial_values(self.data_spectrum)
+                walker_params += component.initial_values(self.data_spectrum)
             walkers_matrix.append(walker_params)
 
-        global iteration_count
-        iteration_count = 0
-
         # Create MCMC sampler. To enable multiproccessing, set threads > 1.
-        # If using multiprocessing, the "lnpostfn" and "args" parameters 
+        # If using multiprocessing, the "log_prob_fn" and "args" parameters 
         # must be pickleable.
         if self.mpi:
             # Initialize the multiprocessing pool object.
-            from emcee.utils import MPIPool
-            pool = MPIPool(loadbalance=True)
-            if not pool.is_master():
-                    pool.wait()
-                    sys.exit(0)
-            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                                 dim=len(walkers_matrix[0]),
-                                                 lnpostfn=ln_posterior, 
-                                                 args=[self], pool=pool,
-                                                 runtime_sortingfn=sort_on_runtime)
-            self.sampler.run_mcmc(walkers_matrix, n_iterations)
-            pool.close()
+            from schwimmbad import MPIPool
+            with MPIPool() as pool:
+                if not pool.is_master():
+                        pool.wait()
+                        sys.exit(0)
+                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                                    ndim=len(walkers_matrix[0]),
+                                                    log_prob_fn=ln_posterior, 
+                                                    args=[self], pool=pool,
+                                                    runtime_sortingfn=sort_on_runtime)
+                self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
 
         else:
-            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                                 dim=len(walkers_matrix[0]),
-                                                 lnpostfn=ln_posterior, args=[self],
-                                                 threads=1)
-        
-        #self.sampler_output = self.sampler.run_mcmc(walkers_matrix, n_iterations)
-        self.sampler.run_mcmc(walkers_matrix, n_iterations)
+            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
+                                                    log_prob_fn=ln_posterior, args=[self])
+            
+            self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+
+            # with Pool() as pool:
+            #     self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
+            #                                         log_prob_fn=ln_posterior, args=[self], pool=pool)
+            
+            #     self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
 
 #-----------------------------------------------------------------------------#
 
@@ -341,7 +348,7 @@ class Model(object):
         # Combine all components into a single spectrum. Build an array of
         # parameters to pass to emcee. 
         if self.print_parameters:
-            print("params = {0}".format(params))
+            print(f"params = {params}")
 
         # Make a copy since we'll delete elements.
         # Note: np.copy does a deepcopy
@@ -414,57 +421,73 @@ class Model(object):
 
 #-----------------------------------------------------------------------------#
 
-# TODO model_spectrum_flux is not used vvv
     def likelihood(self, model_spectrum_flux):
         """
-        Calculate the ln(likelihood) of the given model spectrum.
-        The model is interpolated over the data wavelength grid.
-        ln(L) = -0.5 \sum_n {\left[ \frac{(flux_{Obs}-flux_{model})^2}{\sigma^2} 
-            + ln(2 \pi \sigma^2) \right]}
-    
+        Calculate the natural logarithm of the likelihood (ln(L)) of the given model spectrum.
+
+        The likelihood is calculated based on a Gaussian distribution, with the model 
+        spectrum interpolated over the data wavelength grid. The formula used is:
+
+        ln(L) = -0.5 * sum( (flux_observed - flux_model)^2 / sigma^2 + ln(2 * pi * sigma^2) )
+
+        where:
+        - flux_observed is the observed data flux
+        - flux_model is the model flux interpolated over the data wavelength grid
+        - sigma is the observed data flux error
+
         Args:
-            model_spectrum_flux (): The model spectrum, a numpy array of flux value.
-    
+            model_spectrum_flux (np.array): The model spectrum flux values, represented as a numpy array.
+
         Returns:
-            ln_l (float): Sum of ln(likelihood) values?
+            float: The sum of the natural logarithm of the likelihood values. This represents the total
+            likelihood of the model given the observed data. If any likelihood values are NaN, they are 
+            replaced with zero before summing.
+
+        Note:
+            This method assumes that the model flux changes linearly between the points in the model spectrum.
         """
 
         # Create an interpolation function.
-        f = interp1d(self.model_spectrum.spectral_axis,
-                                 self.model_spectrum.flux)
+        interp_func = interp1d(self.model_spectrum.spectral_axis, model_spectrum_flux)
 
-        # It is much more efficient to not use a for loop here.
-        # interp_model_flux = [f(x) for x in self.data_spectrum.wavelength]
-        interp_model_flux = f(self.data_spectrum.spectral_axis)
+        # Interpolate the model flux over the data spectral axis.
+        model_flux_interp = interp_func(self.data_spectrum.spectral_axis)
 
-        ln_l = np.power(( (self.data_spectrum.flux - interp_model_flux) / self.data_spectrum.flux_error), 2) + np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
-        #ln_l *= self.mask
-        ln_l = -0.5 * np.sum(ln_l)
-        ln_l = np.nan_to_num(ln_l)
+        # Calculate the ln(likelihood).
+        first_term = np.power((self.data_spectrum.flux - model_flux_interp) / self.data_spectrum.flux_error, 2)
+        second_term = np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
+        ln_likelihood = -0.5 * np.sum(first_term + second_term)
+
+        # Replace any NaN values with zero.
+        ln_likelihood = np.nan_to_num(ln_likelihood)
         
-        return ln_l
+        return ln_likelihood
 
 #-----------------------------------------------------------------------------#
 
     def prior(self, params):
         """
-        Calculate the ln(priors) for all components in the model.
-    
+        Calculate the sum of the natural logarithm of the priors (ln_priors) for all components in the model.
+
         Args:
-            params (): ? 
+            params (np.array): An array of parameter values for the model.
 
         Returns:
-            ln_p (float): Sum of ln(prior) values?
+            total_ln_prior (float): The sum of the ln_priors for all components in the model.
         """
 
-        # Make a copy since we'll delete elements.
-        p = np.copy(params)
+        total_ln_prior = 0.
+        current_index = 0
 
-        ln_p = 0
         for component in self.components:
-            ln_p += sum(component.ln_priors(params=p[0:component.parameter_count]))
+            # Calculate the end index for the current component's parameters.
+            end_index = current_index + component.parameter_count
 
-            # Remove the parameters for this component from the list.
-            p = p[component.parameter_count:]
+            # Sum all ln_priors for the current component's parameters and add to the total.
+            total_ln_prior += sum(component.ln_priors(params=params[current_index:end_index]))
 
-        return ln_p
+            current_index = end_index
+
+        return total_ln_prior
+    
+

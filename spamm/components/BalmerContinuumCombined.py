@@ -8,7 +8,11 @@ from scipy.integrate import simps
 from scipy.fftpack.helper import next_fast_len
 import matplotlib.pyplot as plt
 from astropy.constants import c, h, k_B, Ryd
-from astropy.modeling.blackbody import blackbody_lambda
+from astropy import units as u
+
+# replacing this with astropy's blackbody function
+#from astropy.modeling.blackbody import blackbody_lambda
+from astropy.modeling.physical_models import BlackBody
 
 #TODO this needs to be integrated into Spectrum eventually
 from utils.rebin_spec import rebin_spec
@@ -432,7 +436,14 @@ class BalmerCombined(Component):
         edge_wl = balmer_edge*(1 - loffset/c.value)
 
     #TODO need WL as quantity objects for better astropy functionality
-        blackbody = blackbody_lambda(spectrum.spectral_axis, Te)
+        # Create a blackbody model with the temperature Te
+        blackbody_model = BlackBody(temperature=Te*u.K)
+
+        # Evaluate the model at the wavelengths in spectrum.spectral_axis
+        blackbody = blackbody_model(spectrum.spectral_axis)
+        # commented below out, because its deprecated, and replaced with above
+        #blackbody = blackbody_lambda(spectrum.spectral_axis, Te)
+        
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms
         tau = tauBE*(spectrum.spectral_axis/balmer_edge)**3

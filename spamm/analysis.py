@@ -22,10 +22,10 @@ This code is for analyzing the final posterior samples.
 #-----------------------------------------------------------------------------#
 
 def plot_posteriors_pdf(S, interactive=False):
-    if interactive is False:
-        matplotlib.use('agg')
+    # if interactive is False:
+    #     matplotlib.use('agg')
     
-    pdfname = os.path.join(S.outdir, "{}_posterior.pdf".format(S.model_name))
+    pdfname = os.path.join(S.outdir, f"{S.model_name}_posterior.pdf")
     pdf_pages = PdfPages(pdfname)    
     figs = []
 
@@ -34,13 +34,13 @@ def plot_posteriors_pdf(S, interactive=False):
         ax = fig.add_subplot(111)
         
         chain = S.samples[:,i]
-        hist,bins = np.histogram(chain, S.histbins)
+        hist, bins = np.histogram(chain, S.histbins)
         binsize = bins[1]-bins[0]
 
         maxm = S.maxs[i]
-        med = S.medians[i] + binsize/2.
-        avg = S.means[i] + binsize/2.
-        mode = S.modes[i] + binsize/2.
+        med = S.medians[i] 
+        avg = S.means[i]
+        mode = S.modes[i]
         
         std = np.std(chain)
         
@@ -306,8 +306,8 @@ def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_
 
     """
     
-    if interactive is False:
-        matplotlib.use('agg')
+    # if interactive is False:
+    #     matplotlib.use('agg')
     
     print("Plotting the sample projections.")
 
@@ -489,7 +489,7 @@ def hist2d(x, y, *args, **kwargs):
         if len(V2) == 1:
             V2 = np.array([0, V2[0]])
         ax.contourf(X1, Y1, H.T, V2,
-                    cmap=LinearSegmentedColormap.from_list("cmap", ([1] * 3, [1] * 3),
+                    cmap=LinearSegmentedColormap.from_list("cmap", [[1] * 3, [1] * 3],
                     N=2), antialiased=False)
 
     ax.pcolor(X, Y, H.max() - H.T, cmap=cmap)
@@ -553,8 +553,8 @@ def mean_values(samples):
 
 
 def plot_chains(samples, labels, interactive=False):
-    if interactive is False:
-        matplotlib.use('agg')
+    # if interactive is False:
+    #     matplotlib.use('agg')
     
     num_params = np.size(samples[0,:])
     fig = plt.figure()
