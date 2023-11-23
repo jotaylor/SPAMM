@@ -6,11 +6,9 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import sys
 import numpy as np
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-from astropy import units as u
-import pickle
 import emcee
 from multiprocessing import Pool
+from functools import partial
 
 from .Spectrum import Spectrum
 import time
@@ -41,47 +39,19 @@ def sort_on_runtime(pos):
 
 #-----------------------------------------------------------------------------#
 
-def ln_posterior(new_params, *args):
-    """
-    Return the logarithm of the posterior function, to be passed to the emcee 
-    sampler.
-
-    Args:
-        new_params (ndarray): Array in the parameter space used as input 
-            into sampler.
-        args: Additional arguments passed to this function 
-            (i.e. the Model object).
-
-    Returns:
-        list (list): List of model likelihoods and priors.
-    """
-    # t0 = time.time()
-    # Make sure "model" is passed in - this needs access to the Model object
-    # since it contains all of the information about the components.
-    model = args[0] # TODO: return an error if this is not the case
-
-    # # Calculate the log prior.
+def ln_posterior(model, new_params):
     ln_prior = model.prior(params=new_params)
 
     if not np.isfinite(ln_prior):
         return -np.inf
     
-    # Only calculate flux and therefore likelihood if parameters lie within 
-    # bounds of priors to save computation time.
-    # Compare the model spectrum to the data, generate model spectrum given 
-    # model parameters, and calculate the log likelihood.
+    t = time.time() + np.random.uniform(0.001, 0.001)
+    while True:
+        if time.time() >= t:
+            break
+    
     model_spectrum_flux = model.model_flux(params=new_params)
     ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
-
-    # for simulating cpu-bound process. multiprocessing testing purposes only
-    # t = time.time() + np.random.uniform(0.1, 0.001)
-    # while True:
-    #     if time.time() >= t:
-    #         break
-
-    # calculate total time of posterior
-    # t3 = time.time()
-    # print(f"ln_posterior took {t3-t0} seconds to run.\n")
 
     return ln_prior + ln_likelihood
 
@@ -269,31 +239,19 @@ class Model(object):
         # Create MCMC sampler. To enable multiproccessing, set threads > 1.
         # If using multiprocessing, the "log_prob_fn" and "args" parameters 
         # must be pickleable.
-        if self.mpi:
-            # Initialize the multiprocessing pool object.
-            from schwimmbad import MPIPool
-            with MPIPool() as pool:
-                if not pool.is_master():
-                        pool.wait()
-                        sys.exit(0)
-                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                                    ndim=len(walkers_matrix[0]),
-                                                    log_prob_fn=ln_posterior, 
-                                                    args=[self], pool=pool,
-                                                    runtime_sortingfn=sort_on_runtime)
-                self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
 
-        else:
+        wrapped_posterior = partial(ln_posterior, self)
+
+        # self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
+        #                                             log_prob_fn=wrapped_posterior)
+            
+        # self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+        
+        with Pool() as pool:
             self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-                                                    log_prob_fn=ln_posterior, args=[self])
+                                                    log_prob_fn=wrapped_posterior, pool=pool)
             
             self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
-
-            # with Pool() as pool:
-            #     self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-            #                                         log_prob_fn=ln_posterior, args=[self], pool=pool)
-            
-            #     self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
 
 #-----------------------------------------------------------------------------#
 

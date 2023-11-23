@@ -128,9 +128,9 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
                                      BalmerPseudocContinuum=components["BPC"])
         model.components.append(balmer_comp)
 
-    if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
-        ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
-        model.components.append(ext_comp)
+    # if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
+    #     ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
+    #     model.components.append(ext_comp)
 
     # Add the data spectrum to the model
     model.data_spectrum = spectrum
