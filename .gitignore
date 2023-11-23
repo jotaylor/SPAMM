@@ -37,7 +37,7 @@ docs/source/_templates
 documentation/tmp
 documentation/_build
 *pickle.gz
-examples/.ipynb_check*
+.ipynb*
 
 # Fortran
 *.f90
