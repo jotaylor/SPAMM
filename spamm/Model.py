@@ -113,11 +113,6 @@ def ln_posterior(args, params):
     if not np.isfinite(ln_prior):
         return -np.inf
     
-    # t = time.time() + np.random.uniform(0.001, 0.0005)
-    # while True:
-    #     if time.time() >= t:
-    #         break
-    
     model_spectrum_flux = model_flux(params=params, data_spectrum=data_spectrum, components=components)
     ln_likelihood = likelihood(data_spectrum=data_spectrum, model_spectrum_flux=model_spectrum_flux)
 
@@ -140,10 +135,11 @@ def model_flux(params, data_spectrum, components):
     # Note: np.copy does a deepcopy
     params2 = np.copy(params)
 
+    # Initialize the model spectrum flux
     model_spectrum_flux = np.zeros(len(data_spectrum.spectral_axis))
 
-    # Extract parameters from full array for each component.
     for component in components:
+        # Extract parameters from full array for each component.
         p = params2[0:component.parameter_count]
 
         # Add the flux of each component to the model spectrum, 
@@ -168,20 +164,18 @@ class Model(object):
     """
     The Model class holds the data spectrum and a list of components that make up the model. 
     It provides methods for setting the data spectrum, adding components, and running 
-    an MCMC process to fit the model to the data. It also provides methods for calculating 
-    the likelihood and prior probabilities used in the MCMC process.
+    an MCMC process to fit the model to the data.
 
     Attributes:
         _mask (np.array): Mask for the data spectrum.
         _data_spectrum (Spectrum object): Observed data spectrum.
         z (float): Redshift of the model.
         components (list): List of Component objects in the model.
-        mpi (bool): Flag for using MPI for parallel processing.
+        parallel (bool): Flag for using local parallel processing on one machine
         sampler (emcee.EnsembleSampler object): MCMC sampler.
         model_spectrum (Spectrum object): Generated model spectrum.
         downsample_data_if_needed (bool): Flag for downsampling data spectrum.
         upsample_components_if_needed (bool): Flag for upsampling components.
-        print_parameters (bool): Flag for printing parameters during MCMC.
     """
     
     def __init__(self, wavelength_start=1000, wavelength_end=10000, 
@@ -191,7 +185,7 @@ class Model(object):
             wavelength_start (): 
             wavelength_end (): 
             wavelength_delta (float):
-            mpi (Bool):
+            parallel (Bool):
         """
 
         self._mask = None
@@ -214,8 +208,6 @@ class Model(object):
         # TODO - document better!
         self.downsample_data_if_needed = False
         self.upsample_components_if_needed = False
-
-        self.print_parameters = False
 
 # TODO is this needed? vvvv
 
