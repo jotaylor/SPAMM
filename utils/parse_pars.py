@@ -5,15 +5,15 @@ import yaml
 from astropy import units as u
 ABSPATH = os.path.dirname(os.path.realpath(__file__))
 
-def parse_pars(par_file=os.path.join(os.getcwd(), "parameters.yaml")):
-    '''
+def parse_pars(par_file=os.path.join(ABSPATH, "parameters.yaml")):
+    """"
     Read in SPAMM input parameters from input parameters file.
 
     Args:
         par_file (str): Location of parameters file.
     Returns:
         pars (dict): SPAMM input parameters.
-    '''
+    """
 
     assert os.path.exists(par_file), f"Input parameters {par_file} is not in {os.getcwd()}"
 
