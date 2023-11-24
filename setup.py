@@ -13,6 +13,7 @@ setup(
                    'Topic :: Scientific/Engineering :: Physics',
                    'Topic :: Software Development :: Libraries :: Python Modules'],
     packages = find_packages(),
+    package_data = {'utils': ['parameters.yaml']},
     install_requires = ['setuptools',
                         'numpy',
                         'astropy',
