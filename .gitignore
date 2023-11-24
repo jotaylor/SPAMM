@@ -38,6 +38,7 @@ documentation/tmp
 documentation/_build
 *pickle.gz
 .ipynb*
+experimentation/
 
 # Fortran
 *.f90
