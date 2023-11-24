@@ -29,7 +29,7 @@ ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "CALZETTI_EXT", "SMC_EXT", "M
 
 # Main function to run SPAMM analysis
 def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500, 
-          outdir=None, picklefile=None, comp_params=None):
+          outdir=None, picklefile=None, comp_params=None, parallel=True):
     """
     Args:
         complist (list): A list with at least one component to model. 
@@ -103,6 +103,7 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
 
     # Initialize the model
     model = Model()
+    model.parallel = parallel
     model.print_parameters = False
 
     # Initialize the components of the model. Checks if each component should
@@ -134,9 +135,11 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
 
     # Add the data spectrum to the model
     model.data_spectrum = spectrum
+    data_spectrum = spectrum
+    components = model.components
 
     # Run mcmc
-    model.run_mcmc(n_walkers=n_walkers, n_iterations=n_iterations)
+    model.run_mcmc(data_spectrum=data_spectrum, components=components, n_walkers=n_walkers, n_iterations=n_iterations)
     print(f"Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
 
     # Save the model and component parameters to a pickle file

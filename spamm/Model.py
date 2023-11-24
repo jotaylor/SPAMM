@@ -12,12 +12,6 @@ from functools import partial
 
 from .Spectrum import Spectrum
 import time
-#-----------------------------------------------------------------------------#
-
-class MCMCDidNotConverge(Exception):
-    pass
-
-#-----------------------------------------------------------------------------#
 
 # TODO arg pos is not even used vv
 def sort_on_runtime(pos):
@@ -39,21 +33,133 @@ def sort_on_runtime(pos):
 
 #-----------------------------------------------------------------------------#
 
-def ln_posterior(model, new_params):
-    ln_prior = model.prior(params=new_params)
+def prior(params, components):
+    
+    """
+    Calculate the sum of the natural logarithm of the priors (ln_priors) for all components in the model.
 
+    Args:
+        params (np.array): An array of parameter values for the model.
+
+    Returns:
+        total_ln_prior (float): The sum of the ln_priors for all components in the model.
+    """
+
+    total_ln_prior = 0.
+    current_index = 0
+
+    for component in components:
+        # Calculate the end index for the current component's parameters.
+        end_index = current_index + component.parameter_count
+
+        # Sum all ln_priors for the current component's parameters and add to the total.
+        total_ln_prior += sum(component.ln_priors(params=params[current_index:end_index]))
+
+        current_index = end_index
+
+    return total_ln_prior
+
+#-----------------------------------------------------------------------------#
+
+def likelihood(data_spectrum, model_spectrum_flux):
+    """
+    Calculate the natural logarithm of the likelihood (ln(L)) of the given model spectrum.
+
+    The likelihood is calculated based on a Gaussian distribution, with the model 
+    spectrum interpolated over the data wavelength grid. The formula used is:
+
+    ln(L) = -0.5 * sum( (flux_observed - flux_model)^2 / sigma^2 + ln(2 * pi * sigma^2) )
+
+    where:
+    - flux_observed is the observed data flux
+    - flux_model is the model flux interpolated over the data wavelength grid
+    - sigma is the observed data flux error
+
+    Args:
+        model_spectrum_flux (np.array): The model spectrum flux values, represented as a numpy array.
+
+    Returns:
+        float: The sum of the natural logarithm of the likelihood values. This represents the total
+        likelihood of the model given the observed data. If any likelihood values are NaN, they are 
+        replaced with zero before summing.
+
+    Note:
+        This method assumes that the model flux changes linearly between the points in the model spectrum.
+    """
+
+    # Create an interpolation function. #TODO WARNING: SHOULDNT THIS BE MODEL_SPECTRUM INSTEAD OF DATA_SPECTRUM?
+    interp_func = interp1d(data_spectrum.spectral_axis, model_spectrum_flux)
+
+    # Interpolate the model flux over the data spectral axis.
+    model_flux_interp = interp_func(data_spectrum.spectral_axis)
+
+    # Calculate the ln(likelihood).
+    first_term = np.power((data_spectrum.flux - model_flux_interp) / data_spectrum.flux_error, 2)
+    second_term = np.log(2 * np.pi * np.power(data_spectrum.flux_error, 2))
+    ln_likelihood = -0.5 * np.sum(first_term + second_term)
+
+    # Replace any NaN values with zero.
+    ln_likelihood = np.nan_to_num(ln_likelihood)
+    
+    return ln_likelihood
+
+#-----------------------------------------------------------------------------#
+
+def ln_posterior(args, params):
+
+    data_spectrum, components = args[0], args[1]
+
+    ln_prior = prior(params=params, components=components)
     if not np.isfinite(ln_prior):
         return -np.inf
     
-    t = time.time() + np.random.uniform(0.001, 0.001)
-    while True:
-        if time.time() >= t:
-            break
+    # t = time.time() + np.random.uniform(0.001, 0.0005)
+    # while True:
+    #     if time.time() >= t:
+    #         break
     
-    model_spectrum_flux = model.model_flux(params=new_params)
-    ln_likelihood = model.likelihood(model_spectrum_flux=model_spectrum_flux)
+    model_spectrum_flux = model_flux(params=params, data_spectrum=data_spectrum, components=components)
+    ln_likelihood = likelihood(data_spectrum=data_spectrum, model_spectrum_flux=model_spectrum_flux)
 
     return ln_prior + ln_likelihood
+
+def model_flux(params, data_spectrum, components):
+    """
+    Given the parameters in the model, generate a spectrum. This method is
+    called by multiple MCMC walkers at the same time, so edit with caution.
+
+    Args:
+        params (ndarray): 1D numpy array of all parameters of all 
+            components of the model.
+
+    Returns:
+        self.model_spectrum.flux (ndarray): Array of flux values?
+    """
+
+    # Make a copy since we'll delete elements.
+    # Note: np.copy does a deepcopy
+    params2 = np.copy(params)
+
+    model_spectrum_flux = np.zeros(len(data_spectrum.spectral_axis))
+
+    # Extract parameters from full array for each component.
+    for component in components:
+        p = params2[0:component.parameter_count]
+
+        # Add the flux of each component to the model spectrum, 
+        # except for extinction
+        if component.name != "Extinction":
+            component_flux = component.flux(spectrum=data_spectrum, parameters=p)
+            model_spectrum_flux += component_flux
+        else:
+            extinction = component.extinction(spectrum=data_spectrum, parameters=p)
+            extinct_spectra = np.array(model_spectrum_flux)*extinction
+            model_spectrum_flux = extinct_spectra
+
+        # Remove the parameters for this component from the list
+        params2 = params2[component.parameter_count:]
+
+    return model_spectrum_flux
 
 #-----------------------------------------------------------------------------#
 
@@ -79,7 +185,7 @@ class Model(object):
     """
     
     def __init__(self, wavelength_start=1000, wavelength_end=10000, 
-                 wavelength_delta=0.05, mpi=False):
+                 wavelength_delta=0.05, parallel=True):
         """
         Args:
             wavelength_start (): 
@@ -93,7 +199,7 @@ class Model(object):
         
         self.z = None
         self.components = []
-        self.mpi = mpi
+        self.parallel = parallel
 
         self.sampler = None
         #self.sampler_output = None
@@ -219,7 +325,7 @@ class Model(object):
 
 #-----------------------------------------------------------------------------#
 
-    def run_mcmc(self, n_walkers=100, n_iterations=100):
+    def run_mcmc(self, data_spectrum, components, n_walkers=100, n_iterations=100):
         """
         Run emcee MCMC.
     
@@ -240,17 +346,16 @@ class Model(object):
         # If using multiprocessing, the "log_prob_fn" and "args" parameters 
         # must be pickleable.
 
-        wrapped_posterior = partial(ln_posterior, self)
-
-        # self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-        #                                             log_prob_fn=wrapped_posterior)
-            
-        # self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+        wrapped_posterior = partial(ln_posterior, (data_spectrum, components))
         
-        with Pool() as pool:
+        if self.parallel:
+            with Pool() as pool:
+                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
+                                                        log_prob_fn=wrapped_posterior, pool=pool)
+                self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+        else:
             self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-                                                    log_prob_fn=wrapped_posterior, pool=pool)
-            
+                                                    log_prob_fn=wrapped_posterior)
             self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
 
 #-----------------------------------------------------------------------------#
@@ -290,77 +395,10 @@ class Model(object):
 
 #-----------------------------------------------------------------------------#
 
-    def model_flux(self, params):
-        """
-        Given the parameters in the model, generate a spectrum. This method is
-        called by multiple MCMC walkers at the same time, so edit with caution.
-
-        Args:
-            params (ndarray): 1D numpy array of all parameters of all 
-                components of the model.
-
-        Returns:
-            self.model_spectrum.flux (ndarray): Array of flux values?
-        """
-
-        # Combine all components into a single spectrum. Build an array of
-        # parameters to pass to emcee. 
-        if self.print_parameters:
-            print(f"params = {params}")
-
-        # Make a copy since we'll delete elements.
-        # Note: np.copy does a deepcopy
-        params2 = np.copy(params)
-
-        self.model_spectrum.flux = np.zeros(len(self.model_spectrum.spectral_axis))
-
-        # Extract parameters from full array for each component.
-        for component in self.components:
-            p = params2[0:component.parameter_count]
-
-            # Add the flux of each component to the model spectrum, 
-            # except for extinction
-            if component.name != "Extinction":
-                self.add_component(component=component, parameters=p)
-            else:
-                self.reddening(component=component, parameters=p)
-
-            # Remove the parameters for this component from the list
-            params2 = params2[component.parameter_count:]
-
-        return self.model_spectrum.flux
-
-#-----------------------------------------------------------------------------#
-
-    def add_component(self, component, parameters):
-        """
-        Add the specified component's flux to the model's flux.
-            
-        Args:
-            component (Component Object): Component to add to model.
-            parameters (): ?
-        """
-
-        component_flux = component.flux(spectrum=self.data_spectrum, parameters=parameters)
-        self.model_spectrum.flux += component_flux
-
-#-----------------------------------------------------------------------------#
-
-    def reddening(self, component, parameters):
-        """
-        Apply reddening to the model spectrum flux.
     
-        Args:
-            component (Component Object): Component to add to model.
-            parameters (): ?
-        """
 
-        extinction = component.extinction(spectrum=self.data_spectrum, params=parameters)
-        extinct_spectra= np.array(self.model_spectrum.flux)*extinction
-        self.model_spectrum.flux = extinct_spectra
+#-----------------------------------------------------------------------------#
 
-        #for j in range(len(self.data_spectrum.spectral_axis)):
-        #    self.model_spectrum.flux[j] *= extinction[j]
 
 #-----------------------------------------------------------------------------#
 
@@ -376,76 +414,5 @@ class Model(object):
         for c in self.components:
             labels = labels + [x for x in c.model_parameter_names]
         return labels
-
-#-----------------------------------------------------------------------------#
-
-    def likelihood(self, model_spectrum_flux):
-        """
-        Calculate the natural logarithm of the likelihood (ln(L)) of the given model spectrum.
-
-        The likelihood is calculated based on a Gaussian distribution, with the model 
-        spectrum interpolated over the data wavelength grid. The formula used is:
-
-        ln(L) = -0.5 * sum( (flux_observed - flux_model)^2 / sigma^2 + ln(2 * pi * sigma^2) )
-
-        where:
-        - flux_observed is the observed data flux
-        - flux_model is the model flux interpolated over the data wavelength grid
-        - sigma is the observed data flux error
-
-        Args:
-            model_spectrum_flux (np.array): The model spectrum flux values, represented as a numpy array.
-
-        Returns:
-            float: The sum of the natural logarithm of the likelihood values. This represents the total
-            likelihood of the model given the observed data. If any likelihood values are NaN, they are 
-            replaced with zero before summing.
-
-        Note:
-            This method assumes that the model flux changes linearly between the points in the model spectrum.
-        """
-
-        # Create an interpolation function.
-        interp_func = interp1d(self.model_spectrum.spectral_axis, model_spectrum_flux)
-
-        # Interpolate the model flux over the data spectral axis.
-        model_flux_interp = interp_func(self.data_spectrum.spectral_axis)
-
-        # Calculate the ln(likelihood).
-        first_term = np.power((self.data_spectrum.flux - model_flux_interp) / self.data_spectrum.flux_error, 2)
-        second_term = np.log(2 * np.pi * np.power(self.data_spectrum.flux_error, 2))
-        ln_likelihood = -0.5 * np.sum(first_term + second_term)
-
-        # Replace any NaN values with zero.
-        ln_likelihood = np.nan_to_num(ln_likelihood)
-        
-        return ln_likelihood
-
-#-----------------------------------------------------------------------------#
-
-    def prior(self, params):
-        """
-        Calculate the sum of the natural logarithm of the priors (ln_priors) for all components in the model.
-
-        Args:
-            params (np.array): An array of parameter values for the model.
-
-        Returns:
-            total_ln_prior (float): The sum of the ln_priors for all components in the model.
-        """
-
-        total_ln_prior = 0.
-        current_index = 0
-
-        for component in self.components:
-            # Calculate the end index for the current component's parameters.
-            end_index = current_index + component.parameter_count
-
-            # Sum all ln_priors for the current component's parameters and add to the total.
-            total_ln_prior += sum(component.ln_priors(params=params[current_index:end_index]))
-
-            current_index = end_index
-
-        return total_ln_prior
     
 
