@@ -98,7 +98,7 @@ class HostGalaxyComponent(Component):
         f"No host galaxy templates found in specified diretory {self.inputpars['hg_models']}"
     
         self.host_gal = []
-    
+
         for template_filename in template_list:
             wavelengths, flux = np.loadtxt(template_filename, unpack=True)
             flux = np.where(flux<0, 1e-19, flux)
