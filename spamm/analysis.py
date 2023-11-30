@@ -13,6 +13,7 @@ import numpy as np
 import subprocess
 
 from spamm.Samples import Samples
+from spamm.Model import model_flux
 
 '''
 This code is for analyzing the final posterior samples.
@@ -108,16 +109,16 @@ def plot_best_models(S):
                     data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
                     ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
     ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.means),
+            model_flux(params=S.means, data_spectrum=data_spectrum, components=S.model.components),
             color="darkblue", label="Mean")
     ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.medians),
+            model_flux(params=S.medians, data_spectrum=data_spectrum, components=S.model.components),
             color="darkviolet", label="Median")
     ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.modes),
+            model_flux(params=S.modes, data_spectrum=data_spectrum, components=S.model.components),
             color="blue", label="Mode")
     ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.maxs),
+            model_flux(params=S.maxs, data_spectrum=data_spectrum, components=S.model.components),
             color="fuchsia", label="Max")
     ax.set_title("Best Fits")
     ax.set_xlabel(r"Wavelength [$\AA$]")
