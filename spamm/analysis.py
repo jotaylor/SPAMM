@@ -2,7 +2,6 @@
 
 import os
 import argparse
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MaxNLocator
@@ -48,16 +47,16 @@ def plot_posteriors_pdf(S, interactive=False):
         if S.params is not None:
             try:
                 actual = S.params[S.model_parameter_names[i]]
-#                print("New limits for {}:\n{:0.20f}\n{:0.20f}\n".format(S.model_parameter_names[i], maxm-(1.5*std), maxm+(1.5*std)))
+#                print(f"New limits for {S.model_parameter_names[i]}:\n{maxm-(1.5*std):0.20f}\n{maxm+(1.5*std):0.20f}\n")
                 ax.axvspan(actual-std, actual+std, facecolor="grey", 
-                           alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+                           alpha=0.25, label=rf"1$\sigma$={std:1.3e}")
                 ax.axvline(S.params[S.model_parameter_names[i]], 
                            color="red", linestyle="solid", linewidth=1.5, 
-                           label="Actual value={:1.3e}".format(actual))
+                           label=f"Actual value={actual:1.3e}")
             except KeyError:
                 actual = maxm
                 ax.axvspan(actual-std, actual+std, facecolor="grey", 
-                           alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+                           alpha=0.25, label=rf"1$\sigma$={std:1.3e}")
                  
         ax.hist(chain, bins, color="skyblue")
 
@@ -76,13 +75,13 @@ def plot_posteriors_pdf(S, interactive=False):
         
 #        ax.axvline(center, color="red", linestyle="dotted", linewidth=1.5, label="Max")
         ax.axvline(avg, color="darkblue", linestyle="--", linewidth=1.5, 
-                   label="Mean={:1.3e}".format(avg))
+                   label=f"Mean={avg:1.3e}")
         ax.axvline(med, color="darkviolet", linestyle="--", linewidth=1.5, 
-                   label="Median={:1.3e}".format(med))
+                   label=f"Median={med:1.3e}")
         ax.axvline(mode, color="blue", linestyle="--", linewidth=1.5, 
-                   label="Mode={:1.3e}".format(mode))
+                   label=f"Mode={mode:1.3e}")
         ax.axvline(maxm, color="fuchsia", linestyle="--", linewidth=1.5, 
-                   label="Maximum={:1.3e}".format(maxm))
+                   label=f"Maximum={maxm:1.3e}")
         ax.legend(loc="best")
 
         ax.set_xlabel(S.model_parameter_names[i])
@@ -94,7 +93,7 @@ def plot_posteriors_pdf(S, interactive=False):
         plt.close(fig)
 
     pdf_pages.close()
-    print("Saved {}".format(pdfname))
+    print(f"Saved {pdfname}")
 
     return figs
 
@@ -127,7 +126,7 @@ def plot_best_models(S):
     figname = "{}_best.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {}".format(figname))
+    print(f"\tSaved {figname}")
 
 #--------------------------------------------------------------------------#
 
@@ -150,7 +149,7 @@ def plot_models(S, ymax=None):
     else:
         sample_range = range(0, len(S.samples), S.step)
     for i in sample_range:
-        print("Iteration {}".format(i))
+        print(f"Iteration {i}")
         j = 0
         for component in S.model.components:
             fig = plt.figure(figsize=(15,7))
@@ -166,14 +165,14 @@ def plot_models(S, ymax=None):
             if ymax is None:
                 ymax = compmax + .1*compmax
             ax.set_ylim(0, ymax)
-            ax.set_title("{}, Iteration {}".format(component.name, i))
+            ax.set_title(f"{component.name}, Iteration {i}")
             ax.set_xlabel(r"Wavelength [$\AA$]")
             ax.set_ylabel(r"ergs/s/cm$^2$")
             ax.legend(loc="upper left", framealpha=0.25)
-            figname = os.path.join(gifdir, "{}_iter{:06d}.png".format(component.name, i))
+            figname = os.path.join(gifdir, f"{component.name}_iter{i:06d}.png")
             fig.savefig(os.path.join(S.outdir, figname))
             if S.last is True:
-                print("\tSaved {}".format(figname))
+                print(f"\tSaved {figname}")
             j += len(component.model_parameter_names)
             plt.close(fig)
 
@@ -189,29 +188,29 @@ def plot_models(S, ymax=None):
         if ymax is None:
             ymax = modelmax + .1*modelmax
         ax.set_ylim(0, ymax)
-        ax.set_title("Sum Of Model Components, Iteration {}".format(i))
+        ax.set_title(f"Sum Of Model Components, Iteration {i}")
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"ergs/s/cm$^2$")
         ax.legend(loc="upper left", framealpha=0.25)
-        figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
+        figname = os.path.join(outdir, f"model_iter{i:06d}.png")
         fig.savefig(os.path.join(S.outdir, figname))
         if S.last is True:
-            print("\tSaved {}".format(figname))
+            print(f"\tSaved {figname}")
         plt.close(fig)
 
     if S.gif is True:
         for component in S.model.components:
             cname = component.name
-            gifname = os.path.join(outdir, "{}.gif".format(cname))
+            gifname = os.path.join(outdir, f"{cname}.gif")
             subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
-                                   os.path.join(outdir, "{}*png".format(cname)), 
+                                   os.path.join(outdir, f"{cname}*png"), 
                                    gifname])
-            print("\tSaved {}".format(gifname))
-        gifname = os.path.join(outdir, "{}.gif".format(S.model_name))
+            print(f"\tSaved {gifname}")
+        gifname = os.path.join(outdir, f"{S.model_name}.gif")
         subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
-                               os.path.join(outdir, "model*png".format(S.model_name)), 
+                               os.path.join(outdir, f"{S.model_name}*png"), 
                                gifname])
-        print("\tSaved {}".format(gifname))
+        print(f"\tSaved {gifname}")
     
 #--------------------------------------------------------------------------#
 
@@ -219,28 +218,28 @@ def make_all_plots(S):
 
     # Create the triangle plot.
     fig = corner(S.samples, labels=S.model_parameter_names)
-    figname = "{0}_triangle.png".format(S.model_name)
+    figname = f"{S.model_name}_triangle.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"\tSaved {figname}")
 
     # Plot the MCMC chains as a function of iteration. You can easily tell if 
     # the chains are converged because you can no longer tell where the individual 
     # particle chains are sliced together.
     fig = plot_chains(S.samples, labels=S.model_parameter_names)
-    figname = "{0}_chain.png".format(S.model_name)
+    figname = f"{S.model_name}_chain.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"\tSaved {figname}")
 
     # Plot the posterior PDFs for each parameter. These are histograms of the 
     # MCMC chains. Boxes = 20 is the default.
     fig = plot_posteriors(S.samples, labels=S.model_parameter_names, 
                           boxes=20, params=S.params)
-    figname = "{0}_posterior.png".format(S.model_name)
+    figname = f"{S.model_name}_posterior.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"\tSaved {figname}")
 
     # Make a PDF (the plot kind!) with the histogram for each parameter a
     # different page in the PDF for detailed analysis.
@@ -609,7 +608,7 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
         if params is not None:
             try:
                 ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
-                ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
+                ax.set_title(f"Actual {labels[i]}={params[labels[i]]}")
             except KeyError:
                 pass
         ax.set_xlabel(labels[i])
