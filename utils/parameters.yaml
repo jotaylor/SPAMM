@@ -18,7 +18,7 @@ emission_lines: ""
 host_galaxy:
     boxcar_width: 5
     hg_models: "../Data/HostModels"
-    hg_norm_min: 0.
+    hg_norm_min: 0
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM
     hg_stellar_disp_max: 1000. # km/s. Must be dispersion, not FWHM
@@ -36,7 +36,7 @@ nuclear_continuum:
     pl_slope_min: -3.
     pl_slope_max: 3.
     pl_norm_min: 0.
-    pl_norm_max: "fnw" #max_flux or fnw
+    pl_norm_max: "max_flux" #max_flux or fnw
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
