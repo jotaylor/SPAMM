@@ -95,6 +95,7 @@ def create_hg(hg_params=None):
     hg = HostGalaxyComponent()
     # Make a Spectrum object with dummy flux and flux error
     spectrum = Spectrum(hg_params["wl"], hg_params["wl"], hg_params["wl"])
+
     hg.initialize(spectrum)
     comp_params = [hg_params[f"hg_norm_{x}"] for x in range(1, hg_params["no_templates"]+1)] + [hg_params["hg_stellar_disp"]]
     print("comp_params:", comp_params)
