@@ -13,17 +13,17 @@ from specutils import Spectrum1D
 
 from utils.parse_pars import parse_pars
 from spamm.analysis import make_plots_from_pickle
-#from plot_spamm_results import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
 from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
+from spamm.components.NarrowComponent import NarrowComponent
 from spamm.components.ReddeningLaw import Extinction
 
 # List of accepted component names for the model
-ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
+ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
 
 #-----------------------------------------------------------------------------#
 
@@ -127,6 +127,10 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
                                      BalmerContinuum=components["BC"],
                                      BalmerPseudocContinuum=components["BPC"])
         model.components.append(balmer_comp)
+
+    if components["NEL"]:
+        narrow_comp = NarrowComponent(pars=pars["narrow_lines"])
+        model.components.append(narrow_comp)
 
     #TODO: MW_ext, AGN_ext etc. are all undefined?
     if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
