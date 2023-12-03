@@ -1,15 +1,11 @@
 #!/usr/bin/python
 
-# To create a new component class, copy this file and fill in the values as instructed.
-# Follow comments the begin with "[replace]", then delete the comment.
-
-import sys
 import numpy as np
 
 from .ComponentBase import Component
 from utils.runningmeanfast import runningMeanFast
 
-def Gaussian(x,cenwave,sigma,ampl):
+def Gaussian(x, cenwave, sigma, ampl):
     '''
     x = array of wavelenengths 
     cenwave = Gaussian central wavelength
@@ -18,9 +14,9 @@ def Gaussian(x,cenwave,sigma,ampl):
 
     \f$ Gauss = \frac{amplitude}{sigma \sqrt{2\pi}}e^{-\frac{1}{2} \left(\frac{x-cenwave}{sigma}\right)^2}\f$
     '''
-    Gauss = ampl/(sigma*np.sqrt(2*np.pi))*np.exp(-0.5*np.power((x-cenwave)/width,2))
+    gauss = ampl/(sigma*np.sqrt(2*np.pi))*np.exp(-0.5*np.power((x-cenwave)/sigma,2))
 
-    return Gauss
+    return gauss
 
 def gauss_hermite(x,cenwave,sigma,amplitude,h3,h4,h5,h6)
 
@@ -34,6 +30,7 @@ def gauss_hermite(x,cenwave,sigma,amplitude,h3,h4,h5,h6)
     ghermite=amplitude*alpha/sigma*(1+h3*H3+h4*H4+h5*H5+h6*H6)
 
     return ghermite
+
 class BroadLineComponent(Component):
     '''
     Broad Emission Line component
@@ -71,8 +68,8 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
     Gauss-Hermite moment: \f$ h_6 \f$	
     '''
 
-    def __init__(self, llab=None):
-        super(BroadLineComponent, self).__init__()
+    def __init__(self, pars=None):
+        super().__init__()
 
         self.model_parameter_names = list() # this may need to be defined as a method
         self.model_parameter_names.append("Gauss_cenwave")
@@ -86,7 +83,7 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
         self.model_parameter_names.append("GH_h5")
         self.model_parameter_names.append("GH_h6")
 
-        self.norm_wavelength=None		
+        self.norm_wavelength = None		
         self.min_cenwave = None
         self.max_cenwave = None
         self.min_width = None
@@ -98,31 +95,37 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
 
     @property
     def is_analytic(self):
-        return True 
+        """ 
+        Method that stores whether component is analytic or not
+        
+        Returns:
+            Bool (Bool): True if componenet is analytic.
+        """
+        return True
 
 
-    def initial_values(self, spectrum=None):
+    def initial_values(self, spectrum):
         '''
 
         Needs to sample from prior distribution.
         '''
 
         # call super() implementation
-        super(BroadLineComponent, self).initialize()
+        #super(BroadLineComponent, self).initialize()
 
         # [replace] calculate/define minimum and maximum values for each parameter.
-        light_speed=299792.458 #km/s
+        c = 299792.458 # km/s
         boxcar_width=5
 
-        self.min_cenwave =(-6000./light_speed+1.)*llab
-        self.max_cenwave =(6000./light_speed+1.)*llab
+        self.min_cenwave = (-6000./c+1.)*llab
+        self.max_cenwave = (6000./c+1.)*llab
 
         Gauss_cenwave_init = np.random.uniform(low=self.min_cenwave, high=self.max_cenwave)
 
         GH_cenwave_init = np.random.uniform(low=self.min_cenwave, high=self.max_cenwave)
 
         self.min_width = 0.
-        self.max_width =(12000./light_speed+1.)*llab
+        self.max_width =(12000./c+1.)*llab
 
         Gauss_width_init = np.random.uniform(low=self.min_width, high=self.max_width)
 
