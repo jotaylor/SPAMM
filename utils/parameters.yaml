@@ -12,7 +12,14 @@ global:
     flux_unit: "erg cm-2 s-1 AA-1"
     wl_unit: "AA"
 
-emission_lines: ""
+narrow_lines:
+    boxcar_width: 5
+    width_min: 10. # km/s
+    width_max: 500. # km/s
+    amp_min: 0.
+    amp_max: "max_flux" #max_flux or fnw
+    center_size: 20
+    wavelengths: [4830, 6800, 3000]  # Replace with your wavelengths
 
 ## Host Galaxy ##
 host_galaxy:
@@ -33,7 +40,7 @@ boxcar_width: 5
 nuclear_continuum:
     boxcar_width: 5
     broken_pl: False
-    pl_slope_min: -3.
+    pl_slope_min: 0.
     pl_slope_max: 3.
     pl_norm_min: 0.
     pl_norm_max: "max_flux" #max_flux or fnw
