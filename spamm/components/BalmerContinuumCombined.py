@@ -33,11 +33,12 @@ class BalmerCombined(Component):
 
     """
     Model of the combined BalmerContinuum (BC) based on Grandi et
-    al. (1982) and Kovacevic & Popovic (2014).It contains two components: an analytical 
-    function to describe optically thick clouds with a uniform temperature for wavelength <3646A
-    and the sum of higher order Balmer lines which merge into a pseudo-continuum for wavelength >=3646A.
+    al. (1982) and Kovacevic & Popovic (2014). It contains two components: an analytical 
+    function to describe optically thick clouds with a uniform temperature for wavelength <=3646A
+    and the sum of higher order Balmer lines which merge into a pseudo-continuum for wavelength >3646A.
     The resulting flux is therefore given by the combination of these two components, here BC_flux + BpC_flux. 
-    When initialising set which components to use"""
+    When initialising set which components to use
+    """
 
 
     def __init__(self, pars=None, BalmerContinuum=False, BalmerPseudocContinuum=False):
@@ -55,7 +56,7 @@ class BalmerCombined(Component):
         self.model_parameter_names.append("bc_norm")
         self.model_parameter_names.append("bc_Te")
         self.model_parameter_names.append("bc_tauBE")
-        # paramters for the lines
+        # parameters for the lines
         self.model_parameter_names.append("bc_loffset")
         self.model_parameter_names.append("bc_lwidth")
         self.model_parameter_names.append("bc_logNe")
@@ -134,7 +135,7 @@ class BalmerCombined(Component):
 #                        high=self.lscale_max)
 
 
-        return [normalization_init, Te_init, tauBE_init,loffset_init,lwidth_init,logNe_init]#,lscale_init]
+        return [normalization_init, Te_init, tauBE_init, loffset_init, lwidth_init, logNe_init] #,lscale_init]
 
 #-----------------------------------------------------------------------------#
 
@@ -203,47 +204,59 @@ class BalmerCombined(Component):
     
     #TODO add convolution function to utils
     
-    def log_conv(self,wavelength, orig_flux, width_lines): 
-        
+    def log_conv(self, wavelength, orig_flux, width_lines): 
         """
         Perform convolution in log space. 
         
+        This method convolves the input spectrum with a Gaussian kernel in logarithmic wavelength space. 
+        This is equivalent to performing the convolution in velocity space with a kernel that has a 
+        constant width in terms of velocity.
+        
         Args:
-            wavelength (): wavelength of original spectrum
-            orig_flux (): Flux of spectrum before convolution
-            width_lines (): width of the lines wanted in v/c 
+            wavelength (numpy.ndarray): Wavelength array of the original spectrum.
+            orig_flux (numpy.ndarray): Flux array of the spectrum before convolution.
+            width_lines (float): Desired width of the lines in units of v/c.
         
         Returns:
-            array (array):
+            orig_wl (numpy.ndarray): Convolved spectrum rebinned back to the original wavelength array.
         """
         
-        # Calculates convolution with lwidth in log wavelength space, 
-        # which is equivalent to uniform in velocity space.
+        # Convert the wavelength to logarithmic scale
         ln_wave  = np.log(wavelength)
-        ln_wavenew = np.r_[ln_wave.min():ln_wave.max():1j*ln_wave.size]
+        
+        # Create a new logarithmic wavelength array with the same range but uniform grid
+        ln_wavenew = np.linspace(ln_wave.min(), ln_wave.max(), ln_wave.size)
         ln_wavenew[0]  = ln_wave[0]
         ln_wavenew[-1] = ln_wave[-1]
         
-        #rebin spectrum in equally spaced log wavelengths
+        # Rebin the original spectrum onto the new logarithmic wavelength grid
         if self.fast_interp:
             flux_rebin = np.interp(ln_wavenew, ln_wave, orig_flux)
         else:
             flux_rebin = rebin_spec(ln_wave, orig_flux, ln_wavenew)
         
+        # Calculate the width of the Gaussian kernel in terms of the new grid spacing
         dpix = width_lines/(ln_wavenew[1] - ln_wavenew[0])
+        
+        # Create the Gaussian kernel over a range of -5*dpix to 5*dpix
         kernel_width = round(5*dpix)
-        kernel_x = np.r_[-kernel_width:kernel_width+1]
+        kernel_x = np.arange(-kernel_width, kernel_width+1)
         kernel  = np.exp(- (kernel_x)**2/(dpix)**2)
+        
+        # Normalize the kernel so that its total area is 1
         kernel /= abs(np.sum(kernel))
         
-        flux_conv = np.convolve(flux_rebin, kernel,mode='same')
+        # Convolve the rebinned spectrum with the kernel
+        flux_conv = np.convolve(flux_rebin, kernel, mode='same')
         assert flux_conv.size == wavelength.size
-        #rebin spectrum to original wavelength values
+
+        # Rebin the convolved spectrum back to the original wavelength grid
         if self.fast_interp:
             orig_wl = np.interp(wavelength, np.exp(ln_wavenew), flux_conv)
         else:
             orig_wl = rebin_spec(np.exp(ln_wavenew), flux_conv, wavelength)
         
+        # Return the convolved spectrum
         return orig_wl
         
 #-----------------------------------------------------------------------------#
@@ -313,19 +326,18 @@ class BalmerCombined(Component):
         """
 
         line_orders = np.arange(self.inputpars["bc_lines_min"],self.inputpars["bc_lines_max"]) 
-        lcenter =  self.balmerseries(line_orders)
+        lcenter = self.balmerseries(line_orders)
     
         lcenter -= shift*lcenter
         LL = sp_wavel - lcenter.reshape(lcenter.size, 1) #(is this simply x-x0)
-        lwidth =  width*lcenter.reshape(lcenter.size,1)
+        lwidth = width*lcenter.reshape(lcenter.size, 1)
         ltype = self.inputpars["bc_line_type"]
         if ltype == "gaussian":
-            lines = np.exp(- LL**2 /lwidth**2)
+            lines = np.exp(-LL**2 / lwidth**2)
         elif ltype == "lorentzian":
             lines = lwidth / (LL**2 + lwidth**2)
         else:
-            raise ValueError("Variable 'ltype' ({0}) must be 'gaussian' or 'lorentzian'".
-                             format(ltype))
+            raise ValueError(f"Variable 'ltype' ({ltype}) must be 'gaussian' or 'lorentzian'")
     
         lflux = self.balmer_ratio(n_e,line_orders,T)
 
@@ -432,8 +444,10 @@ class BalmerCombined(Component):
         lwidth        = parameters[self.parameter_index("bc_lwidth")]
         logNe         = parameters[self.parameter_index("bc_logNe")]
         
+        c_kms = c.to("km/s")
+
         # Wavelength at which Balmer components merge.
-        edge_wl = balmer_edge*(1 - loffset/c.value)
+        edge_wl = balmer_edge*(1 - loffset/c_kms.value)
 
     #TODO need WL as quantity objects for better astropy functionality
         # Create a blackbody model with the temperature Te
@@ -446,10 +460,11 @@ class BalmerCombined(Component):
         
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms
-        tau = tauBE*(spectrum.spectral_axis/balmer_edge)**3
+        
+        tau = tauBE*(spectrum.spectral_axis / balmer_edge)**3
         absorption = 1 - np.exp(-tau)
         bc_flux = absorption * blackbody
-        bc_flux = self.log_conv(spectrum.spectral_axis,bc_flux,lwidth/c.value)
+        bc_flux = self.log_conv(spectrum.spectral_axis, bc_flux, lwidth/c_kms.value)
     
         norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
         fnorm = bc_flux[norm_index]
