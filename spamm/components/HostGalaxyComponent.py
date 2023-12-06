@@ -182,9 +182,9 @@ class HostGalaxyComponent(Component):
                                           np.log(template.spectral_axis),
                                           template.flux)
             else:
-                log_host_flux = rebin_spec(np.log(template.spectral_axis), 
-                                           template.flux, 
-                                           log_host_wl)
+                log_host_flux = rebin_spec(log_host_wl,
+                                           np.log(template.spectral_axis),
+                                           template.flux)
 
             log_host_spectrum = Spectrum(spectral_axis=log_host_wl, flux=log_host_flux, flux_error=log_host_flux)
             self.log_host.append(log_host_spectrum)
@@ -194,9 +194,9 @@ class HostGalaxyComponent(Component):
                                       template.spectral_axis,
                                       template.flux)
             else:
-                host_flux = rebin_spec(template.spectral_axis,
-                                       template.flux,
-                                       data_spectrum.spectral_axis)
+                host_flux = rebin_spec(data_spectrum.spectral_axis,
+                                       template.spectral_axis,
+                                       template.flux)
             self.interp_host.append(host_flux)
 
             # This gives us the flux of the template at the normalization
@@ -331,9 +331,9 @@ class HostGalaxyComponent(Component):
                                            self.log_host[i].spectral_axis,
                                            log_conv_host_flux)
             else:
-                conv_host_flux = rebin_spec(self.log_host[i].spectral_axis,
-                                            log_conv_host_flux,
-                                            np.log(spectrum.spectral_axis))
+                conv_host_flux = rebin_spec(np.log(spectrum.spectral_axis),
+                                            self.log_host[i].spectral_axis,
+                                            log_conv_host_flux)
             conv_host_nw = np.median(self.host_gal[i].spectral_axis)
             conv_host_norm_flux = np.interp(conv_host_nw, spectrum.spectral_axis, conv_host_flux)
             spectrum_norm_flux = np.interp(conv_host_nw, spectrum.spectral_axis, spectrum.flux)

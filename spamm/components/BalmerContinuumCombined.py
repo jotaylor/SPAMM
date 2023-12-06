@@ -218,7 +218,7 @@ class BalmerCombined(Component):
             width_lines (float): Desired width of the lines in units of v/c.
         
         Returns:
-            orig_wl (numpy.ndarray): Convolved spectrum rebinned back to the original wavelength array.
+            rebinned_flux (numpy.ndarray): Convolved spectrum rebinned back to the original wavelength array.
         """
         
         # Convert the wavelength to logarithmic scale
@@ -233,7 +233,7 @@ class BalmerCombined(Component):
         if self.fast_interp:
             flux_rebin = np.interp(ln_wavenew, ln_wave, orig_flux)
         else:
-            flux_rebin = rebin_spec(ln_wave, orig_flux, ln_wavenew)
+            flux_rebin = rebin_spec(ln_wavenew, ln_wave, orig_flux)
         
         # Calculate the width of the Gaussian kernel in terms of the new grid spacing
         dpix = width_lines/(ln_wavenew[1] - ln_wavenew[0])
@@ -241,23 +241,23 @@ class BalmerCombined(Component):
         # Create the Gaussian kernel over a range of -5*dpix to 5*dpix
         kernel_width = round(5*dpix)
         kernel_x = np.arange(-kernel_width, kernel_width+1)
-        kernel  = np.exp(- (kernel_x)**2/(dpix)**2)
+        kernel_y = np.exp(-(kernel_x)**2 / (dpix)**2)
         
         # Normalize the kernel so that its total area is 1
-        kernel /= abs(np.sum(kernel))
+        kernel_y /= abs(np.sum(kernel_y))
         
         # Convolve the rebinned spectrum with the kernel
-        flux_conv = np.convolve(flux_rebin, kernel, mode='same')
+        flux_conv = np.convolve(flux_rebin, kernel_y, mode='same')
         assert flux_conv.size == wavelength.size
 
         # Rebin the convolved spectrum back to the original wavelength grid
         if self.fast_interp:
-            orig_wl = np.interp(wavelength, np.exp(ln_wavenew), flux_conv)
+            rebinned_flux = np.interp(wavelength, np.exp(ln_wavenew), flux_conv)
         else:
-            orig_wl = rebin_spec(np.exp(ln_wavenew), flux_conv, wavelength)
+            rebinned_flux = rebin_spec(wavelength, np.exp(ln_wavenew), flux_conv)
         
         # Return the convolved spectrum
-        return orig_wl
+        return rebinned_flux
         
 #-----------------------------------------------------------------------------#
     
@@ -358,7 +358,9 @@ class BalmerCombined(Component):
         """
         Analytic model of the high-order Balmer lines, making up the Pseudo continuum near 3666 A.
     
-        Line profiles are Gaussians (for now).  The line ratios are fixed to Storey &^ Hummer 1995, case B, n_e = 10^10 cm^-3.
+        Line profiles are Gaussians (for now).  The line ratios are fixed to Storey &^ Hummer 1995,
+        case B, n_e = 10^10 cm^-3.
+        
         This component has 3 parameters:
         
         parameter1 : The flux normalization near the Balmer Edge lambda = 3666 A, F(3666)
@@ -390,9 +392,10 @@ class BalmerCombined(Component):
         edge_wl = balmer_edge*(1 - loffset/c_kms.value)
         
         n_e =10.**logNe
-        bpc_flux = self.makelines(spectrum.spectral_axis,
-                 Te,n_e,
-                 loffset/c_kms.value,lwidth/c_kms.value)
+        bpc_flux = self.makelines(spectrum.spectral_axis, 
+                                  Te,n_e, 
+                                  loffset/c_kms.value, 
+                                  lwidth/c_kms.value)
                  
         
         norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
@@ -420,8 +423,8 @@ class BalmerCombined(Component):
         parameter1 : The flux normalization at the Balmer Edge lambda = 3646 A, F(3646)
         parameter2 : The electron temperture T_e for the Planck function B(T_e)
         parameter3 : The optical depth at the Balmer edge, tau(3646)
-        parameter4 : A shift of the line centroids
-        parameter5 : The width of the Gaussians
+        parameter4 : A shift of the line centroids (km/s)
+        parameter5 : The width of the Gaussians (km/s)
     
     
         note that all constants, and the units, are absorbed in the
@@ -442,7 +445,7 @@ class BalmerCombined(Component):
         tauBE         = parameters[self.parameter_index("bc_tauBE")]
         loffset       = parameters[self.parameter_index("bc_loffset")]
         lwidth        = parameters[self.parameter_index("bc_lwidth")]
-        logNe         = parameters[self.parameter_index("bc_logNe")]
+        #logNe         = parameters[self.parameter_index("bc_logNe")]
         
         c_kms = c.to("km/s")
 
@@ -455,8 +458,6 @@ class BalmerCombined(Component):
 
         # Evaluate the model at the wavelengths in spectrum.spectral_axis
         blackbody = blackbody_model(spectrum.spectral_axis)
-        # commented below out, because its deprecated, and replaced with above
-        #blackbody = blackbody_lambda(spectrum.spectral_axis, Te)
         
         #calculates [1 - e^(-tau)] (optically-thin emitting slab)
         #assumes angstroms

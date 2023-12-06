@@ -177,12 +177,15 @@ class FeComponent(Component):
 #                                                         template.flux,
 #                                                         equal_log_bins)
             if self.fast_interp:
-                log_fe_flux = np.interp(log_fe_wl, np.log(template.spectral_axis), 
-                                        template.flux, left=0, right=0)
+                log_fe_flux = np.interp(log_fe_wl, 
+                                        np.log(template.spectral_axis), 
+                                        template.flux, 
+                                        left=0, 
+                                        right=0)
             else:
-                log_fe_flux = rebin_spec(np.log(template.spectral_axis),
-                                         template.flux,
-                                         log_fe_wl)
+                log_fe_flux = rebin_spec(log_fe_wl, 
+                                         np.log(template.spectral_axis), 
+                                         template.flux)
 
             
             log_fe_spectrum = Spectrum(spectral_axis=log_fe_wl, flux=log_fe_flux, 
@@ -196,11 +199,12 @@ class FeComponent(Component):
                 fe_flux = np.interp(data_spectrum.spectral_axis, 
                                     template.spectral_axis,
                                     template.flux,
-                                    left=0, right=0)
+                                    left=0, 
+                                    right=0)
             else:
-                fe_flux = rebin_spec(template.spectral_axis,
-                                     template.flux,
-                                     data_spectrum.spectral_axis)
+                fe_flux = rebin_spec(data_spectrum.spectral_axis, 
+                                     template.spectral_axis,
+                                     template.flux)
 
             self.interp_fe.append(fe_flux)
             
@@ -317,9 +321,9 @@ class FeComponent(Component):
                                          left=0,
                                          right=0)
             else:
-                conv_fe_flux = rebin_spec(self.log_fe[i].spectral_axis,
-                                     log_conv_fe_flux,
-                                     np.log(spectrum.spectral_axis))
+                conv_fe_flux = rebin_spec(np.log(spectrum.spectral_axis),
+                                          self.log_fe[i].spectral_axis,
+                                          log_conv_fe_flux)
             
             conv_fe_nw = np.median(self.fe_templ[i].spectral_axis)
             conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.spectral_axis, conv_fe_flux) 
