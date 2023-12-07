@@ -173,7 +173,7 @@ class NuclearContinuumComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    def flux(self, spectrum, parameters=None):
+    def flux(self, spectrum, params=None):
         """
         Compute the flux for this component for a given wavelength grid
         and parameters. Use the initial parameters if none are specified.
@@ -186,16 +186,16 @@ class NuclearContinuumComponent(Component):
             flux (): Flux of the componenet.
         """
         
-        assert len(parameters) == len(self.model_parameter_names), \
-            "The wrong number of indices were provided: {0}".format(parameters)
+        assert len(params) == len(self.model_parameter_names), \
+            "The wrong number of indices were provided: {0}".format(params)
         
-        norm = parameters[self.parameter_index("norm_PL")]
-        slope1 = parameters[self.parameter_index("slope1")]
+        norm = params[self.parameter_index("norm_PL")]
+        slope1 = params[self.parameter_index("slope1")]
         if not self.broken_pl:   
             PL = PowerLaw1D(norm, spectrum.norm_wavelength, slope1)  
         else:
-            x_break = parameters[self.parameter_index("wave_break")]
-            slope2 = parameters[self.parameter_index("slope2")]
+            x_break = params[self.parameter_index("wave_break")]
+            slope2 = params[self.parameter_index("slope2")]
             PL = BrokenPowerLaw1D(norm, x_break, slope1, slope2)
         flux = PL(spectrum.spectral_axis)
         return flux

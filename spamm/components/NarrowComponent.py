@@ -86,7 +86,7 @@ class NarrowComponent(Component):
 
         return ln_priors
     
-    def flux(self, spectrum, parameters):
+    def flux(self, spectrum, params):
         """
         Compute the flux for this component for a given wavelength grid
         and parameters. Use the initial parameters if none are specified.
@@ -99,14 +99,14 @@ class NarrowComponent(Component):
             total_flux (numpy array): The input spectrum with the Gaussian emission lines added.
         """
         
-        assert len(parameters) == len(self.model_parameter_names), \
-            f"The wrong number of indices were provided: {parameters}"
+        assert len(params) == len(self.model_parameter_names), \
+            f"The wrong number of indices were provided: {params}"
         
         total_flux = np.zeros(len(spectrum.spectral_axis))
-        width = parameters[self.parameter_index('width')]
+        width = params[self.parameter_index('width')]
         for i in range(len(self.wavelengths)):
-            amp = parameters[self.parameter_index(f'amp_{i+1}')]
-            center = parameters[self.parameter_index(f'center_{i+1}')]
+            amp = params[self.parameter_index(f'amp_{i+1}')]
+            center = params[self.parameter_index(f'center_{i+1}')]
             gaussian = Gaussian1D(amplitude=amp, mean=center, stddev=width)
             total_flux += gaussian(spectrum.spectral_axis)
         return total_flux

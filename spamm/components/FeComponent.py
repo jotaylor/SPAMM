@@ -254,7 +254,7 @@ class FeComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    def flux(self, spectrum, parameters):
+    def flux(self, spectrum, params):
         """
         Returns the flux for this component for a given wavelength grid
         and parameters.  The parameters should be a list of length 
@@ -272,10 +272,10 @@ class FeComponent(Component):
         norm_wl = spectrum.norm_wavelength
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
-        width = parameters[self.parameter_index("fe_width")]
+        width = params[self.parameter_index("fe_width")]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis)) 
         for i in range(len(self.fe_templ)):	
-            norm_i = parameters[i]
+            norm_i = params[i]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 

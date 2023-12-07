@@ -253,7 +253,7 @@ class HostGalaxyComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    def flux(self, spectrum, parameters):
+    def flux(self, spectrum, params):
         """
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
@@ -282,12 +282,12 @@ class HostGalaxyComponent(Component):
         # print("parameters:",  parameters)
         # print(len(parameters), len(parameters))
         # print("self.parameter_index('hg_stellar_disp')", self.parameter_index('hg_stellar_disp'))
-        stellar_disp = parameters[self.parameter_index("hg_stellar_disp")]
+        stellar_disp = params[self.parameter_index("hg_stellar_disp")]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis))
 
             
         for i in range(len(self.host_gal)):
-            norm_i = parameters[i]
+            norm_i = params[i]
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
             # velocity width. Compare smoothing (v/c) to bin size, and that 

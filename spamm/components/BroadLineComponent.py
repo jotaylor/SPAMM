@@ -251,13 +251,13 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
 
         return ln_priors
 
-    def flux(self, wavelengths=None, parameters=None):
+    def flux(self, wavelengths=None, params=None):
         '''
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
         '''
-        assert len(parameters) == len(self.model_parameter_names), ("The wrong number " +
-                                                                "of indices were provided: {0}".format(parameters))
+        assert len(params) == len(self.model_parameter_names), ("The wrong number " +
+                                                                "of indices were provided: {0}".format(params))
 
         flux = gaussian(spectrum.spectral_axis,Gauss_cenwave,Gauss_width,Gauss_amplitude)+\
         gauss_hermite(spectrum.spectral_axis,GH_cenwave,GH_width,GH_amplitude,GH_h3,GH_h4,\
