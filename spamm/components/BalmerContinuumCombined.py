@@ -9,6 +9,8 @@ from scipy.fftpack.helper import next_fast_len
 import matplotlib.pyplot as plt
 from astropy.constants import c, h, k_B, Ryd
 from astropy import units as u
+import timeit
+import pickle
 
 # replacing this with astropy's blackbody function
 #from astropy.modeling.blackbody import blackbody_lambda
@@ -40,7 +42,6 @@ class BalmerCombined(Component):
     When initialising set which components to use
     """
 
-
     def __init__(self, pars=None, BalmerContinuum=False, BalmerPseudocContinuum=False):
         super().__init__()
         
@@ -51,6 +52,7 @@ class BalmerCombined(Component):
 
         self.model_parameter_names = []
         self.name = "Balmer"
+        self.coeff = pickle.load(open('../data/SH95recombcoeff/coeff.interpers.pickle','rb'), encoding="latin1")
 
         # parameters for the continuum
         self.model_parameter_names.append("bc_norm")
@@ -141,17 +143,23 @@ class BalmerCombined(Component):
 
     def ln_priors(self, params):
         """
-        Return a list of the ln of all of the priors.
-        
-        @param params
+        Calculate the natural logarithm of priors for each parameter.
+
+        This function checks if each parameter is within its allowed range. 
+        If it is, the function appends 0 (since ln(1) = 0) to the list of priors. 
+        If it's not, it appends negative infinity (since ln(0) = -inf).
+
+        Parameters:
+        params (list): List of parameters to check. 
+        The order is: normalization, Te, tauBE, loffset, lwidth, logNe.
+
+        Returns:
+        list: The natural logarithm of the prior for each parameter.
         """
-        
-        # need to return parameters as a list in the correct order
+        # Initialize an empty list to store the natural logarithm of priors
         ln_priors = list()
-        
-        
-        
-        #get the parameters
+
+        # Extract the parameters from the input list using their respective indices
         normalization = params[self.parameter_index("bc_norm")]
         Te            = params[self.parameter_index("bc_Te")]
         tauBE         = params[self.parameter_index("bc_tauBE")]
@@ -160,9 +168,9 @@ class BalmerCombined(Component):
         logNe         = params[self.parameter_index("bc_logNe")]
 #        lscale        = params[self.parameter_index("lscale")]
         
-
-        
-        #Flat priors, appended in order
+        # Check each parameter against its allowed range
+        # If a parameter is within its range, append 0 to ln_priors (since ln(1) = 0)
+        # If a parameter is outside its range, append -inf to ln_priors (since ln(0) = -inf)
         if self.normalization_min < normalization < self.normalization_max:
             ln_priors.append(0)
         else:
@@ -198,45 +206,45 @@ class BalmerCombined(Component):
 #        else:
 #            ln_priors.append(-np.inf)
 
+        # Return the list of natural logarithm of priors
         return ln_priors
         
 #-----------------------------------------------------------------------------#
     
     #TODO add convolution function to utils
     
-    def log_conv(self, wavelength, orig_flux, width_lines): 
+    def log_conv(self, wave, flux, line_width):
         """
         Perform convolution in log space. 
-        
+
         This method convolves the input spectrum with a Gaussian kernel in logarithmic wavelength space. 
         This is equivalent to performing the convolution in velocity space with a kernel that has a 
         constant width in terms of velocity.
         
         Args:
-            wavelength (numpy.ndarray): Wavelength array of the original spectrum.
-            orig_flux (numpy.ndarray): Flux array of the spectrum before convolution.
-            width_lines (float): Desired width of the lines in units of v/c.
+            wave (numpy.ndarray): Wavelength array of the original spectrum.
+            flux (numpy.ndarray): Flux array of the spectrum before convolution.
+            line_width (float): Desired width of the lines in units of v/c.
         
         Returns:
             rebinned_flux (numpy.ndarray): Convolved spectrum rebinned back to the original wavelength array.
         """
-        
         # Convert the wavelength to logarithmic scale
-        ln_wave  = np.log(wavelength)
+        ln_wave = np.log(wave)
         
         # Create a new logarithmic wavelength array with the same range but uniform grid
-        ln_wavenew = np.linspace(ln_wave.min(), ln_wave.max(), ln_wave.size)
-        ln_wavenew[0]  = ln_wave[0]
-        ln_wavenew[-1] = ln_wave[-1]
+        ln_wave_uniform = np.linspace(ln_wave.min(), ln_wave.max(), ln_wave.size)
+        ln_wave_uniform[0] = ln_wave[0]
+        ln_wave_uniform[-1] = ln_wave[-1]
         
         # Rebin the original spectrum onto the new logarithmic wavelength grid
         if self.fast_interp:
-            flux_rebin = np.interp(ln_wavenew, ln_wave, orig_flux)
+            rebinned_flux = np.interp(ln_wave_uniform, ln_wave, flux)
         else:
-            flux_rebin = rebin_spec(ln_wavenew, ln_wave, orig_flux)
+            rebinned_flux = rebin_spec(ln_wave_uniform, ln_wave, flux)
         
         # Calculate the width of the Gaussian kernel in terms of the new grid spacing
-        dpix = width_lines/(ln_wavenew[1] - ln_wavenew[0])
+        dpix = line_width/(ln_wave_uniform[1] - ln_wave_uniform[0])
         
         # Create the Gaussian kernel over a range of -5*dpix to 5*dpix
         kernel_width = round(5*dpix)
@@ -247,17 +255,17 @@ class BalmerCombined(Component):
         kernel_y /= abs(np.sum(kernel_y))
         
         # Convolve the rebinned spectrum with the kernel
-        flux_conv = np.convolve(flux_rebin, kernel_y, mode='same')
-        assert flux_conv.size == wavelength.size
+        flux_conv = np.convolve(rebinned_flux, kernel_y, mode='same')
+        assert flux_conv.size == wave.size
 
         # Rebin the convolved spectrum back to the original wavelength grid
         if self.fast_interp:
-            rebinned_flux = np.interp(wavelength, np.exp(ln_wavenew), flux_conv)
+            rebinned_flux_conv = np.interp(wave, np.exp(ln_wave_uniform), flux_conv)
         else:
-            rebinned_flux = rebin_spec(wavelength, np.exp(ln_wavenew), flux_conv)
+            rebinned_flux_conv = rebin_spec(wave, np.exp(ln_wave_uniform), flux_conv)
         
         # Return the convolved spectrum
-        return rebinned_flux
+        return rebinned_flux_conv
         
 #-----------------------------------------------------------------------------#
     
@@ -278,39 +286,34 @@ class BalmerCombined(Component):
     
 #-----------------------------------------------------------------------------#
     
-    def balmer_ratio(self, n_e, line_orders ,T): # 
+    def balmer_ratio(self, n_e, line_orders, T): # 
         """
-        Calculate the ratio between Balmer lines.
-        (Intensity values from Storey and Hammer 1`995 results and Kovacevic et al 2014)
-        
+        Calculate the ratio between Balmer lines based on electron density and temperature.
+
+        This function estimates the relative intensity values for lines 3-400 using results
+        from Storey and Hammer 1995 and Kovacevic et al 2014. The ratios are calculated for
+        a given electron density and temperature, and for a specified range of Balmer lines.
+
         Args:
-            n_e (float): Electron density.
-            T (): Electron Temperature
-            lines (int array): array of lines to include.
-    
+            n_e (float): Electron density in cm^-3.
+            T (float): Electron temperature in Kelvin.
+            line_orders (numpy array): Array of integers representing the Balmer lines to include. For example, an array [3, 4, 5] would represent H-gamma, H-delta, and H-epsilon.
+
         Returns:
-            array (array): Ratio of Balmer lines, with Htheta (N=10 -> N=2) first.
+            flux_ratios (numpy array): Array of calculated Balmer line ratios. The ratios are ordered from Htheta (N=10 -> N=2) first to the maximum line order specified in the input.
         """
-        """
-        Estimate relative intensity values for lines 3-400 using from 
-        Kovacevic et al 2014.
-        """ 
-        import pickle
-        
         maxline = int(line_orders.max())
         minline = int(line_orders.min())
-        flux_ratios = np.zeros(maxline-minline+1)
-        n = np.arange(minline,maxline+1)
+        flux_ratios = np.zeros(maxline - minline + 1)
+        n = np.arange(minline, maxline+1)
     
-        coeff = pickle.load(open('../Data/SH95recombcoeff/coeff.interpers.pickle','rb'),
-                            encoding="latin1")
-        coef_use = [coef_interp(n_e, T) for coef_interp in coeff] 
-    
+        coef_use = [coef_interp(n_e, T) for coef_interp in self.coeff] 
+        print(coef_use)
         for i in n:
             if i <=50:
-                flux_ratios[i-minline] = coef_use[-i+2]
+                flux_ratios[i - minline] = coef_use[-i+2]
             else:
-                flux_ratios[i-minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k.value*T))
+                flux_ratios[i - minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k.value*T))
         return flux_ratios
     
 #-----------------------------------------------------------------------------#
@@ -325,13 +328,15 @@ class BalmerCombined(Component):
             width (int or float): Width of emission line. 
         """
 
-        line_orders = np.arange(self.inputpars["bc_lines_min"],self.inputpars["bc_lines_max"]) 
+        line_orders = np.arange(self.inputpars["bc_lines_min"], self.inputpars["bc_lines_max"]) 
         lcenter = self.balmerseries(line_orders)
     
         lcenter -= shift*lcenter
-        LL = sp_wavel - lcenter.reshape(lcenter.size, 1) #(is this simply x-x0)
-        lwidth = width*lcenter.reshape(lcenter.size, 1)
+        lcenter_reshaped = lcenter.reshape(lcenter.size, 1)
+        LL = sp_wavel - lcenter_reshaped #(is this simply x-x0)
+        lwidth = width * lcenter_reshaped
         ltype = self.inputpars["bc_line_type"]
+
         if ltype == "gaussian":
             lines = np.exp(-LL**2 / lwidth**2)
         elif ltype == "lorentzian":
@@ -339,10 +344,10 @@ class BalmerCombined(Component):
         else:
             raise ValueError(f"Variable 'ltype' ({ltype}) must be 'gaussian' or 'lorentzian'")
     
-        lflux = self.balmer_ratio(n_e,line_orders,T)
+        lflux = self.balmer_ratio(n_e, line_orders, T)
 
-        scale = np.repeat(lflux.reshape(lflux.size,1),lines.shape[1],axis=1)
-
+        #scale = np.repeat(lflux.reshape(lflux.size,1), lines.shape[1], axis=1)
+        scale = lflux[:, np.newaxis]
 
         lines *= scale
     
@@ -354,7 +359,7 @@ class BalmerCombined(Component):
        
 #-----------------------------------------------------------------------------#
     
-    def BpC_flux(self, spectrum=None, parameters=None):
+    def BpC_flux(self, spectrum=None, params=None):
         """
         Analytic model of the high-order Balmer lines, making up the Pseudo continuum near 3666 A.
     
@@ -380,26 +385,26 @@ class BalmerCombined(Component):
         note that all constants, and the units, are absorbed in the
         parameter F(3656 A).  
         """
-        normalization = parameters[self.parameter_index("bc_norm")]
-        Te            = parameters[self.parameter_index("bc_Te")]
-        tauBE         = parameters[self.parameter_index("bc_tauBE")]
-        loffset       = parameters[self.parameter_index("bc_loffset")]
-        lwidth        = parameters[self.parameter_index("bc_lwidth")]
-        logNe         = parameters[self.parameter_index("bc_logNe")]
-#        lscale         = parameters[self.parameter_index("lscale")]
+        normalization = params[self.parameter_index("bc_norm")]
+        Te            = params[self.parameter_index("bc_Te")]
+        tauBE         = params[self.parameter_index("bc_tauBE")]
+        loffset       = params[self.parameter_index("bc_loffset")]
+        lwidth        = params[self.parameter_index("bc_lwidth")]
+        logNe         = params[self.parameter_index("bc_logNe")]
+#        lscale         = params[self.parameter_index("lscale")]
     
         c_kms = c.to("km/s")
         edge_wl = balmer_edge*(1 - loffset/c_kms.value)
         
         n_e =10.**logNe
         bpc_flux = self.makelines(spectrum.spectral_axis, 
-                                  Te,n_e, 
+                                  Te,
+                                  n_e, 
                                   loffset/c_kms.value, 
                                   lwidth/c_kms.value)
                  
         
         norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
-        
         
         fnorm = bpc_flux[norm_index]
         bpc_flux[spectrum.spectral_axis <= spectrum.spectral_axis[norm_index]] = 0
@@ -410,7 +415,7 @@ class BalmerCombined(Component):
     
 #-----------------------------------------------------------------------------#
     
-    def BC_flux(self, spectrum=None, parameters=None):
+    def BC_flux(self, spectrum=None, params=None):
         """
         Analytic model of the BalmerContinuum (BC) based on Grandi et
         al. (1982) and Kovacevic & Popovic (2013).
@@ -440,12 +445,12 @@ class BalmerCombined(Component):
         p5 :  Determined from Hbeta, if applicable.            
         """
         #get the parameters
-        normalization = parameters[self.parameter_index("bc_norm")]
-        Te            = parameters[self.parameter_index("bc_Te")]
-        tauBE         = parameters[self.parameter_index("bc_tauBE")]
-        loffset       = parameters[self.parameter_index("bc_loffset")]
-        lwidth        = parameters[self.parameter_index("bc_lwidth")]
-        #logNe         = parameters[self.parameter_index("bc_logNe")]
+        normalization = params[self.parameter_index("bc_norm")]
+        Te            = params[self.parameter_index("bc_Te")]
+        tauBE         = params[self.parameter_index("bc_tauBE")]
+        loffset       = params[self.parameter_index("bc_loffset")]
+        lwidth        = params[self.parameter_index("bc_lwidth")]
+        #logNe         = params[self.parameter_index("bc_logNe")]
         
         c_kms = c.to("km/s")
 
@@ -479,22 +484,28 @@ class BalmerCombined(Component):
 #-----------------------------------------------------------------------------#
 
     
-    def flux(self, spectrum=None, parameters=None):
+    def flux(self, spectrum=None, params=None):
         """
         Returns the flux for this component for a given wavelength grid
         and parameters. 
         """
-        
-        
         if self.BC and self.BpC:
-            flux_BC = self.BC_flux(spectrum=spectrum, parameters=parameters)
-            flux_BpC = self.BpC_flux(spectrum=spectrum, parameters=parameters)
-            flux_est=[flux_BC[i]+flux_BpC[i] for i in range(len(flux_BpC))]
+            #start_time = timeit.default_timer()
+            flux_BC = self.BC_flux(spectrum=spectrum, params=params)
+            #end_time = timeit.default_timer()
+            #print(f"Execution time (BC): {end_time - start_time} seconds")
+
+            #start_time = timeit.default_timer()
+            flux_BpC = self.BpC_flux(spectrum=spectrum, params=params)
+            #end_time = timeit.default_timer()
+            #print(f"Execution tim (BpC): {end_time - start_time} seconds")
+
+            flux_est = flux_BC + flux_BpC
 
         else:
             if self.BC:
-                flux_est = self.BC_flux(spectrum=spectrum, parameters=parameters)
+                flux_est = self.BC_flux(spectrum=spectrum, params=params)
             if self.BpC:
-                flux_est = self.BpC_flux(spectrum=spectrum, parameters=parameters)
+                flux_est = self.BpC_flux(spectrum=spectrum, params=params)
                 
         return np.array(flux_est)
