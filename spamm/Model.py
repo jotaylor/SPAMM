@@ -157,10 +157,10 @@ def model_flux(params, data_spectrum, components):
         # Add the flux of each component to the model spectrum, 
         # except for extinction
         if component.name != "Extinction":
-            component_flux = component.flux(spectrum=data_spectrum, parameters=p)
+            component_flux = component.flux(spectrum=data_spectrum, params=p)
             model_spectrum_flux += component_flux
         else:
-            extinction = component.extinction(spectrum=data_spectrum, parameters=p)
+            extinction = component.extinction(spectrum=data_spectrum, params=p)
             model_spectrum_flux *= extinction
 
         # Move the offset by the number of parameters for this component
@@ -367,13 +367,20 @@ class Model(object):
         
         if self.parallel:
             with Pool() as pool:
-                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-                                                        log_prob_fn=wrapped_posterior, pool=pool)
-                self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                                     ndim=len(walkers_matrix[0]),
+                                                     log_prob_fn=wrapped_posterior,
+                                                     pool=pool)
+                self.sampler.run_mcmc(walkers_matrix, 
+                                      n_iterations, 
+                                      progress=True)
         else:
-            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, ndim=len(walkers_matrix[0]),
-                                                    log_prob_fn=wrapped_posterior)
-            self.sampler.run_mcmc(walkers_matrix, n_iterations, progress=True)
+            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                                 ndim=len(walkers_matrix[0]),
+                                                 log_prob_fn=wrapped_posterior)
+            self.sampler.run_mcmc(walkers_matrix, 
+                                  n_iterations, 
+                                  progress=True)
 
 #-----------------------------------------------------------------------------#
 
