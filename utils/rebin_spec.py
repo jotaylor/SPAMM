@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 
-from pysynphot import observation
-from pysynphot import spectrum as pysynphot_spec
-import numpy as np
-
-def rebin_spectrum(new_wave, old_wave, old_spec):
+def rebin_spec(new_wave, old_wave, old_spec):
     """
     Rebin a spectrum to new wavelengths.
 
@@ -19,6 +15,10 @@ def rebin_spectrum(new_wave, old_wave, old_spec):
     Reference: 
     http://www.astrobetter.com/blog/2013/08/12/python-tip-re-sampling-spectra-with-pysynphot/
     """
+
+    from pysynphot import observation
+    from pysynphot import spectrum as pysynphot_spec
+    import numpy as np
 
     # Create a source spectrum from the old wavelengths and spectrum
     source_spec = pysynphot_spec.ArraySourceSpectrum(wave=old_wave, 
