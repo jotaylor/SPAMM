@@ -308,7 +308,7 @@ class BalmerCombined(Component):
         n = np.arange(minline, maxline+1)
     
         coef_use = [coef_interp(n_e, T) for coef_interp in self.coeff] 
-        print(coef_use)
+        
         for i in n:
             if i <=50:
                 flux_ratios[i - minline] = coef_use[-i+2]
