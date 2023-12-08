@@ -90,7 +90,7 @@ class Component(ABC):
             assert True, "The method 'native_wavelength_grid' must be defined for {0}.".format(self.__class__.__name__)
 
     @abstractmethod
-    def flux(self, wavelengths=None, parameters=None):
+    def flux(self, wavelengths=None, params=None):
         pass
 
     def grid_spacing(self):

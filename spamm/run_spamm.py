@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import os
+# Set OMP_NUM_THREADS=1 to prevent NumPy's automatic parallelization
+# (which can interfere with emcee's parallelization). Recommended in emcee's documentation.
 os.environ["OMP_NUM_THREADS"] = "1"
-
 
 import gzip
 import dill as pickle
@@ -10,6 +11,7 @@ import datetime
 import numpy as np
 from astropy import units as u
 from specutils import Spectrum1D
+import timeit
 
 from utils.parse_pars import parse_pars
 from spamm.analysis import make_plots_from_pickle
@@ -31,37 +33,30 @@ ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_E
 def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500, 
           outdir=None, picklefile=None, comp_params=None, parallel=True):
     """
-    Args:
-        complist (list): A list with at least one component to model. 
-            Accepted component names are listed below. They are case insensitive:
-                - PL
-                - FE
-                - HOST
-                - BC
-                - BPC
-                - CALZETTI_EXT
-                - SMC_EXT
-                - MW_EXT
-                - AGN_EXT
-                - LMC_EXT
-        inspectrum (:obj:`spamm.Spectrum`, :obj:`specutils.Spectrum1D`, or tuple): 
-            A SPAMM Spectrum object, specutils Spectrum object, or a tuple. 
-            If tuple, it must be at least length 2: ((wavelength,), (flux,)). 
-            It may also contain a 3rd element, the error on the flux.
-        par_file (str): Location of parameters file.
-        n_walkers (int): Number of walkers, or chains, to use in emcee.
-        n_iterations (int): Number of iterations for each walker/chain.
-        outdir (str): Name of output directory for pickle file and plots.
-            If None, name will be determined based on current run tie.
-        picklefile (str): Name of output pickle file. If None, name will be
-            determined based on current run time.
-        comp_params : dictionary
-            Contains the known values of component parameters, with keys
-            defined in each of the individual run scripts (run_XX.py).
-            If None, the actual values of parameters will not be plotted.
-    """
+    Runs the SPAMM analysis on a given spectrum with specified components.
 
-    t1 = datetime.datetime.now()
+    Args:
+        complist (list): A list of components to model. Accepted component names are: 
+            "PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT".
+        inspectrum (spamm.Spectrum, specutils.Spectrum1D, or tuple): The input spectrum to model. 
+            If a tuple, it should be in the format ((wavelength,), (flux,)) or ((wavelength,), (flux,), (flux_error,)).
+        par_file (str, optional): Path to the parameters file. If None, default parameters are used.
+        n_walkers (int, optional): Number of walkers to use in the MCMC analysis.
+        n_iterations (int, optional): Number of iterations for each MCMC walker.
+        outdir (str, optional): Directory to save output files. If None, a directory is created based on the current run time.
+        picklefile (str, optional): Name of the output pickle file. If None, a name is generated based on the current run time.
+        comp_params (dict, optional): Known values of component parameters. 
+            Contains the known values of component parameters, 
+            with keys defined in each of the individual run scripts (run_XX.py).
+            If None, the actual values of parameters will not be plotted.
+
+    Returns:
+        dict: A dictionary containing the model and component parameters.
+
+    Raises:
+        ValueError: If an invalid component is specified in `complist`.
+    """
+    start_time = timeit.default_timer()
 
     # Parse parameter file 
     if par_file is None:
@@ -101,14 +96,10 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
             comp_params[param_name] = param_value
 
     # Initialize the model
-    model = Model()
-    model.parallel = parallel
-    model.print_parameters = False
+    model = Model(parallel=parallel)
 
-    # Initialize the components of the model. Checks if each component should
-    # be included in the model and adds it to the model's components if so
+    # Add each component to the model's components if it should be included in the model.
     if components["PL"]:
-        # Get the 'broken_pl' parameter from comp_params, default to False if not present
         is_broken = comp_params.get("broken_pl", False)
 
         nuclear_comp = NuclearContinuumComponent(broken=is_broken, pars=pars["nuclear_continuum"])
@@ -132,10 +123,10 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
         narrow_comp = NarrowComponent(pars=pars["narrow_lines"])
         model.components.append(narrow_comp)
 
-    #TODO: MW_ext, AGN_ext etc. are all undefined?
-    if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
-        ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
-        model.components.append(ext_comp)
+    # TODO: MW_ext, AGN_ext etc. are all undefined?
+    #if components["CALZETTI_EXT"] or components["SMC_EXT"] or components["MW_EXT"] or components["AGN_EXT"] or components["LMC_EXT"]:
+    #    ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
+    #    model.components.append(ext_comp)
 
     # Add the data spectrum to the model
     model.data_spectrum = spectrum
@@ -184,8 +175,8 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
     make_plots_from_pickle(pname, outdir)
 
     # Calculate and print the total execution time
-    t2 = datetime.datetime.now()
-    print(f"executed in {t2-t1}")
+    end_time = timeit.default_timer()
+    print(f"Execution time: {(end_time - start_time):.3f} seconds")
 
     return p_data
 

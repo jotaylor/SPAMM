@@ -1,35 +1,21 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-import os
-os.environ["OMP_NUM_THREADS"] = "1"
+from functools import partial
+from multiprocessing import Pool
 
+import emcee
 import numpy as np
 from scipy.interpolate import interp1d
-import emcee
-from multiprocessing import Pool
-from functools import partial
 
 from .Spectrum import Spectrum
 
-# TODO arg pos is not even used vv
 def sort_on_runtime(pos):
-    """
-    Description.
-
-    Args:
-        pos (): ?? 
-
-    Returns:
-        ndarray (ndarray): ?
-        ndarray (ndarray): ? 
-    """
-
-    p = np.atleast_2d(p)
+    
+    p = np.atleast_2d(pos)
     idx = np.argsort(p[:, 0])[::-1]
     
     return p[idx], idx
-
-#-----------------------------------------------------------------------------#
 
 def prior(params, components):
     """
@@ -55,8 +41,6 @@ def prior(params, components):
         current_index = end_index
 
     return total_ln_prior
-
-#-----------------------------------------------------------------------------#
 
 def likelihood(data_spectrum, model_spectrum_flux):
     """
@@ -100,8 +84,6 @@ def likelihood(data_spectrum, model_spectrum_flux):
     ln_likelihood = np.nan_to_num(ln_likelihood)
     
     return ln_likelihood
-
-#-----------------------------------------------------------------------------#
 
 def ln_posterior(args, params):
     """
@@ -188,23 +170,17 @@ class Model(object):
         downsample_data_if_needed (bool): Flag for downsampling data spectrum.
         upsample_components_if_needed (bool): Flag for upsampling components.
     """
-    
-    def __init__(self, wavelength_start=1000, wavelength_end=10000, 
-                 wavelength_delta=0.05, parallel=True):
+    def __init__(self, wave_start=1000, wave_end=10000, wave_delta=0.05, parallel=False):
         """
         Initializes the Model with a specified wavelength range and step size, 
         and sets whether to use parallel processing.
 
         Args:
-            wavelength_start (float): The starting wavelength for the model spectrum. 
-                                      Default is 1000.
-            wavelength_end (float): The ending wavelength for the model spectrum. 
-                                    Default is 10000.
-            wavelength_delta (float): The step size for the wavelength grid of the model spectrum. 
-                                      Default is 0.05.
+            wave_start (float): The starting wavelength for the model spectrum. 
+            wave_end (float): The ending wavelength for the model spectrum. 
+            wave_delta (float): The step size for the wavelength grid of the model spectrum. 
             parallel (bool): Whether to use parallel processing. Default is True.
         """
-
         self._mask = None
         self._data_spectrum = None
         
@@ -215,18 +191,19 @@ class Model(object):
         self.sampler = None
         #self.sampler_output = None
 
-        wl_init = np.arange(wavelength_start, wavelength_end, wavelength_delta)
-        self.model_spectrum = Spectrum(spectral_axis = wl_init,
-                                       flux = np.zeros(len(wl_init)),
-                                       flux_error = np.zeros(len(wl_init)))
+        wave_init = np.arange(wave_start, wave_end, wave_delta)
+        self.model_spectrum = Spectrum(spectral_axis = wave_init,
+                                       flux = np.zeros(len(wave_init)),
+                                       flux_error = np.zeros(len(wave_init)))
 
         # Flag to allow Model to interpolate components' wavelength grid to 
         # match data if component grid is more course than data.
-        # TODO - document better!
+
+        # TODO: Needs better documentation.
         self.downsample_data_if_needed = False
         self.upsample_components_if_needed = False
 
-# TODO is this needed? vvvv
+# TODO: is this needed? vvvv
 
 #        self.reddening = None
 #        self.model_parameters = {}
@@ -338,22 +315,23 @@ class Model(object):
                 for component in self.components:
                     component.initialize(data_spectrum=downsampled_spectrum)
             else:
-                raise ValueError(f"""Component '{worst_component}' has coarser grid spacing than data. 
-                                     Increase component spacing or use 'upsample_components_if_needed' 
-                                     or 'downsample_data_if_needed' flags in Model class.""")
+                raise ValueError(f"Component '{worst_component}' has coarser grid spacing than data."
+                                  "Increase component spacing or use 'upsample_components_if_needed'"
+                                  "or 'downsample_data_if_needed' flags in Model class.")
         
 
 #-----------------------------------------------------------------------------#
 
     def run_mcmc(self, data_spectrum, components, n_walkers=100, n_iterations=100):
         """
-        Run emcee MCMC.
-    
-        Args:
-            n_walkers (int): Number of walkers to pass to the MCMC.
-            n_iteratins (int): Number of iterations to pass to the MCMC. 
-        """
+        Run MCMC using the emcee EnsembleSampler.
 
+        Args:
+            data_spectrum: The data spectrum to be used in the MCMC.
+            components: The components to be used in the MCMC.
+            n_walkers (int, optional): The number of walkers to use in the MCMC.
+            n_iterations (int, optional): The number of iterations for the MCMC.
+        """
         # Initialize walker matrix with initial parameters
         walkers_matrix = []
         for _ in range(n_walkers):
@@ -365,22 +343,18 @@ class Model(object):
         # Wrap the posterior function to pass the data spectrum and components
         wrapped_posterior = partial(ln_posterior, (data_spectrum, components))
         
+        pool = Pool() if self.parallel else None
+
+        self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
+                                             ndim=len(walkers_matrix[0]),
+                                             log_prob_fn=wrapped_posterior,
+                                             pool=pool)
+        self.sampler.run_mcmc(walkers_matrix, 
+                              n_iterations, 
+                              progress=True)
+
         if self.parallel:
-            with Pool() as pool:
-                self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                                     ndim=len(walkers_matrix[0]),
-                                                     log_prob_fn=wrapped_posterior,
-                                                     pool=pool)
-                self.sampler.run_mcmc(walkers_matrix, 
-                                      n_iterations, 
-                                      progress=True)
-        else:
-            self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
-                                                 ndim=len(walkers_matrix[0]),
-                                                 log_prob_fn=wrapped_posterior)
-            self.sampler.run_mcmc(walkers_matrix, 
-                                  n_iterations, 
-                                  progress=True)
+            pool.close()
 
 #-----------------------------------------------------------------------------#
 

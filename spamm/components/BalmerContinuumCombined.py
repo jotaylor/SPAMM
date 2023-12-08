@@ -1,20 +1,15 @@
 #!/usr/bin/python
 
-import sys
 import numpy as np
 from .ComponentBase import Component
-from scipy.interpolate import interp1d
-from scipy.integrate import simps
-from scipy.fftpack.helper import next_fast_len
-import matplotlib.pyplot as plt
 from astropy.constants import c, h, k_B, Ryd
 from astropy import units as u
-import timeit
 import pickle
 
 # replacing this with astropy's blackbody function
 #from astropy.modeling.blackbody import blackbody_lambda
 from astropy.modeling.physical_models import BlackBody
+#from utils.blackbody import blackbody
 
 #TODO this needs to be integrated into Spectrum eventually
 from utils.rebin_spec import rebin_spec
@@ -25,9 +20,11 @@ from utils.parse_pars import parse_pars
 
 # Constants are in cgs.  
 c = c.cgs
-h = h.cgs
-k = k_B.cgs
-R = Ryd.to("1/Angstrom")
+c_cms = c.cgs.value
+c_kms = c.to("km/s").value
+h = h.cgs.value
+k = k_B.cgs.value
+R = Ryd.to("1/Angstrom").value
 E0 = 2.179e-11
 balmer_edge = 3646 # Angstroms
 
@@ -58,6 +55,7 @@ class BalmerCombined(Component):
         self.model_parameter_names.append("bc_norm")
         self.model_parameter_names.append("bc_Te")
         self.model_parameter_names.append("bc_tauBE")
+
         # parameters for the lines
         self.model_parameter_names.append("bc_loffset")
         self.model_parameter_names.append("bc_lwidth")
@@ -121,10 +119,10 @@ class BalmerCombined(Component):
         tauBE_init = np.random.uniform(low=self.tauBE_min,
                            high=self.tauBE_max)
 
-        loffset_init = np.random.uniform( low=self.loffset_min,
+        loffset_init = np.random.uniform(low=self.loffset_min,
                          high=self.loffset_max)
 
-        lwidth_init = np.random.uniform( low=self.lwidth_min,
+        lwidth_init = np.random.uniform(low=self.lwidth_min,
                            high=self.lwidth_max)
                            
         logNe_init = np.random.uniform(low=self.logNe_min,
@@ -280,7 +278,7 @@ class BalmerCombined(Component):
             float (float): Wavelength of the transition from n=n to n=2.
         """
         
-        ilambda = R.value * (0.25 - 1./line_orders**2)
+        ilambda = R * (0.25 - 1./line_orders**2)
         return 1. / ilambda
     
     
@@ -291,7 +289,7 @@ class BalmerCombined(Component):
         Calculate the ratio between Balmer lines based on electron density and temperature.
 
         This function estimates the relative intensity values for lines 3-400 using results
-        from Storey and Hammer 1995 and Kovacevic et al 2014. The ratios are calculated for
+        from Storey and Hummer 1995 and Kovacevic et al 2014. The ratios are calculated for
         a given electron density and temperature, and for a specified range of Balmer lines.
 
         Args:
@@ -308,12 +306,12 @@ class BalmerCombined(Component):
         n = np.arange(minline, maxline+1)
     
         coef_use = [coef_interp(n_e, T) for coef_interp in self.coeff] 
-        
+
         for i in n:
             if i <=50:
                 flux_ratios[i - minline] = coef_use[-i+2]
             else:
-                flux_ratios[i - minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k.value*T))
+                flux_ratios[i - minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T))
         return flux_ratios
     
 #-----------------------------------------------------------------------------#
@@ -393,15 +391,15 @@ class BalmerCombined(Component):
         logNe         = params[self.parameter_index("bc_logNe")]
 #        lscale         = params[self.parameter_index("lscale")]
     
-        c_kms = c.to("km/s")
-        edge_wl = balmer_edge*(1 - loffset/c_kms.value)
+        #c_kms = c.to("km/s")
+        edge_wl = balmer_edge*(1 - loffset/c_kms)
         
         n_e =10.**logNe
         bpc_flux = self.makelines(spectrum.spectral_axis, 
                                   Te,
                                   n_e, 
-                                  loffset/c_kms.value, 
-                                  lwidth/c_kms.value)
+                                  loffset/c_kms, 
+                                  lwidth/c_kms)
                  
         
         norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
@@ -452,10 +450,10 @@ class BalmerCombined(Component):
         lwidth        = params[self.parameter_index("bc_lwidth")]
         #logNe         = params[self.parameter_index("bc_logNe")]
         
-        c_kms = c.to("km/s")
+        #c_kms = c.to("km/s")
 
         # Wavelength at which Balmer components merge.
-        edge_wl = balmer_edge*(1 - loffset/c_kms.value)
+        edge_wl = balmer_edge*(1 - loffset/c_kms)
 
     #TODO need WL as quantity objects for better astropy functionality
         # Create a blackbody model with the temperature Te
@@ -463,14 +461,14 @@ class BalmerCombined(Component):
 
         # Evaluate the model at the wavelengths in spectrum.spectral_axis
         blackbody = blackbody_model(spectrum.spectral_axis)
-        
-        #calculates [1 - e^(-tau)] (optically-thin emitting slab)
-        #assumes angstroms
-        
+
+        # Calculates [1 - e^(-tau)] (optically-thin emitting slab)
+        # Assumes angstroms
         tau = tauBE*(spectrum.spectral_axis / balmer_edge)**3
         absorption = 1 - np.exp(-tau)
+        
         bc_flux = absorption * blackbody
-        bc_flux = self.log_conv(spectrum.spectral_axis, bc_flux, lwidth/c_kms.value)
+        bc_flux = self.log_conv(spectrum.spectral_axis, bc_flux, lwidth/c_kms)
     
         norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
         fnorm = bc_flux[norm_index]
