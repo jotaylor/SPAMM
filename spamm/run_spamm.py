@@ -2,18 +2,18 @@
 
 import os
 # Set OMP_NUM_THREADS=1 to prevent NumPy's automatic parallelization
-# (which can interfere with emcee's parallelization). Recommended in emcee's documentation.
+# which can interfere with emcee's parallelization. Recommended in emcee's documentation.
 os.environ["OMP_NUM_THREADS"] = "1"
 
 import gzip
 import dill as pickle
 import datetime
 import numpy as np
-from astropy import units as u
 from specutils import Spectrum1D
 import timeit
 
 from utils.parse_pars import parse_pars
+from utils.bool_mask import bool_mask
 from spamm.analysis import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -22,39 +22,53 @@ from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
 from spamm.components.NarrowComponent import NarrowComponent
-from spamm.components.ReddeningLaw import Extinction
+#from spamm.components.ReddeningLaw import Extinction
 
 # List of accepted component names for the model
 ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
-# Main function to run SPAMM analysis
-def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500, 
+def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterations=500, 
           outdir=None, picklefile=None, comp_params=None, parallel=True):
     """
     Runs the SPAMM analysis on a given spectrum with specified components.
 
     Args:
-        complist (list): A list of components to model. Accepted component names are: 
-            "PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT".
-        inspectrum (spamm.Spectrum, specutils.Spectrum1D, or tuple): The input spectrum to model. 
-            If a tuple, it should be in the format ((wavelength,), (flux,)) or ((wavelength,), (flux,), (flux_error,)).
-        par_file (str, optional): Path to the parameters file. If None, default parameters are used.
-        n_walkers (int, optional): Number of walkers to use in the MCMC analysis.
-        n_iterations (int, optional): Number of iterations for each MCMC walker.
-        outdir (str, optional): Directory to save output files. If None, a directory is created based on the current run time.
-        picklefile (str, optional): Name of the output pickle file. If None, a name is generated based on the current run time.
-        comp_params (dict, optional): Known values of component parameters. 
-            Contains the known values of component parameters, 
+        complist (list): 
+            A list of components to model. Accepted component names are: 
+            "PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", 
+            "MW_EXT", "AGN_EXT", "LMC_EXT".
+        inspectrum (spamm.Spectrum, specutils.Spectrum1D, or tuple): 
+            The input spectrum to model. If a tuple, it should be in the format 
+            ((wavelength,), (flux,)) or ((wavelength,), (flux,), (flux_error,)).
+        mask (numpy.ndarray, list of bools, or list of tuples/lists, optional): 
+            A mask for the input spectrum. If a boolean array or list, `True` 
+            indicates a valid data point and `False` a point to be ignored. 
+            If a list of tuples/lists, each tuple/list should contain two elements 
+            representing a range in the spectrum to be included. If None, no mask is applied.
+        par_file (str, optional): 
+            Path to the parameters file. If None, default parameters are used.
+        n_walkers (int, optional): 
+            Number of walkers to use in the MCMC analysis.
+        n_iterations (int, optional): 
+            Number of iterations for each MCMC walker.
+        outdir (str, optional): 
+            Directory to save output files. If None, a directory is created based on the current run time.
+        picklefile (str, optional): 
+            Name of the output pickle file. If None, a name is generated based on the current run time.
+        comp_params (dict, optional): 
+            Known values of component parameters. Contains the known values of component parameters, 
             with keys defined in each of the individual run scripts (run_XX.py).
             If None, the actual values of parameters will not be plotted.
 
     Returns:
-        dict: A dictionary containing the model and component parameters.
+        dict: 
+            A dictionary containing the model and component parameters.
 
     Raises:
-        ValueError: If an invalid component is specified in `complist`.
+        ValueError: 
+            If an invalid component is specified in `complist`.
     """
     start_time = timeit.default_timer()
 
@@ -128,13 +142,30 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
     #    ext_comp = Extinction(MW=MW_ext, AGN=AGN_ext, LMC=LMC_ext, SMC=SMC_ext, Calzetti=Calzetti_ext)
     #    model.components.append(ext_comp)
 
+    if mask is not None:
+        # Check if mask is a boolean array/list
+        if (isinstance(mask, np.ndarray) or isinstance(mask, list)) and all(isinstance(x, bool) for x in mask):
+            boolmask = np.array(mask)
+        # Check if mask is a list of tuples/lists
+        elif isinstance(mask, (list, np.ndarray)) and all(isinstance(x, (list, tuple)) for x in mask):
+            boolmask = bool_mask(wl, mask)
+        else:
+            raise TypeError("Mask must be a boolean array/list or a list of tuples/lists.")
+        
+        # Ensure wavelength and mask arrays have same length
+        if len(wl) != len(boolmask):
+            raise ValueError(f"Wavelength array length ({len(wl)}) and mask array length ({len(boolmask)}) must be the same.")
+        # Ensure flux and mask arrays have same length
+        if len(flux) != len(boolmask):
+            raise ValueError(f"Flux array length ({len(flux)}) and mask array length ({len(boolmask)}) must be the same.")
+
     # Add the data spectrum to the model
     model.data_spectrum = spectrum
     data_spectrum = spectrum
     components = model.components
 
     # Run mcmc
-    model.run_mcmc(data_spectrum=data_spectrum, components=components, n_walkers=n_walkers, n_iterations=n_iterations)
+    model.run_mcmc(data_spectrum=data_spectrum, components=components, mask=boolmask, n_walkers=n_walkers, n_iterations=n_iterations)
     print(f"Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
 
     # Save the model and component parameters to a pickle file
@@ -180,7 +211,7 @@ def spamm(complist, inspectrum, par_file=None, n_walkers=30, n_iterations=500,
 
     return p_data
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def parse_comps(argcomp):
     if len(argcomp) == 1:
@@ -193,10 +224,12 @@ def parse_comps(argcomp):
 
     return comps
 
-#-----------------------------------------------------------------------------#
+###############################################################################
+
+# TODO: What is this?
 # NOT SUPPORTED YET #
 
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 #    parser = argparse.ArgumentParser()
 #    parser.add_argument("inspectrum", help="Input spectrum file", 
 #                        type=str) 
@@ -207,7 +240,7 @@ def parse_comps(argcomp):
 #    parser.add_argument("--n_iterations", dest="n_iterations", default=500,
 #                        help="Number of iterations per walker")
 #    args = parser.parse_args()
-#
-#
+
+
 #    comps = parse_comps(args.comp)
 #    spamm(complist=comps, n_walkers=int(args.n_walkers), n_iterations=int(args.n_iterations))

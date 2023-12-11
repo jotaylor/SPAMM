@@ -14,12 +14,8 @@ import subprocess
 from spamm.Samples import Samples
 from spamm.Model import model_flux
 
-'''
-This code is for analyzing the final posterior samples.
-'''
-
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
+###############################################################################
+# This code is for analyzing the final posterior samples.
 
 def plot_posteriors_pdf(S, interactive=False):
     # if interactive is False:
@@ -97,7 +93,7 @@ def plot_posteriors_pdf(S, interactive=False):
 
     return figs
 
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def plot_best_models(S):
     data_spectrum = S.model.data_spectrum
@@ -128,7 +124,7 @@ def plot_best_models(S):
     plt.close(fig)
     print(f"\tSaved {figname}")
 
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def plot_models(S, ymax=None):
     data_spectrum = S.model.data_spectrum
@@ -212,7 +208,7 @@ def plot_models(S, ymax=None):
                                gifname])
         print(f"\tSaved {gifname}")
     
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def make_all_plots(S):
 
@@ -250,21 +246,20 @@ def make_all_plots(S):
     if S.gif is True:
         plot_models(S)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def make_plots_from_pickle(pname, outdir, gif=False, last=False, step=100):
     S = Samples(pname, outdir=outdir, gif=gif, last=last, step=step)
     make_all_plots(S)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def first_concat():
     models = ["model_20180807_0442.pickle.gz", "model_20180807_2917.pickle.gz", "model_20180807_3906.pickle.gz", "model_20180808_0244.pickle.gz", "model_20180810_0857.pickle.gz", "model_20180811_0849.pickle.gz", "model_20180812_2600.pickle.gz", "model_20180814_2104.pickle.gz"]
     S = Samples(models)
     make_all_plots(S)
 
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_color="#4682b4",
            scale_hist=False, quantiles=[], **kwargs):
@@ -401,6 +396,7 @@ def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_
 
     return fig
 
+###############################################################################
 
 def error_ellipse(mu, cov, ax=None, factor=1.0, **kwargs):
     """
@@ -433,6 +429,7 @@ def error_ellipse(mu, cov, ax=None, factor=1.0, **kwargs):
         ax = plt.gca()
     ax.add_patch(ellipsePlot)
 
+###############################################################################
 
 def hist2d(x, y, *args, **kwargs):
     """
@@ -508,9 +505,8 @@ def hist2d(x, y, *args, **kwargs):
     ax.set_xlim(extent[0])
     ax.set_ylim(extent[1])
 
+###############################################################################
 
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
 def median_values(samples, frac=0.68):
     num_params = np.size(samples[0,:])
     result = np.zeros((num_params, 3))
@@ -539,6 +535,7 @@ def median_values(samples, frac=0.68):
     print("Calculating median and "+str(frac*100)+"% confidence intervals (min, max).")
     return result
 
+###############################################################################
 
 def mean_values(samples):
     num_params = np.size(samples[0,:])
@@ -551,6 +548,7 @@ def mean_values(samples):
     print("Calculating mean and standard deviation.")
     return result
 
+###############################################################################
 
 def plot_chains(samples, labels, interactive=False):
     # if interactive is False:
@@ -582,6 +580,7 @@ def plot_chains(samples, labels, interactive=False):
     print("Plotting the MCMC chains.")
     return fig
 
+###############################################################################
 
 def plot_posteriors(samples, labels, boxes=20, params=None):
     num_params = np.size(samples[0,:])
@@ -616,6 +615,7 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
     print("Plotting the model posterior PDFs.")
     return fig
 
+###############################################################################
 
 def plot_spectra(model, samples):
     data_spectrum = model.data_spectrum   # lambda, flux, flux_error
@@ -641,7 +641,7 @@ def plot_spectra(model, samples):
         model_spectrum = model.model_flux(params=samples[i,:])  # flux
         plt.plot(data_spectrum.spectral_axis, model_spectrum)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

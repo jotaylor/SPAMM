@@ -4,12 +4,14 @@
 from functools import partial
 from multiprocessing import Pool
 
+import sys
 import emcee
 import numpy as np
 from scipy.interpolate import interp1d
 
 from .Spectrum import Spectrum
 
+# TODO: What is this used for?
 def sort_on_runtime(pos):
     
     p = np.atleast_2d(pos)
@@ -17,16 +19,21 @@ def sort_on_runtime(pos):
     
     return p[idx], idx
 
+###############################################################################
+
 def prior(params, components):
     """
     Calculates the sum of the log priors for all components in the model.
 
     Args:
-        params (np.array): An array of model parameter values.
-        components (list): List of Component objects in the model.
+        params (np.array): 
+            An array of model parameter values.
+        components (list): 
+            List of Component objects in the model.
 
     Returns:
-        float: The sum of the log priors for all components.
+        float: 
+            The sum of the log priors for all components.
     """
     total_ln_prior = 0.
     current_index = 0
@@ -42,9 +49,11 @@ def prior(params, components):
 
     return total_ln_prior
 
-def likelihood(data_spectrum, model_spectrum_flux):
+###############################################################################
+
+def likelihood(data_spectrum, model_spectrum_flux, mask):
     """
-    Calculate the natural logarithm of the likelihood (ln(L)) of the given model spectrum.
+    Calculates the natural logarithm of the likelihood (ln(L)) of the given model spectrum.
 
     The likelihood is calculated based on a Gaussian distribution, with the model 
     spectrum interpolated over the data wavelength grid. The formula used is:
@@ -57,18 +66,20 @@ def likelihood(data_spectrum, model_spectrum_flux):
     - sigma is the observed data flux error
 
     Args:
-        data_spectrum (Spectrum object): The observed data spectrum.
-        model_spectrum_flux (np.array): The model spectrum flux values, represented as a numpy array.
+        data_spectrum (Spectrum object): 
+            The observed data spectrum.
+        model_spectrum_flux (np.array): 
+            The model spectrum flux values, represented as a numpy array.
 
     Returns:
-        float: The sum of the natural logarithm of the likelihood values. This represents the total
-        likelihood of the model given the observed data. If any likelihood values are NaN, they are 
-        replaced with zero before summing.
+        float: 
+            The sum of the natural logarithm of the likelihood values. This represents the total
+            likelihood of the model given the observed data. If any likelihood values are NaN, they are 
+            replaced with zero before summing.
 
     Note:
         This method assumes that the model flux changes linearly between the points in the model spectrum.
     """
-
     # Create an interpolation function.
     interp_func = interp1d(data_spectrum.spectral_axis, model_spectrum_flux)
 
@@ -76,8 +87,8 @@ def likelihood(data_spectrum, model_spectrum_flux):
     model_flux_interp = interp_func(data_spectrum.spectral_axis)
 
     # Calculate the ln(likelihood).
-    first_term = np.power((data_spectrum.flux - model_flux_interp) / data_spectrum.flux_error, 2)
-    second_term = np.log(2 * np.pi * np.power(data_spectrum.flux_error, 2))
+    first_term = np.power((data_spectrum.flux[mask] - model_flux_interp[mask]) / data_spectrum.flux_error[mask], 2)
+    second_term = np.log(2 * np.pi * np.power(data_spectrum.flux_error[mask], 2))
     ln_likelihood = -0.5 * np.sum(first_term + second_term)
 
     # Replace any NaN values with zero.
@@ -85,47 +96,58 @@ def likelihood(data_spectrum, model_spectrum_flux):
     
     return ln_likelihood
 
+###############################################################################
+
 def ln_posterior(args, params):
     """
     Computes the log of the posterior probability of the model given the data.
 
     Args:
-        args (tuple): Contains the data spectrum (args[0]) and the list of components (args[1]).
-        params (ndarray): 1D array of all parameters of all components.
+        args (tuple): 
+            Contains the data spectrum (args[0]) and the list of components (args[1]).
+        params (ndarray): 
+            1D array of all parameters of all components.
 
     Returns:
-        float: The log of the posterior probability.
+        float: 
+            The log of the posterior probability.
 
-    The function calculates the log of the prior probability of the parameters. If the prior is finite, 
+    This function calculates the log of the prior probability of the parameters. If the prior is finite, 
     it computes the model spectrum flux and the log of the likelihood. It returns the sum of the log of 
     the prior and the likelihood.
     """
-    data_spectrum, components = args[0], args[1]
+    data_spectrum, components, mask = args[0], args[1], args[2]
 
     ln_prior = prior(params=params, components=components)
     if not np.isfinite(ln_prior):
         return -np.inf
-    
+
     model_spectrum_flux = model_flux(params=params, data_spectrum=data_spectrum, components=components)
-    ln_likelihood = likelihood(data_spectrum=data_spectrum, model_spectrum_flux=model_spectrum_flux)
+    ln_likelihood = likelihood(data_spectrum=data_spectrum, model_spectrum_flux=model_spectrum_flux, mask=mask)
 
     return ln_prior + ln_likelihood
+
+###############################################################################
 
 def model_flux(params, data_spectrum, components):
     """
     Generates a model spectrum from the given parameters, data spectrum, and components.
 
     Args:
-        params (ndarray): 1D array of all parameters of all components.
-        data_spectrum (Spectrum object): The observed data spectrum.
-        components (list): List of Component objects in the model.
+        params (ndarray): 
+            1D array of all parameters of all components.
+        data_spectrum (Spectrum object): 
+            The observed data spectrum.
+        components (list): 
+            List of Component objects in the model.
 
     Returns:
-        ndarray: Array of flux values for the model spectrum.
+        ndarray: 
+            Array of flux values for the model spectrum.
 
-    Note: This function is called by multiple MCMC walkers simultaneously.
+    Note: 
+        This function is called by multiple MCMC walkers simultaneously.
     """
-
     # Initialize the model spectrum flux
     model_spectrum_flux = np.zeros(len(data_spectrum.spectral_axis))
 
@@ -150,25 +172,34 @@ def model_flux(params, data_spectrum, components):
 
     return model_spectrum_flux
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
-#TODO do we need all these commented attributes??
 class Model(object):
     """
-    The Model class holds the data spectrum and a list of components that make up the model. 
+    A class that holds the data spectrum and a list of components that make up the model. 
+
     It provides methods for setting the data spectrum, adding components, and running 
     an MCMC process to fit the model to the data.
 
     Attributes:
-        _mask (np.array): Mask for the data spectrum.
-        _data_spectrum (Spectrum object): Observed data spectrum.
-        z (float): Redshift of the model.
-        components (list): List of Component objects in the model.
-        parallel (bool): Flag for using local parallel processing on one machine
-        sampler (emcee.EnsembleSampler object): MCMC sampler.
-        model_spectrum (Spectrum object): Generated model spectrum.
-        downsample_data_if_needed (bool): Flag for downsampling data spectrum.
-        upsample_components_if_needed (bool): Flag for upsampling components.
+        _mask (np.array): 
+            Mask for the data spectrum.
+        _data_spectrum (Spectrum object): 
+            Observed data spectrum.
+        z (float): 
+            Redshift of the model.
+        components (list): 
+            List of Component objects in the model.
+        parallel (bool): 
+            Flag for using local parallel processing on one machine.
+        sampler (emcee.EnsembleSampler object): 
+            MCMC sampler.
+        model_spectrum (Spectrum object): 
+            Generated model spectrum.
+        downsample_data_if_needed (bool): 
+            Flag for downsampling data spectrum.
+        upsample_components_if_needed (bool): 
+            Flag for upsampling components.
     """
     def __init__(self, wave_start=1000, wave_end=10000, wave_delta=0.05, parallel=False):
         """
@@ -176,10 +207,14 @@ class Model(object):
         and sets whether to use parallel processing.
 
         Args:
-            wave_start (float): The starting wavelength for the model spectrum. 
-            wave_end (float): The ending wavelength for the model spectrum. 
-            wave_delta (float): The step size for the wavelength grid of the model spectrum. 
-            parallel (bool): Whether to use parallel processing. Default is True.
+            wave_start (float): 
+                The starting wavelength for the model spectrum. 
+            wave_end (float): 
+                The ending wavelength for the model spectrum. 
+            wave_delta (float): 
+                The step size for the wavelength grid of the model spectrum. 
+            parallel (bool): 
+                Whether to use parallel processing. Default is True.
         """
         self._mask = None
         self._data_spectrum = None
@@ -208,60 +243,92 @@ class Model(object):
 #        self.reddening = None
 #        self.model_parameters = {}
 #        self.mcmc_param_vector = None
-#    @property
-#    def mask(self):
-#        """
-#
-#        """
-#        if self.data_spectrum is None:
-#            print("Attempting to read the bad pixel mask before a spectrum was defined.")
-#            sys.exit(1)
-#        if self._mask is None:
-#            self._mask = np.ones(len(self.data_spectrum.spectral_axis))
-#
-#        return self._mask
-#
-#    @mask.setter
-#    def mask(self, new_mask):
-#        """
-#        Document me.
-#
-#        :params mask: A numpy array representing the mask.
-#        """
-#        self._mask = new_mask
 
-#-----------------------------------------------------------------------------#
+###############################################################################
+
+    @property
+    def mask(self):
+        """
+        Property getter that returns the mask of the data spectrum. 
+
+        The mask is a numpy array of ones and (possibly) zeros with the same length as the spectral 
+        axis of the data spectrum. If the data spectrum has not been defined yet, it raises an error
+        and exits the program. If the mask has not been defined yet, it creates a new mask with all
+        elements set to True, indicating that all data points are initially considered valid.
+
+        Returns:
+            numpy.ndarray: 
+                The mask of the data spectrum.
+
+        Raises:
+            SystemExit: 
+                If the data spectrum has not been defined yet.
+        """
+        print("MASK GETTER CALLED")
+        if self.data_spectrum is None:
+            print("Attempted to access the bad pixel mask before defining the spectrum.")
+            sys.exit(1)
+        if self._mask is None:
+            self._mask = np.ones(len(self.data_spectrum.spectral_axis), dtype=bool)
+
+        return self._mask
+
+    @mask.setter
+    def mask(self, new_mask):
+        """
+        This property setter sets the mask of the data spectrum. The mask is a numpy array
+        that should have the same length as the spectral axis of the data spectrum.
+
+        Parameters:
+            new_mask (numpy.ndarray): A numpy array representing the new mask to be set.
+
+        Raises:
+            ValueError: If the new mask does not have the same length as the spectral axis
+            of the data spectrum.
+        """
+        print("MASK SETTER CALLED")
+        self._mask = new_mask
+
+###############################################################################
 
     @property
     def data_spectrum(self):
         """
-        This property represents the data spectrum of the model. 
+        Property that represents the data spectrum of the model. 
+
         All components of the model must be set before setting the data spectrum.
 
         Returns:
-            _data_spectrum (Spectrum object): The data spectrum of the model.
+            _data_spectrum (Spectrum object): 
+                The data spectrum of the model.
         """
+        print("MASK GETTER CALLED")
         return self._data_spectrum
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
     @data_spectrum.setter
     def data_spectrum(self, new_data_spectrum):
         """
         Sets the data spectrum for the model and initializes the model spectrum 
-        with the same spectral axis. Checks that all components are on the same 
-        wavelength grid and if not, interpolates them if the relevant flag has been set. 
-        If the maximum grid spacing of the components is greater than the data spectrum, 
-        it either downsamples the data or raises an error, depending on the 
+        with the same spectral axis. 
+
+        Checks that all components are on the same wavelength grid and if not, 
+        interpolates them if the relevant flag has been set. If the maximum grid 
+        spacing of the components is greater than the data spectrum, it either 
+        downsamples the data or raises an error, depending on the 
         'downsample_data_if_needed' flag.
 
         Args:
-            new_data_spectrum (Spectrum object): The new data spectrum to be set.
+            new_data_spectrum (Spectrum object): 
+                The new data spectrum to be set.
 
         Raises:
-            Exception: If there are no components in the model when setting the data spectrum.
-            ValueError: If a component has coarser grid spacing than the data and neither 
-                        'upsample_components_if_needed' nor 'downsample_data_if_needed' flags are set.
+            Exception: 
+                If there are no components in the model when setting the data spectrum.
+            ValueError: 
+                If a component has coarser grid spacing than the data and neither 
+                'upsample_components_if_needed' nor 'downsample_data_if_needed' flags are set.
         """
         self._data_spectrum = new_data_spectrum
 
@@ -318,19 +385,22 @@ class Model(object):
                 raise ValueError(f"Component '{worst_component}' has coarser grid spacing than data."
                                   "Increase component spacing or use 'upsample_components_if_needed'"
                                   "or 'downsample_data_if_needed' flags in Model class.")
-        
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
-    def run_mcmc(self, data_spectrum, components, n_walkers=100, n_iterations=100):
+    def run_mcmc(self, data_spectrum, components, mask=None, n_walkers=100, n_iterations=100):
         """
-        Run MCMC using the emcee EnsembleSampler.
+        Runs MCMC using the emcee EnsembleSampler.
 
         Args:
-            data_spectrum: The data spectrum to be used in the MCMC.
-            components: The components to be used in the MCMC.
-            n_walkers (int, optional): The number of walkers to use in the MCMC.
-            n_iterations (int, optional): The number of iterations for the MCMC.
+            data_spectrum (Spectrum object): 
+                The data spectrum to be used in the MCMC run.
+            components (list): 
+                The components to be used in the MCMC run.
+            n_walkers (int, optional): 
+                The number of walkers to use in the MCMC run.
+            n_iterations (int, optional): 
+                The number of iterations for the MCMC run.
         """
         # Initialize walker matrix with initial parameters
         walkers_matrix = []
@@ -341,7 +411,7 @@ class Model(object):
             walkers_matrix.append(walker_params)
 
         # Wrap the posterior function to pass the data spectrum and components
-        wrapped_posterior = partial(ln_posterior, (data_spectrum, components))
+        wrapped_posterior = partial(ln_posterior, (data_spectrum, components, mask))
         
         pool = Pool() if self.parallel else None
 
@@ -356,17 +426,17 @@ class Model(object):
         if self.parallel:
             pool.close()
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 # TODO should there be a getter without a setter? vv
     @property
     def total_parameter_count(self):
         """
-        Return the total number of parameters of all components.
-        
+        Returns the total number of parameters of all components.
+
         Returns:
-            total_no_parameters (int): Total number of parameters for 
-                all components.
+            int: 
+                Total number of parameters for all components.
         """
         total_no_params = 0
         for component in self.components:
@@ -374,16 +444,17 @@ class Model(object):
         
         return total_no_params
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
     def parameter_vector(self):
         """
-        This method returns a list of parameters for each component in the model. 
+        Returns a list of parameters for each component in the model. 
+
         Each item in the list is itself a list of parameters for a specific component.
 
         Returns:
-            param_vector (list of lists): A list where each item is a list of parameters 
-                                          for a specific component in the model.
+            list of lists: 
+                A list where each item is a list of parameters for a specific component in the model.
         """
         param_vector = []
         for component in self.components:
@@ -391,15 +462,15 @@ class Model(object):
 
         return param_vector
 
-#-----------------------------------------------------------------------------#
-
+###############################################################################
 
     def model_parameter_names(self):
         """
         Constructs a list of parameter names for all components in the model.
 
         Returns:
-            list: Parameter names of all components.
+            list: 
+                Parameter names of all components.
         """
         param_names = []
         for component in self.components:
