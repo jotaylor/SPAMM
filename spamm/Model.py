@@ -186,7 +186,7 @@ class Model(object):
             Mask for the data spectrum.
         _data_spectrum (Spectrum object): 
             Observed data spectrum.
-        z (float): 
+        redshift (float): 
             Redshift of the model.
         components (list): 
             List of Component objects in the model.
@@ -201,7 +201,7 @@ class Model(object):
         upsample_components_if_needed (bool): 
             Flag for upsampling components.
     """
-    def __init__(self, wave_start=1000, wave_end=10000, wave_delta=0.05, parallel=False):
+    def __init__(self, wave_start=1000, wave_end=10000, wave_delta=0.05):
         """
         Initializes the Model with a specified wavelength range and step size, 
         and sets whether to use parallel processing.
@@ -220,9 +220,8 @@ class Model(object):
         self._data_spectrum = None
         
         self.mask = None
-        self.z = None
+        self.redshift = None
         self.components = []
-        self.parallel = parallel
 
         self.sampler = None
         #self.sampler_output = None
@@ -388,7 +387,7 @@ class Model(object):
 
 ###############################################################################
 
-    def run_mcmc(self, data_spectrum, components, mask=None, n_walkers=100, n_iterations=100):
+    def run_mcmc(self, data_spectrum, components, mask, n_walkers, n_iterations, parallel):
         """
         Runs MCMC using the emcee EnsembleSampler.
 
@@ -413,7 +412,7 @@ class Model(object):
         # Wrap the posterior function to pass the data spectrum and components
         wrapped_posterior = partial(ln_posterior, (data_spectrum, components, mask))
         
-        pool = Pool() if self.parallel else None
+        pool = Pool() if parallel else None
 
         self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
                                              ndim=len(walkers_matrix[0]),
@@ -423,7 +422,7 @@ class Model(object):
                               n_iterations, 
                               progress=True)
 
-        if self.parallel:
+        if parallel:
             pool.close()
 
 ###############################################################################

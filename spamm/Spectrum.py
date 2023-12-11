@@ -20,12 +20,16 @@ class Spectrum(Spectrum1D):
     attributes.
 
     Args:
-        spectral_axis (array-like or :obj:`astropy.units.Quantity`): Wavelength values.
-        flux (array-like or :obj:`astropy.units.Quantity`) : Flux values.
-        flux_error (array-like or :obj:`astropy.nddata.NDUncertainty`, or :obj:`astropy.units.Quantity) : 
+        spectral_axis (array-like or astropy.units.Quantity): 
+            Wavelength values.
+        flux (array-like or astropy.units.Quantity): 
+            Flux values.
+        flux_error (array-like or astropy.nddata.NDUncertainty, or astropy.units.Quantity): 
             Error on `flux` values.
-        spectral_axis_unit (:obj:`astropy.units.Unit`, optional) : Wavelength unit
-        flux_unit (:obj:`astropy.units.Unit`, optional) : Flux unit. 
+        spectral_axis_unit (astropy.units.Unit, optional): 
+            Wavelength unit.
+        flux_unit (astropy.units.Unit, optional): 
+            Flux unit. 
     """
 
     def __init__(self, spectral_axis, flux, flux_error, spectral_axis_unit=WL_UNIT, 
@@ -61,14 +65,16 @@ class Spectrum(Spectrum1D):
         super(Spectrum, self).__init__(spectral_axis=spectral_axis*spectral_axis_unit, 
                                        flux=flux*flux_unit, uncertainty=uncertainty,
                                        *args, **kwargs)
-        self.uncertainty = uncertainty
-        self.flux_unit = flux_unit
-        self.flux_error = flux_error
-        self._flux = flux
-        self._norm_wavelength = None
-        self._norm_wavelength_flux = None
+        
         self._spectral_axis = spectral_axis
         self._spectral_axis_unit = spectral_axis_unit
+        self._flux = flux
+        self.flux_error = flux_error
+        self.flux_unit = flux_unit
+        self.uncertainty = uncertainty
+        self._norm_wavelength = None
+        self._norm_wavelength_flux = None
+        
 
     def __getstate__(self):
         """
@@ -206,4 +212,4 @@ class Spectrum(Spectrum1D):
         self._flux = new_flux
         self._norm_wavelength_flux = None
 
-#TODO need to add log_grid_spacing, spectrum binning
+# TODO: need to add log_grid_spacing, spectrum binning

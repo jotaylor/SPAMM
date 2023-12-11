@@ -29,13 +29,13 @@ ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_E
 
 ###############################################################################
 
-def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterations=500, 
-          outdir=None, picklefile=None, comp_params=None, parallel=True):
+def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walkers=32, n_iterations=500, 
+          outdir=None, picklefile=None, comp_params=None, parallel=False):
     """
     Runs the SPAMM analysis on a given spectrum with specified components.
 
     Args:
-        complist (list): 
+        complist (list):
             A list of components to model. Accepted component names are: 
             "PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", 
             "MW_EXT", "AGN_EXT", "LMC_EXT".
@@ -99,6 +99,9 @@ def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterat
         wl, flux, flux_error = inspectrum
         spectrum = Spectrum(spectral_axis=wl, flux=flux, flux_error=flux_error)
 
+    # De-redshift wavelength array
+    wl /= (1.0 + redshift)
+
     # If comp_params is not provided, initialize it as an empty dictionary
     if comp_params is None:
         comp_params = {}
@@ -110,7 +113,7 @@ def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterat
             comp_params[param_name] = param_value
 
     # Initialize the model
-    model = Model(parallel=parallel)
+    model = Model()
 
     # Add each component to the model's components if it should be included in the model.
     if components["PL"]:
@@ -169,7 +172,13 @@ def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterat
     components = model.components
 
     # Run mcmc
-    model.run_mcmc(data_spectrum=data_spectrum, components=components, mask=boolmask, n_walkers=n_walkers, n_iterations=n_iterations)
+    model.run_mcmc(data_spectrum=data_spectrum, 
+                   components=components,
+                   mask=boolmask,
+                   n_walkers=n_walkers,
+                   n_iterations=n_iterations,
+                   parallel=parallel)
+    
     print(f"Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
 
     # Save the model and component parameters to a pickle file
