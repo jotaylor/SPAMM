@@ -13,6 +13,7 @@ import subprocess
 
 from spamm.Samples import Samples
 from spamm.Model import model_flux
+from utils.mask_utils import inverse_bool_mask
 
 ###############################################################################
 # This code is for analyzing the final posterior samples.
@@ -97,9 +98,18 @@ def plot_posteriors_pdf(S, interactive=False):
 
 def plot_best_models(S):
     data_spectrum = S.model.data_spectrum
+
     actualcolor = "deepskyblue"
     fig = plt.figure(figsize=(15,7))
     ax = fig.add_subplot(111)
+
+    # Shade masked regions
+    boolmask = S.model.mask
+    if boolmask is not None:
+        masks = inverse_bool_mask(data_spectrum.spectral_axis, boolmask)
+        for mask in masks:
+            ax.axvspan(mask[0], mask[1], color='red', alpha=0.1)
+
     ax.errorbar(data_spectrum.spectral_axis, data_spectrum.flux,
                     data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
                     ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
@@ -115,6 +125,7 @@ def plot_best_models(S):
     ax.plot(data_spectrum.spectral_axis,
             model_flux(params=S.maxs, data_spectrum=data_spectrum, components=S.model.components),
             color="fuchsia", label="Max")
+
     ax.set_title("Best Fits")
     ax.set_xlabel(r"Wavelength [$\AA$]")
     ax.set_ylabel(r"ergs/s/cm$^2$")

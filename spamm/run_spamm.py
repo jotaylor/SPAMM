@@ -13,7 +13,7 @@ from specutils import Spectrum1D
 import timeit
 
 from utils.parse_pars import parse_pars
-from utils.bool_mask import bool_mask
+from utils.mask_utils import bool_mask
 from spamm.analysis import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
@@ -158,9 +158,13 @@ def spamm(complist, inspectrum, mask=None, par_file=None, n_walkers=30, n_iterat
         # Ensure flux and mask arrays have same length
         if len(flux) != len(boolmask):
             raise ValueError(f"Flux array length ({len(flux)}) and mask array length ({len(boolmask)}) must be the same.")
+    else:
+        boolmask = None
 
     # Add the data spectrum to the model
     model.data_spectrum = spectrum
+    model.mask = boolmask
+
     data_spectrum = spectrum
     components = model.components
 

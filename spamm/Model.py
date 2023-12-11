@@ -216,9 +216,10 @@ class Model(object):
             parallel (bool): 
                 Whether to use parallel processing. Default is True.
         """
-        self._mask = None
+        
         self._data_spectrum = None
         
+        self.mask = None
         self.z = None
         self.components = []
         self.parallel = parallel
@@ -246,48 +247,48 @@ class Model(object):
 
 ###############################################################################
 
-    @property
-    def mask(self):
-        """
-        Property getter that returns the mask of the data spectrum. 
+    # @property
+    # def mask(self):
+    #     """
+    #     Property getter that returns the mask of the data spectrum. 
 
-        The mask is a numpy array of ones and (possibly) zeros with the same length as the spectral 
-        axis of the data spectrum. If the data spectrum has not been defined yet, it raises an error
-        and exits the program. If the mask has not been defined yet, it creates a new mask with all
-        elements set to True, indicating that all data points are initially considered valid.
+    #     The mask is a numpy array of ones and (possibly) zeros with the same length as the spectral 
+    #     axis of the data spectrum. If the data spectrum has not been defined yet, it raises an error
+    #     and exits the program. If the mask has not been defined yet, it creates a new mask with all
+    #     elements set to True, indicating that all data points are initially considered valid.
 
-        Returns:
-            numpy.ndarray: 
-                The mask of the data spectrum.
+    #     Returns:
+    #         numpy.ndarray: 
+    #             The mask of the data spectrum.
 
-        Raises:
-            SystemExit: 
-                If the data spectrum has not been defined yet.
-        """
-        print("MASK GETTER CALLED")
-        if self.data_spectrum is None:
-            print("Attempted to access the bad pixel mask before defining the spectrum.")
-            sys.exit(1)
-        if self._mask is None:
-            self._mask = np.ones(len(self.data_spectrum.spectral_axis), dtype=bool)
+    #     Raises:
+    #         SystemExit: 
+    #             If the data spectrum has not been defined yet.
+    #     """
+    #     print("MASK GETTER CALLED")
+    #     if self.data_spectrum is None:
+    #         print("Attempted to access the bad pixel mask before defining the spectrum.")
+    #         sys.exit(1)
+    #     if self._mask is None:
+    #         self._mask = np.ones(len(self.data_spectrum.spectral_axis), dtype=bool)
 
-        return self._mask
+    #     return self._mask
 
-    @mask.setter
-    def mask(self, new_mask):
-        """
-        This property setter sets the mask of the data spectrum. The mask is a numpy array
-        that should have the same length as the spectral axis of the data spectrum.
+    # @mask.setter
+    # def mask(self, new_mask):
+    #     """
+    #     This property setter sets the mask of the data spectrum. The mask is a numpy array
+    #     that should have the same length as the spectral axis of the data spectrum.
 
-        Parameters:
-            new_mask (numpy.ndarray): A numpy array representing the new mask to be set.
+    #     Parameters:
+    #         new_mask (numpy.ndarray): A numpy array representing the new mask to be set.
 
-        Raises:
-            ValueError: If the new mask does not have the same length as the spectral axis
-            of the data spectrum.
-        """
-        print("MASK SETTER CALLED")
-        self._mask = new_mask
+    #     Raises:
+    #         ValueError: If the new mask does not have the same length as the spectral axis
+    #         of the data spectrum.
+    #     """
+    #     print("MASK SETTER CALLED")
+    #     self._mask = new_mask
 
 ###############################################################################
 
@@ -302,7 +303,6 @@ class Model(object):
             _data_spectrum (Spectrum object): 
                 The data spectrum of the model.
         """
-        print("MASK GETTER CALLED")
         return self._data_spectrum
 
 ###############################################################################
@@ -407,7 +407,7 @@ class Model(object):
         for _ in range(n_walkers):
             walker_params = []
             for component in self.components:
-                walker_params += component.initial_values(self.data_spectrum)
+                walker_params += component.initial_values(data_spectrum)
             walkers_matrix.append(walker_params)
 
         # Wrap the posterior function to pass the data spectrum and components
