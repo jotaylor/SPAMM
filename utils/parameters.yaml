@@ -1,24 +1,32 @@
 # !!!!!!!!!!!!!!!!!!!!!!!
 # !!!!    WARNING    !!!!
 # !!!!!!!!!!!!!!!!!!!!!!!
-#PyYAML resolves scientific notation numbers as strings-
+# PyYAML resolves scientific notation numbers as strings-
 # e.g. 1.6e3 is interpreted as '1.6e3', not 1600. These numbers should
 # be expanded (see bc_Te_max)
 
-## Basic Parameters ##
-## Units MUST exactly match astropy.units counterparts
-## http://docs.astropy.org/en/stable/units/
+# Basic Parameters ##
+# Units MUST exactly match astropy.units counterparts
+# http://docs.astropy.org/en/stable/units/
 global:
     flux_unit: "erg cm-2 s-1 AA-1"
     wl_unit: "AA"
 
-emission_lines: ""
+narrow_lines:
+    boxcar_width: 5
+    width_min: 10. # km/s
+    width_max: 500. # km/s
+    amp_min: 0.
+    amp_max: "max_flux" #max_flux or fnw
+    center_size: 20
+    wavelengths: [4830, 6800, 3000]  # Replace with your wavelengths
 
 ## Host Galaxy ##
 host_galaxy:
     boxcar_width: 5
+    hg_no_templates: 2
     hg_models: "../Data/HostModels"
-    hg_norm_min: 0.
+    hg_norm_min: 0
     hg_norm_max: "max_flux"
     hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM
     hg_stellar_disp_max: 1000. # km/s. Must be dispersion, not FWHM
@@ -33,10 +41,10 @@ boxcar_width: 5
 nuclear_continuum:
     boxcar_width: 5
     broken_pl: False
-    pl_slope_min: -3.
+    pl_slope_min: 0.
     pl_slope_max: 3.
     pl_norm_min: 0.
-    pl_norm_max: "fnw" #max_flux or fnw
+    pl_norm_max: "max_flux" #max_flux or fnw
     pl_wave_break_min: "min_wl"
     pl_wave_break_max: "max_wl"
     #pl_par_prior: np.random.uniform
@@ -48,9 +56,9 @@ balmer_continuum:
     bc_lines_max: 400. #km/s
     bc_norm_min: 0.
     bc_norm_max: "bcmax_flux" # Balmer Continuum max flux
-    bc_Te_min: 500.
-    bc_Te_max: 100000.
-    bc_tauBE_min: 0.
+    bc_Te_min: 5000.
+    bc_Te_max: 20000.
+    bc_tauBE_min: 0.1
     bc_tauBE_max: 2.
     bc_loffset_min: -10.
     bc_loffset_max: 10.

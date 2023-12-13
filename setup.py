@@ -13,12 +13,13 @@ setup(
                    'Topic :: Scientific/Engineering :: Physics',
                    'Topic :: Software Development :: Libraries :: Python Modules'],
     packages = find_packages(),
+    package_data = {'utils': ['parameters.yaml']},
     install_requires = ['setuptools',
                         'numpy',
                         'astropy',
                         'matplotlib',
                         'scipy>=0.17.1',
-                        'emcee==2.2.1',
+                        'emcee>=3.1.4',
                         'pysynphot']
     )
 

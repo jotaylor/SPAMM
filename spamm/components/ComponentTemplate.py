@@ -65,7 +65,7 @@ class TemplateComponent(Component):
         self.max_parameter2 = ...
 
         # [replace] this is an example of a random lognormal distribution
-        parameter2_init = np.random.lognormal(mean=, sigma=, size=)
+        # parameter2_init = np.random.lognormal(mean=, sigma=, size=)
 
         # [replace] return a list of all parameter_init values
         # NOTE: Order is important! Place them in the same order they were defined
@@ -96,20 +96,20 @@ class TemplateComponent(Component):
 
         # [replace] Get the current value of the parameters. Use the names
         # as defined in __init__() above.
-        parameter1 = params[self.parameter_index("parameter 1")]
-        parametern = params[self.parameter_index("parameter 2")]
+        parameter1 = params["par_1"]
+        parametern = params["par_2"]
 
         # [replace] append each parameter, in the correct order, to the "ln_priors" list
 
         return ln_priors
 
-    def flux(self, wavelengths=None, parameters=None):
+    def flux(self, wavelengths=None, params=None):
         '''
         Returns the flux for this component for a given wavelength grid
         and parameters. Will use the initial parameters if none are specified.
         '''
-        assert len(parameters) == len(self.model_parameter_names), ("The wrong number " +
-                                                                "of indices were provided: {0}".format(parameters))
+        assert len(params) == len(self.model_parameter_names), ("The wrong number " +
+                                                                "of indices were provided: {0}".format(params))
 
         # calculate flux of the component
         # [replace] fill in the flux calculation

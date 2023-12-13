@@ -2,7 +2,6 @@
 
 import os
 import argparse
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MaxNLocator
@@ -13,19 +12,15 @@ import numpy as np
 import subprocess
 
 from spamm.Samples import Samples
+from spamm.Model import model_flux
+from utils.mask_utils import inverse_bool_mask
 
-'''
-This code is for analyzing the final posterior samples.
-'''
-
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
+###############################################################################
+# This code is for analyzing the final posterior samples.
 
 def plot_posteriors_pdf(S, interactive=False):
-    if interactive is False:
-        matplotlib.use('agg')
-    
-    pdfname = os.path.join(S.outdir, "{}_posterior.pdf".format(S.model_name))
+
+    pdfname = os.path.join(S.outdir, f"{S.model_name}_posterior.pdf")
     pdf_pages = PdfPages(pdfname)    
     figs = []
 
@@ -34,29 +29,29 @@ def plot_posteriors_pdf(S, interactive=False):
         ax = fig.add_subplot(111)
         
         chain = S.samples[:,i]
-        hist,bins = np.histogram(chain, S.histbins)
+        hist, bins = np.histogram(chain, S.histbins)
         binsize = bins[1]-bins[0]
 
         maxm = S.maxs[i]
-        med = S.medians[i] + binsize/2.
-        avg = S.means[i] + binsize/2.
-        mode = S.modes[i] + binsize/2.
+        med = S.medians[i] 
+        avg = S.means[i]
+        mode = S.modes[i]
         
         std = np.std(chain)
         
         if S.params is not None:
             try:
                 actual = S.params[S.model_parameter_names[i]]
-#                print("New limits for {}:\n{:0.20f}\n{:0.20f}\n".format(S.model_parameter_names[i], maxm-(1.5*std), maxm+(1.5*std)))
+#                print(f"New limits for {S.model_parameter_names[i]}:\n{maxm-(1.5*std):0.20f}\n{maxm+(1.5*std):0.20f}\n")
                 ax.axvspan(actual-std, actual+std, facecolor="grey", 
-                           alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+                           alpha=0.25, label=rf"1$\sigma$={std:1.3e}")
                 ax.axvline(S.params[S.model_parameter_names[i]], 
                            color="red", linestyle="solid", linewidth=1.5, 
-                           label="Actual value={:1.3e}".format(actual))
+                           label=f"Actual value={actual:1.3e}")
             except KeyError:
                 actual = maxm
                 ax.axvspan(actual-std, actual+std, facecolor="grey", 
-                           alpha=0.25, label=r"1$\sigma$={:1.3e}".format(std))
+                           alpha=0.25, label=rf"1$\sigma$={std:1.3e}")
                  
         ax.hist(chain, bins, color="skyblue")
 
@@ -75,60 +70,70 @@ def plot_posteriors_pdf(S, interactive=False):
         
 #        ax.axvline(center, color="red", linestyle="dotted", linewidth=1.5, label="Max")
         ax.axvline(avg, color="darkblue", linestyle="--", linewidth=1.5, 
-                   label="Mean={:1.3e}".format(avg))
+                   label=f"Mean={avg:1.3e}")
         ax.axvline(med, color="darkviolet", linestyle="--", linewidth=1.5, 
-                   label="Median={:1.3e}".format(med))
+                   label=f"Median={med:1.3e}")
         ax.axvline(mode, color="blue", linestyle="--", linewidth=1.5, 
-                   label="Mode={:1.3e}".format(mode))
+                   label=f"Mode={mode:1.3e}")
         ax.axvline(maxm, color="fuchsia", linestyle="--", linewidth=1.5, 
-                   label="Maximum={:1.3e}".format(maxm))
+                   label=f"Maximum={maxm:1.3e}")
         ax.legend(loc="best")
 
         ax.set_xlabel(S.model_parameter_names[i])
         ax.set_ylabel("Posterior PDF")
         ax.set_title(S.model_parameter_names[i])
 
+        plt.close(fig)
         figs.append(fig)
         pdf_pages.savefig(fig)
-        plt.close(fig)
+        
 
+    
     pdf_pages.close()
-    print("Saved {}".format(pdfname))
+    print(f"[SPAMM]: Saved {pdfname}")
 
     return figs
 
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def plot_best_models(S):
+
+    def plot_model_flux(ax, values, label, color):
+        params = dict(zip(S.model_parameter_names, values))
+        ax.plot(data_spectrum.spectral_axis, 
+        model_flux(params, data_spectrum, S.model.components), color=color, label=label)
+    
     data_spectrum = S.model.data_spectrum
-    actualcolor = "deepskyblue"
     fig = plt.figure(figsize=(15,7))
     ax = fig.add_subplot(111)
+
+    # Shade masked regions
+    boolmask = S.model.mask
+    if boolmask is not None:
+        masks = inverse_bool_mask(data_spectrum.spectral_axis, boolmask)
+        for mask in masks:
+            ax.axvspan(mask[0], mask[1], color='red', alpha=0.1, lw=0)
+
+    actualcolor = "deepskyblue"
     ax.errorbar(data_spectrum.spectral_axis, data_spectrum.flux,
-                    data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
-                    ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
-    ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.means),
-            color="darkblue", label="Mean")
-    ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.medians),
-            color="darkviolet", label="Median")
-    ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.modes),
-            color="blue", label="Mode")
-    ax.plot(data_spectrum.spectral_axis,
-            S.model.model_flux(params=S.maxs),
-            color="fuchsia", label="Max")
+                data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
+                ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux")
+    
+    plot_model_flux(ax, S.means, "Mean", "darkblue")
+    plot_model_flux(ax, S.medians, "Median", "darkviolet")
+    plot_model_flux(ax, S.modes, "Mode", "blue")
+    plot_model_flux(ax, S.maxs, "Max", "fuchsia")
+    
     ax.set_title("Best Fits")
     ax.set_xlabel(r"Wavelength [$\AA$]")
     ax.set_ylabel(r"ergs/s/cm$^2$")
     ax.legend(loc="upper left", framealpha=0.25)
-    figname = "{}_best.png"
+    figname = f"{S.model_name}_bestfits.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {}".format(figname))
+    print(f"[SPAMM]: Saved {figname}")
 
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def plot_models(S, ymax=None):
     data_spectrum = S.model.data_spectrum
@@ -149,7 +154,6 @@ def plot_models(S, ymax=None):
     else:
         sample_range = range(0, len(S.samples), S.step)
     for i in sample_range:
-        print("Iteration {}".format(i))
         j = 0
         for component in S.model.components:
             fig = plt.figure(figsize=(15,7))
@@ -165,14 +169,14 @@ def plot_models(S, ymax=None):
             if ymax is None:
                 ymax = compmax + .1*compmax
             ax.set_ylim(0, ymax)
-            ax.set_title("{}, Iteration {}".format(component.name, i))
+            ax.set_title(f"{component.name}, Iteration {i}")
             ax.set_xlabel(r"Wavelength [$\AA$]")
             ax.set_ylabel(r"ergs/s/cm$^2$")
             ax.legend(loc="upper left", framealpha=0.25)
-            figname = os.path.join(gifdir, "{}_iter{:06d}.png".format(component.name, i))
+            figname = os.path.join(gifdir, f"{component.name}_iter{i:06d}.png")
             fig.savefig(os.path.join(S.outdir, figname))
             if S.last is True:
-                print("\tSaved {}".format(figname))
+                print(f"[SPAMM]: Saved {figname}")
             j += len(component.model_parameter_names)
             plt.close(fig)
 
@@ -188,83 +192,82 @@ def plot_models(S, ymax=None):
         if ymax is None:
             ymax = modelmax + .1*modelmax
         ax.set_ylim(0, ymax)
-        ax.set_title("Sum Of Model Components, Iteration {}".format(i))
+        ax.set_title(f"Sum Of Model Components, Iteration {i}")
         ax.set_xlabel(r"Wavelength [$\AA$]")
         ax.set_ylabel(r"ergs/s/cm$^2$")
         ax.legend(loc="upper left", framealpha=0.25)
-        figname = os.path.join(outdir, "model_iter{:06d}.png".format(i))
+        figname = os.path.join(outdir, f"model_iter{i:06d}.png")
         fig.savefig(os.path.join(S.outdir, figname))
         if S.last is True:
-            print("\tSaved {}".format(figname))
+            print(f"[SPAMM]: Saved {figname}")
         plt.close(fig)
 
     if S.gif is True:
         for component in S.model.components:
             cname = component.name
-            gifname = os.path.join(outdir, "{}.gif".format(cname))
+            gifname = os.path.join(outdir, f"{cname}.gif")
             subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
-                                   os.path.join(outdir, "{}*png".format(cname)), 
+                                   os.path.join(outdir, f"{cname}*png"), 
                                    gifname])
-            print("\tSaved {}".format(gifname))
-        gifname = os.path.join(outdir, "{}.gif".format(S.model_name))
+            print(f"[SPAMM]: Saved {gifname}")
+        gifname = os.path.join(outdir, f"{S.model_name}.gif")
         subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
-                               os.path.join(outdir, "model*png".format(S.model_name)), 
+                               os.path.join(outdir, f"{S.model_name}*png"), 
                                gifname])
-        print("\tSaved {}".format(gifname))
+        print(f"[SPAMM]: Saved {gifname}")
     
-#--------------------------------------------------------------------------#
+###############################################################################
 
 def make_all_plots(S):
 
     # Create the triangle plot.
     fig = corner(S.samples, labels=S.model_parameter_names)
-    figname = "{0}_triangle.png".format(S.model_name)
+    figname = f"{S.model_name}_triangle.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"[SPAMM]: Saved {figname}")
 
     # Plot the MCMC chains as a function of iteration. You can easily tell if 
     # the chains are converged because you can no longer tell where the individual 
     # particle chains are sliced together.
     fig = plot_chains(S.samples, labels=S.model_parameter_names)
-    figname = "{0}_chain.png".format(S.model_name)
+    figname = f"{S.model_name}_chain.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"[SPAMM]: Saved {figname}")
 
     # Plot the posterior PDFs for each parameter. These are histograms of the 
     # MCMC chains. Boxes = 20 is the default.
     fig = plot_posteriors(S.samples, labels=S.model_parameter_names, 
                           boxes=20, params=S.params)
-    figname = "{0}_posterior.png".format(S.model_name)
+    figname = f"{S.model_name}_posterior.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print("\tSaved {0}".format(figname))
+    print(f"[SPAMM]: Saved {figname}")
 
     # Make a PDF (the plot kind!) with the histogram for each parameter a
     # different page in the PDF for detailed analysis.
-    figs = plot_posteriors_pdf(S)
-
+    #plot_posteriors_pdf(S)
+    
     # Make a gif of the model spectrum as a function of iteration,
     # or if last is True, only save the last model spectrum.
     if S.gif is True:
         plot_models(S)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def make_plots_from_pickle(pname, outdir, gif=False, last=False, step=100):
     S = Samples(pname, outdir=outdir, gif=gif, last=last, step=step)
     make_all_plots(S)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def first_concat():
     models = ["model_20180807_0442.pickle.gz", "model_20180807_2917.pickle.gz", "model_20180807_3906.pickle.gz", "model_20180808_0244.pickle.gz", "model_20180810_0857.pickle.gz", "model_20180811_0849.pickle.gz", "model_20180812_2600.pickle.gz", "model_20180814_2104.pickle.gz"]
     S = Samples(models)
     make_all_plots(S)
 
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_color="#4682b4",
            scale_hist=False, quantiles=[], **kwargs):
@@ -306,10 +309,9 @@ def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_
 
     """
     
-    if interactive is False:
-        matplotlib.use('agg')
+    # if interactive is False:
+    #     matplotlib.use('agg')
     
-    print("Plotting the sample projections.")
 
     # Deal with 1D sample lists.
     xs = np.atleast_1d(xs)
@@ -401,6 +403,7 @@ def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_
 
     return fig
 
+###############################################################################
 
 def error_ellipse(mu, cov, ax=None, factor=1.0, **kwargs):
     """
@@ -433,6 +436,7 @@ def error_ellipse(mu, cov, ax=None, factor=1.0, **kwargs):
         ax = plt.gca()
     ax.add_patch(ellipsePlot)
 
+###############################################################################
 
 def hist2d(x, y, *args, **kwargs):
     """
@@ -489,7 +493,7 @@ def hist2d(x, y, *args, **kwargs):
         if len(V2) == 1:
             V2 = np.array([0, V2[0]])
         ax.contourf(X1, Y1, H.T, V2,
-                    cmap=LinearSegmentedColormap.from_list("cmap", ([1] * 3, [1] * 3),
+                    cmap=LinearSegmentedColormap.from_list("cmap", [[1] * 3, [1] * 3],
                     N=2), antialiased=False)
 
     ax.pcolor(X, Y, H.max() - H.T, cmap=cmap)
@@ -508,9 +512,8 @@ def hist2d(x, y, *args, **kwargs):
     ax.set_xlim(extent[0])
     ax.set_ylim(extent[1])
 
+###############################################################################
 
-#-----------------------------------------------------------------------------#
-#-----------------------------------------------------------------------------#
 def median_values(samples, frac=0.68):
     num_params = np.size(samples[0,:])
     result = np.zeros((num_params, 3))
@@ -536,9 +539,10 @@ def median_values(samples, frac=0.68):
         result[i,1] = min_error
         result[i,2] = max_error
 
-    print("Calculating median and "+str(frac*100)+"% confidence intervals (min, max).")
+    print("[SPAMM]: Calculating median and "+str(frac*100)+"% confidence intervals (min, max).")
     return result
 
+###############################################################################
 
 def mean_values(samples):
     num_params = np.size(samples[0,:])
@@ -548,16 +552,16 @@ def mean_values(samples):
         result[i,0] = np.mean(chain)
         result[i,1] = np.std(chain)
 
-    print("Calculating mean and standard deviation.")
+    print("[SPAMM]: Calculating mean and standard deviation.")
     return result
 
+###############################################################################
 
 def plot_chains(samples, labels, interactive=False):
-    if interactive is False:
-        matplotlib.use('agg')
+    # if interactive is False:
+    #     matplotlib.use('agg')
     
     num_params = np.size(samples[0,:])
-    fig = plt.figure()
     #####
     # The following is from corner:
     K = num_params
@@ -567,6 +571,7 @@ def plot_chains(samples, labels, interactive=False):
     whspace = 0.15         # w/hspace size
     plotdim = factor * K + factor * (K - 1.) * whspace
     dim = lbdim + plotdim + trdim
+
     fig = plt.figure(figsize=(dim, dim))
     lb = lbdim / dim
     tr = (lbdim + plotdim) / dim
@@ -579,13 +584,13 @@ def plot_chains(samples, labels, interactive=False):
         ax.plot(chain, '-b')
         ax.set_ylabel(labels[i])
     ax.set_xlabel("MCMC Chain Iteration")
-    print("Plotting the MCMC chains.")
     return fig
 
+###############################################################################
 
 def plot_posteriors(samples, labels, boxes=20, params=None):
     num_params = np.size(samples[0,:])
-    fig = plt.figure()
+
     #####
     # The following is from corner:
     K = num_params
@@ -595,6 +600,7 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
     whspace = 0.3         # w/hspace size
     plotdim = factor * K + factor * (K - 1.) * whspace
     dim = lbdim + plotdim + trdim
+
     fig = plt.figure(figsize=(dim, dim))
     lb = lbdim / dim
     tr = (lbdim + plotdim) / dim
@@ -608,14 +614,14 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
         if params is not None:
             try:
                 ax.axvline(params[labels[i]], color="r", linestyle="dashed", linewidth=2)
-                ax.set_title("Actual {0}={1}".format(labels[i], params[labels[i]]))
+                ax.set_title(f"Actual {labels[i]}={params[labels[i]]}")
             except KeyError:
                 pass
         ax.set_xlabel(labels[i])
         ax.set_ylabel("Posterior PDF")
-    print("Plotting the model posterior PDFs.")
     return fig
 
+###############################################################################
 
 def plot_spectra(model, samples):
     data_spectrum = model.data_spectrum   # lambda, flux, flux_error
@@ -641,7 +647,7 @@ def plot_spectra(model, samples):
         model_spectrum = model.model_flux(params=samples[i,:])  # flux
         plt.plot(data_spectrum.spectral_axis, model_spectrum)
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

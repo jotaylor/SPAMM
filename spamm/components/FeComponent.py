@@ -55,7 +55,7 @@ class FeComponent(Component):
             self.inputpars = pars
         
         self.load_templates()
-        self.model_parameter_names = ["fe_norm_{0}".format(x) for x in range(1, len(self.fe_templ)+1)]
+        self.model_parameter_names = [f"fe_norm_{x}" for x in range(1, len(self.fe_templ)+1)]
         self.model_parameter_names.append("fe_width") 
         self.interp_fe = []
         self.interp_fe_norm_flux = []
@@ -67,7 +67,7 @@ class FeComponent(Component):
         self.width_max = self.inputpars["fe_width_max"]
         self.templ_width= self.inputpars["fe_template_width"]
         if self.width_min < self.templ_width:
-            print("Specified minimum Fe width too small, setting Fe width minimum to intrinsic template width = {0}".format(self.templ_width))
+            print(f"Specified minimum Fe width too small, setting Fe width minimum to intrinsic template width = {self.templ_width}")
             self.width_min = self.templ_width
 
 #-----------------------------------------------------------------------------#
@@ -78,17 +78,16 @@ class FeComponent(Component):
         # Sort the templates alphabetically.
         template_list = sorted(glob.glob(os.path.join(self.inputpars["fe_templates"], "*")))
         assert len(template_list) != 0, \
-        "No Fe templates found in specified diretory {0}".format(self.inputpars["fe_templates"])
+        f"No Fe templates found in specified diretory {self.inputpars['fe_templates']}"
 
         self.fe_templ = []
 
         for template_filename in template_list:
-            with open(template_filename) as template_file:
-                wavelengths, flux = np.loadtxt(template_filename, unpack=True)
-                flux = np.where(flux<0, 1e-19, flux)
-                fe = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
+            wavelengths, flux = np.loadtxt(template_filename, unpack=True)
+            flux = np.where(flux<0, 1e-19, flux)
+            fe = Spectrum(spectral_axis=wavelengths, flux=flux, flux_error=flux)
 
-                self.fe_templ.append(fe)
+            self.fe_templ.append(fe)
 
 #-----------------------------------------------------------------------------#
 
@@ -156,7 +155,7 @@ class FeComponent(Component):
     def initialize(self, data_spectrum):
         """
         Perform all necessary initializations for the iron component, 
-        such as reading in teh templates, rebinning them, and 
+        such as reading in the templates, rebinning them, and 
         interpolating them on the grid scale of the data spectrum.
         """
 
@@ -178,12 +177,15 @@ class FeComponent(Component):
 #                                                         template.flux,
 #                                                         equal_log_bins)
             if self.fast_interp:
-                log_fe_flux = np.interp(log_fe_wl, np.log(template.spectral_axis), 
-                                        template.flux, left=0, right=0)
+                log_fe_flux = np.interp(log_fe_wl, 
+                                        np.log(template.spectral_axis), 
+                                        template.flux, 
+                                        left=0, 
+                                        right=0)
             else:
-                log_fe_flux = rebin_spec(np.log(template.spectral_axis),
-                                         template.flux,
-                                         log_fe_wl)
+                log_fe_flux = rebin_spec(log_fe_wl, 
+                                         np.log(template.spectral_axis), 
+                                         template.flux)
 
             
             log_fe_spectrum = Spectrum(spectral_axis=log_fe_wl, flux=log_fe_flux, 
@@ -197,11 +199,12 @@ class FeComponent(Component):
                 fe_flux = np.interp(data_spectrum.spectral_axis, 
                                     template.spectral_axis,
                                     template.flux,
-                                    left=0, right=0)
+                                    left=0, 
+                                    right=0)
             else:
-                fe_flux = rebin_spec(template.spectral_axis,
-                                     template.flux,
-                                     data_spectrum.spectral_axis)
+                fe_flux = rebin_spec(data_spectrum.spectral_axis, 
+                                     template.spectral_axis,
+                                     template.flux)
 
             self.interp_fe.append(fe_flux)
             
@@ -232,9 +235,9 @@ class FeComponent(Component):
         norm = []
 
         for i in range(1, len(self.fe_templ)+1):
-            norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
+            norm.append(params[f"fe_norm_{i}"])
         
-        width = params[self.parameter_index("fe_width")]
+        width = params["fe_width"]
 
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
@@ -251,7 +254,7 @@ class FeComponent(Component):
 
 #-----------------------------------------------------------------------------#
 
-    def flux(self, spectrum, parameters):
+    def flux(self, spectrum, params):
         """
         Returns the flux for this component for a given wavelength grid
         and parameters.  The parameters should be a list of length 
@@ -269,10 +272,10 @@ class FeComponent(Component):
         norm_wl = spectrum.norm_wavelength
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
-        width = parameters[self.parameter_index("fe_width")]
+        width = params["fe_width"]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis)) 
         for i in range(len(self.fe_templ)):	
-            norm_i = parameters[i]
+            norm_i = params[f"fe_norm_{i+1}"]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
@@ -318,9 +321,9 @@ class FeComponent(Component):
                                          left=0,
                                          right=0)
             else:
-                conv_fe_flux = rebin_spec(self.log_fe[i].spectral_axis,
-                                     log_conv_fe_flux,
-                                     np.log(spectrum.spectral_axis))
+                conv_fe_flux = rebin_spec(np.log(spectrum.spectral_axis),
+                                          self.log_fe[i].spectral_axis,
+                                          log_conv_fe_flux)
             
             conv_fe_nw = np.median(self.fe_templ[i].spectral_axis)
             conv_fe_norm_flux = np.interp(conv_fe_nw, spectrum.spectral_axis, conv_fe_flux) 
