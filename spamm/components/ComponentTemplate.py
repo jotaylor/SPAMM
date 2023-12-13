@@ -96,8 +96,8 @@ class TemplateComponent(Component):
 
         # [replace] Get the current value of the parameters. Use the names
         # as defined in __init__() above.
-        parameter1 = params[self.parameter_index("parameter 1")]
-        parametern = params[self.parameter_index("parameter 2")]
+        parameter1 = params["par_1"]
+        parametern = params["par_2"]
 
         # [replace] append each parameter, in the correct order, to the "ln_priors" list
 

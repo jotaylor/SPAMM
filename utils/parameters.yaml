@@ -24,6 +24,7 @@ narrow_lines:
 ## Host Galaxy ##
 host_galaxy:
     boxcar_width: 5
+    hg_no_templates: 2
     hg_models: "../Data/HostModels"
     hg_norm_min: 0
     hg_norm_max: "max_flux"
@@ -55,9 +56,9 @@ balmer_continuum:
     bc_lines_max: 400. #km/s
     bc_norm_min: 0.
     bc_norm_max: "bcmax_flux" # Balmer Continuum max flux
-    bc_Te_min: 500.
-    bc_Te_max: 100000.
-    bc_tauBE_min: 0.
+    bc_Te_min: 5000.
+    bc_Te_max: 20000.
+    bc_tauBE_min: 0.1
     bc_tauBE_max: 2.
     bc_loffset_min: -10.
     bc_loffset_max: 10.

@@ -39,6 +39,11 @@ def inverse_bool_mask(wave, mask):
             List of spectral masks. Each mask is a tuple of two values 
             indicating the start and end of the spectral region to be masked.
     """
+    # If the mask starts with False, prepend a True value
+    if not mask[0]:
+        mask = np.concatenate(([True], mask))
+        wave = np.concatenate(([wave[0]], wave))
+
     # Find the indices where the mask changes
     change_points = np.where(np.diff(mask))[0]
     starts = change_points[::2]

@@ -19,9 +19,7 @@ from utils.mask_utils import inverse_bool_mask
 # This code is for analyzing the final posterior samples.
 
 def plot_posteriors_pdf(S, interactive=False):
-    # if interactive is False:
-    #     matplotlib.use('agg')
-    
+
     pdfname = os.path.join(S.outdir, f"{S.model_name}_posterior.pdf")
     pdf_pages = PdfPages(pdfname)    
     figs = []
@@ -85,21 +83,27 @@ def plot_posteriors_pdf(S, interactive=False):
         ax.set_ylabel("Posterior PDF")
         ax.set_title(S.model_parameter_names[i])
 
+        plt.close(fig)
         figs.append(fig)
         pdf_pages.savefig(fig)
-        plt.close(fig)
+        
 
+    
     pdf_pages.close()
-    print(f"Saved {pdfname}")
+    print(f"[SPAMM]: Saved {pdfname}")
 
     return figs
 
 ###############################################################################
 
 def plot_best_models(S):
-    data_spectrum = S.model.data_spectrum
 
-    actualcolor = "deepskyblue"
+    def plot_model_flux(ax, values, label, color):
+        params = dict(zip(S.model_parameter_names, values))
+        ax.plot(data_spectrum.spectral_axis, 
+        model_flux(params, data_spectrum, S.model.components), color=color, label=label)
+    
+    data_spectrum = S.model.data_spectrum
     fig = plt.figure(figsize=(15,7))
     ax = fig.add_subplot(111)
 
@@ -108,32 +112,26 @@ def plot_best_models(S):
     if boolmask is not None:
         masks = inverse_bool_mask(data_spectrum.spectral_axis, boolmask)
         for mask in masks:
-            ax.axvspan(mask[0], mask[1], color='red', alpha=0.1)
+            ax.axvspan(mask[0], mask[1], color='red', alpha=0.1, lw=0)
 
+    actualcolor = "deepskyblue"
     ax.errorbar(data_spectrum.spectral_axis, data_spectrum.flux,
-                    data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
-                    ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux") 
-    ax.plot(data_spectrum.spectral_axis,
-            model_flux(params=S.means, data_spectrum=data_spectrum, components=S.model.components),
-            color="darkblue", label="Mean")
-    ax.plot(data_spectrum.spectral_axis,
-            model_flux(params=S.medians, data_spectrum=data_spectrum, components=S.model.components),
-            color="darkviolet", label="Median")
-    ax.plot(data_spectrum.spectral_axis,
-            model_flux(params=S.modes, data_spectrum=data_spectrum, components=S.model.components),
-            color="blue", label="Mode")
-    ax.plot(data_spectrum.spectral_axis,
-            model_flux(params=S.maxs, data_spectrum=data_spectrum, components=S.model.components),
-            color="fuchsia", label="Max")
-
+                data_spectrum.flux_error, mfc=actualcolor, mec=actualcolor,
+                ecolor=actualcolor, fmt=".", zorder=-100, label="Actual Flux")
+    
+    plot_model_flux(ax, S.means, "Mean", "darkblue")
+    plot_model_flux(ax, S.medians, "Median", "darkviolet")
+    plot_model_flux(ax, S.modes, "Mode", "blue")
+    plot_model_flux(ax, S.maxs, "Max", "fuchsia")
+    
     ax.set_title("Best Fits")
     ax.set_xlabel(r"Wavelength [$\AA$]")
     ax.set_ylabel(r"ergs/s/cm$^2$")
     ax.legend(loc="upper left", framealpha=0.25)
-    figname = "{}_best.png"
+    figname = f"{S.model_name}_bestfits.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print(f"\tSaved {figname}")
+    print(f"[SPAMM]: Saved {figname}")
 
 ###############################################################################
 
@@ -156,7 +154,6 @@ def plot_models(S, ymax=None):
     else:
         sample_range = range(0, len(S.samples), S.step)
     for i in sample_range:
-        print(f"Iteration {i}")
         j = 0
         for component in S.model.components:
             fig = plt.figure(figsize=(15,7))
@@ -179,7 +176,7 @@ def plot_models(S, ymax=None):
             figname = os.path.join(gifdir, f"{component.name}_iter{i:06d}.png")
             fig.savefig(os.path.join(S.outdir, figname))
             if S.last is True:
-                print(f"\tSaved {figname}")
+                print(f"[SPAMM]: Saved {figname}")
             j += len(component.model_parameter_names)
             plt.close(fig)
 
@@ -202,7 +199,7 @@ def plot_models(S, ymax=None):
         figname = os.path.join(outdir, f"model_iter{i:06d}.png")
         fig.savefig(os.path.join(S.outdir, figname))
         if S.last is True:
-            print(f"\tSaved {figname}")
+            print(f"[SPAMM]: Saved {figname}")
         plt.close(fig)
 
     if S.gif is True:
@@ -212,12 +209,12 @@ def plot_models(S, ymax=None):
             subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
                                    os.path.join(outdir, f"{cname}*png"), 
                                    gifname])
-            print(f"\tSaved {gifname}")
+            print(f"[SPAMM]: Saved {gifname}")
         gifname = os.path.join(outdir, f"{S.model_name}.gif")
         subprocess.check_call(["convert", "-delay", "15", "-loop", "1", 
                                os.path.join(outdir, f"{S.model_name}*png"), 
                                gifname])
-        print(f"\tSaved {gifname}")
+        print(f"[SPAMM]: Saved {gifname}")
     
 ###############################################################################
 
@@ -228,7 +225,7 @@ def make_all_plots(S):
     figname = f"{S.model_name}_triangle.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print(f"\tSaved {figname}")
+    print(f"[SPAMM]: Saved {figname}")
 
     # Plot the MCMC chains as a function of iteration. You can easily tell if 
     # the chains are converged because you can no longer tell where the individual 
@@ -237,7 +234,7 @@ def make_all_plots(S):
     figname = f"{S.model_name}_chain.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print(f"\tSaved {figname}")
+    print(f"[SPAMM]: Saved {figname}")
 
     # Plot the posterior PDFs for each parameter. These are histograms of the 
     # MCMC chains. Boxes = 20 is the default.
@@ -246,12 +243,12 @@ def make_all_plots(S):
     figname = f"{S.model_name}_posterior.png"
     fig.savefig(os.path.join(S.outdir, figname))
     plt.close(fig)
-    print(f"\tSaved {figname}")
+    print(f"[SPAMM]: Saved {figname}")
 
     # Make a PDF (the plot kind!) with the histogram for each parameter a
     # different page in the PDF for detailed analysis.
-    figs = plot_posteriors_pdf(S)
-
+    #plot_posteriors_pdf(S)
+    
     # Make a gif of the model spectrum as a function of iteration,
     # or if last is True, only save the last model spectrum.
     if S.gif is True:
@@ -315,7 +312,6 @@ def corner(xs, interactive=False, labels=None, extents=None, truths=None, truth_
     # if interactive is False:
     #     matplotlib.use('agg')
     
-    print("Plotting the sample projections.")
 
     # Deal with 1D sample lists.
     xs = np.atleast_1d(xs)
@@ -543,7 +539,7 @@ def median_values(samples, frac=0.68):
         result[i,1] = min_error
         result[i,2] = max_error
 
-    print("Calculating median and "+str(frac*100)+"% confidence intervals (min, max).")
+    print("[SPAMM]: Calculating median and "+str(frac*100)+"% confidence intervals (min, max).")
     return result
 
 ###############################################################################
@@ -556,7 +552,7 @@ def mean_values(samples):
         result[i,0] = np.mean(chain)
         result[i,1] = np.std(chain)
 
-    print("Calculating mean and standard deviation.")
+    print("[SPAMM]: Calculating mean and standard deviation.")
     return result
 
 ###############################################################################
@@ -566,7 +562,6 @@ def plot_chains(samples, labels, interactive=False):
     #     matplotlib.use('agg')
     
     num_params = np.size(samples[0,:])
-    fig = plt.figure()
     #####
     # The following is from corner:
     K = num_params
@@ -576,6 +571,7 @@ def plot_chains(samples, labels, interactive=False):
     whspace = 0.15         # w/hspace size
     plotdim = factor * K + factor * (K - 1.) * whspace
     dim = lbdim + plotdim + trdim
+
     fig = plt.figure(figsize=(dim, dim))
     lb = lbdim / dim
     tr = (lbdim + plotdim) / dim
@@ -588,14 +584,13 @@ def plot_chains(samples, labels, interactive=False):
         ax.plot(chain, '-b')
         ax.set_ylabel(labels[i])
     ax.set_xlabel("MCMC Chain Iteration")
-    print("Plotting the MCMC chains.")
     return fig
 
 ###############################################################################
 
 def plot_posteriors(samples, labels, boxes=20, params=None):
     num_params = np.size(samples[0,:])
-    fig = plt.figure()
+
     #####
     # The following is from corner:
     K = num_params
@@ -605,6 +600,7 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
     whspace = 0.3         # w/hspace size
     plotdim = factor * K + factor * (K - 1.) * whspace
     dim = lbdim + plotdim + trdim
+
     fig = plt.figure(figsize=(dim, dim))
     lb = lbdim / dim
     tr = (lbdim + plotdim) / dim
@@ -623,7 +619,6 @@ def plot_posteriors(samples, labels, boxes=20, params=None):
                 pass
         ax.set_xlabel(labels[i])
         ax.set_ylabel("Posterior PDF")
-    print("Plotting the model posterior PDFs.")
     return fig
 
 ###############################################################################

@@ -178,16 +178,16 @@ The \f$ H_j \f$ coefficients can be found in Cappellari et al.\ (2002, ApJ, 578,
         # need to return parameters as a list in the correct order
         ln_priors = list()
 
-        Gauss_cenwave = params[self.parameter_index("Gauss_cenwave")]
-        Gauss_width = params[self.parameter_index("Gauss_width")]
-        Gauss_amplitude = params[self.parameter_index("Gauss_amplitude")]
-        GH_cenwave = params[self.parameter_index("GH_cenwave")]
-        GH_width = params[self.parameter_index("GH_width")]
-        GH_amplitude = params[self.parameter_index("GH_amplitude")]
-        GH_h3 = params[self.parameter_index("GH_h3")]
-        GH_h4 = params[self.parameter_index("GH_h4")]
-        GH_h5 = params[self.parameter_index("GH_h5")]
-        GH_h6 = params[self.parameter_index("GH_h6")]
+        Gauss_cenwave = params["Gauss_cenwave"]
+        Gauss_width = params["Gauss_width"]
+        Gauss_amplitude = params["Gauss_amplitude"]
+        GH_cenwave = params["GH_cenwave"]
+        GH_width = params["GH_width"]
+        GH_amplitude = params["GH_amplitude"]
+        GH_h3 = params["GH_h3"]
+        GH_h4 = params["GH_h4"]
+        GH_h5 = params["GH_h5"]
+        GH_h6 = params["GH_h6"]
 
         if self.min_cenwave < Gauss_cenwave < self.max_cenwave:
             ln_priors.append(np.log(1))

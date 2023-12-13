@@ -16,25 +16,20 @@ WL = np.arange(TEST_WL["wl_min"], TEST_WL["wl_max"], TEST_WL["wl_step"])
 #-----------------------------------------------------------------------------#
 
 def create_ne(ne_params=None):
+
+    wl = ne_params["wl"]
+    del ne_params["wl"]
+    
     print(f"ne params: {ne_params}")
     ne = NarrowComponent()
     
     # Make a Spectrum object with dummy flux and flux error
-    spectrum = Spectrum(ne_params["wl"], ne_params["wl"], ne_params["wl"])
+    spectrum = Spectrum(wl, wl, wl)
     ne.initialize(spectrum)
 
-    comp_params = [ne_params["width"],
-               ne_params["amp_1"],
-               ne_params["center_1"],
-               ne_params["amp_2"],
-               ne_params["center_2"],
-               ne_params["amp_3"],
-               ne_params["center_3"]
-              ]
-
-    ne_flux = NarrowComponent.flux(ne, spectrum, comp_params)
+    ne_flux = NarrowComponent.flux(ne, spectrum, ne_params)
     ne_err = ne_flux * 0.05
 
-    return ne_params["wl"], ne_flux, ne_err, ne_params
+    return wl, ne_flux, ne_err, ne_params
 
 #-----------------------------------------------------------------------------#

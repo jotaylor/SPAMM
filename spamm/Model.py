@@ -35,17 +35,7 @@ def prior(params, components):
         float: 
             The sum of the log priors for all components.
     """
-    total_ln_prior = 0.
-    current_index = 0
-
-    for component in components:
-        # Calculate the end index for the current component's parameters.
-        end_index = current_index + component.parameter_count
-
-        # Sum all ln_priors for the current component's parameters and add to the total.
-        total_ln_prior += sum(component.ln_priors(params=params[current_index:end_index]))
-
-        current_index = end_index
+    total_ln_prior = sum(map(lambda component: sum(component.ln_priors(params=params)), components))
 
     return total_ln_prior
 
@@ -151,24 +141,15 @@ def model_flux(params, data_spectrum, components):
     # Initialize the model spectrum flux
     model_spectrum_flux = np.zeros(len(data_spectrum.spectral_axis))
 
-    # Initialize the offset to the start of the params array
-    offset = 0
-
     for component in components:
-        # Extract parameters from full array for each component.
-        p = params[offset:offset + component.parameter_count]
 
-        # Add the flux of each component to the model spectrum, 
         # except for extinction
         if component.name != "Extinction":
-            component_flux = component.flux(spectrum=data_spectrum, params=p)
+            component_flux = component.flux(spectrum=data_spectrum, params=params)
             model_spectrum_flux += component_flux
         else:
-            extinction = component.extinction(spectrum=data_spectrum, params=p)
+            extinction = component.extinction(spectrum=data_spectrum, params=params)
             model_spectrum_flux *= extinction
-
-        # Move the offset by the number of parameters for this component
-        offset += component.parameter_count
 
     return model_spectrum_flux
 
@@ -238,6 +219,8 @@ class Model(object):
         self.downsample_data_if_needed = False
         self.upsample_components_if_needed = False
 
+        self.params = None
+
 # TODO: is this needed? vvvv
 
 #        self.reddening = None
@@ -264,7 +247,6 @@ class Model(object):
     #         SystemExit: 
     #             If the data spectrum has not been defined yet.
     #     """
-    #     print("MASK GETTER CALLED")
     #     if self.data_spectrum is None:
     #         print("Attempted to access the bad pixel mask before defining the spectrum.")
     #         sys.exit(1)
@@ -286,7 +268,6 @@ class Model(object):
     #         ValueError: If the new mask does not have the same length as the spectral axis
     #         of the data spectrum.
     #     """
-    #     print("MASK SETTER CALLED")
     #     self._mask = new_mask
 
 ###############################################################################
@@ -417,7 +398,8 @@ class Model(object):
         self.sampler = emcee.EnsembleSampler(nwalkers=n_walkers, 
                                              ndim=len(walkers_matrix[0]),
                                              log_prob_fn=wrapped_posterior,
-                                             pool=pool)
+                                             pool=pool,
+                                             parameter_names=self.model_parameter_names())
         self.sampler.run_mcmc(walkers_matrix, 
                               n_iterations, 
                               progress=True)
@@ -462,6 +444,20 @@ class Model(object):
         return param_vector
 
 ###############################################################################
+    # def model_parameter_names(self):
+    #         """
+    #         Constructs a list of parameter names for all components in the model.
+
+    #         Returns:
+    #             list: 
+    #                 Parameter names of all components.
+    #         """
+    #         param_names = {}
+    #         for component in self.components:
+    #             param_names[component.name] = component.model_parameter_names
+
+    #         print('param_names:', param_names)
+    #         return param_names
 
     def model_parameter_names(self):
         """

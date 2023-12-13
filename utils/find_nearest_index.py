@@ -30,5 +30,5 @@ def find_nearest_index(input_list, value):
         float (float): Index of value closest to input value from input_list.
     '''
     
-    idx = (np.abs(np.asarray(input_list, dtype = float)-value)).argmin()
+    idx = (np.abs(np.asarray(input_list, dtype = float) - value)).argmin()
     return idx

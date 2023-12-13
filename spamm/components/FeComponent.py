@@ -235,9 +235,9 @@ class FeComponent(Component):
         norm = []
 
         for i in range(1, len(self.fe_templ)+1):
-            norm.append(params[self.parameter_index("fe_norm_{0}".format(i))])
+            norm.append(params[f"fe_norm_{i}"])
         
-        width = params[self.parameter_index("fe_width")]
+        width = params["fe_width"]
 
         # Flat prior within the expected ranges.
         for i in range(len(self.fe_templ)):
@@ -272,10 +272,10 @@ class FeComponent(Component):
         norm_wl = spectrum.norm_wavelength
         c_kms = c.to("km/s").value
         log_norm_wl = np.log(norm_wl)
-        width = params[self.parameter_index("fe_width")]
+        width = params["fe_width"]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis)) 
         for i in range(len(self.fe_templ)):	
-            norm_i = params[i]
+            norm_i = params[f"fe_norm_{i+1}"]
         
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 

@@ -80,6 +80,8 @@ def create_bc(bc_params=None):
             - bc_lwidth
             - bc_logNe
     """
+    wl = bc_params["wl"]
+    del bc_params["wl"]
 
     if bc_params is None:
         bc_params = {"wl": WL}
@@ -92,19 +94,18 @@ def create_bc(bc_params=None):
         bc_params["bc_lwidth"] = draw_from_sample.gaussian(PARS["bc_lwidth_min"], PARS["bc_lwidth_max"])
         bc_params["bc_logNe"] = draw_from_sample.gaussian(PARS["bc_logNe_min"], PARS["bc_logNe_max"])
 
-    print("BC params: {}".format(bc_params))
     bc = BCComponent(BalmerContinuum=True, BalmerPseudocContinuum=True)
     # Make a Spectrum object with dummy flux and flux error
-    spectrum = Spectrum(bc_params["wl"], bc_params["wl"], bc_params["wl"])
+    spectrum = Spectrum(wl, wl, wl)
     bc.initialize(spectrum)
-    comp_params = [bc_params[x] for x in ["bc_norm", "bc_Te", "bc_tauBE", "bc_loffset", "bc_lwidth", "bc_logNe"]]
-    bc_flux = BCComponent.flux(bc, spectrum, comp_params)
+    #comp_params = {x: bc_params[x] for x in ["bc_norm", "bc_Te", "bc_tauBE", "bc_loffset", "bc_lwidth", "bc_logNe"]}
+    bc_flux = BCComponent.flux(bc, spectrum, bc_params)
     bc_err = bc_flux * 0.05
 
 #    pl.plot(bc_params["wl"], bc_flux)
 #    pl.savefig("bc_data.png")
 #    this = input("press enter")
 
-    return bc_params["wl"], bc_flux, bc_err, bc_params
+    return wl, bc_flux, bc_err, bc_params
 
 #-----------------------------------------------------------------------------#

@@ -32,24 +32,6 @@ class Component(ABC):
         self.data_wavelength_grid = None
         self.interpolated_flux = None # based on data, defined in initialize()
 
-    def parameter_index(self, parameter_name):
-        '''
-        Returns the index of the given parameter in the model_parameter_names list.
-
-        This method uses the index method of the list to find the first occurrence of the given parameter name. If the parameter name is not found in the list, it returns None.
-
-        Args:
-            parameter_name (str): The name of the parameter to find.
-
-        Returns:
-            int or None: The index of the parameter in the model_parameter_names list, or None if the parameter is not found.
-        '''
-
-        try:
-            return self.model_parameter_names.index(parameter_name)
-        except ValueError:
-            return None
-
     @property
     @abstractmethod
     def is_analytic(self):

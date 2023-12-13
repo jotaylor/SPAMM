@@ -17,7 +17,7 @@ from utils.mask_utils import bool_mask
 from spamm.analysis import make_plots_from_pickle
 from spamm.Spectrum import Spectrum
 from spamm.Model import Model
-from spamm.components.NuclearContinuumComponent import NuclearContinuumComponent
+from spamm.components.PowerLawComponent import NuclearContinuumComponent
 from spamm.components.HostGalaxyComponent import HostGalaxyComponent
 from spamm.components.FeComponent import FeComponent
 from spamm.components.BalmerContinuumCombined import BalmerCombined
@@ -25,7 +25,7 @@ from spamm.components.NarrowComponent import NarrowComponent
 #from spamm.components.ReddeningLaw import Extinction
 
 # List of accepted component names for the model
-ACCEPTED_COMPS = ["PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
+ACCEPTED_COMPS = ["PL", "FE", "HG", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", "MW_EXT", "AGN_EXT", "LMC_EXT"]
 
 ###############################################################################
 
@@ -37,7 +37,7 @@ def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walker
     Args:
         complist (list):
             A list of components to model. Accepted component names are: 
-            "PL", "FE", "HOST", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", 
+            "PL", "FE", "HG", "BC", "BPC", "NEL", "CALZETTI_EXT", "SMC_EXT", 
             "MW_EXT", "AGN_EXT", "LMC_EXT".
         inspectrum (spamm.Spectrum, specutils.Spectrum1D, or tuple): 
             The input spectrum to model. If a tuple, it should be in the format 
@@ -118,15 +118,14 @@ def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walker
     # Add each component to the model's components if it should be included in the model.
     if components["PL"]:
         is_broken = comp_params.get("broken_pl", False)
-
-        nuclear_comp = NuclearContinuumComponent(broken=is_broken, pars=pars["nuclear_continuum"])
+        nuclear_comp = NuclearContinuumComponent(pars=pars["nuclear_continuum"], broken=is_broken)
         model.components.append(nuclear_comp)
 
     if components["FE"]:
         fe_comp = FeComponent(pars=pars["fe_forest"])
         model.components.append(fe_comp)
 
-    if components["HOST"]:
+    if components["HG"]:
         host_galaxy_comp = HostGalaxyComponent(pars=pars["host_galaxy"])
         model.components.append(host_galaxy_comp)
 
@@ -164,7 +163,6 @@ def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walker
     else:
         boolmask = None
 
-    # Add the data spectrum to the model
     model.data_spectrum = spectrum
     model.mask = boolmask
 
@@ -179,7 +177,7 @@ def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walker
                    n_iterations=n_iterations,
                    parallel=parallel)
     
-    print(f"Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
+    print(f"[SPAMM]: Mean acceptance fraction: {np.mean(model.sampler.acceptance_fraction):.3f}")
 
     # Save the model and component parameters to a pickle file
     p_data = {"model": model, "comp_params": comp_params}
@@ -213,14 +211,14 @@ def spamm(complist, inspectrum, redshift=0.0, mask=None, par_file=None, n_walker
     # Save the model and component parameters to a gzipped pickle file
     with gzip.open(pname, "wb") as model_output:
         model_output.write(pickle.dumps(p_data))
-        print(f"Saved pickle file {pname}")
+        print(f"[SPAMM]: Saved pickle file: {pname}")
 
     # Generate plots from the saved pickle file
     make_plots_from_pickle(pname, outdir)
 
     # Calculate and print the total execution time
     end_time = timeit.default_timer()
-    print(f"Execution time: {(end_time - start_time):.3f} seconds")
+    print(f"[SPAMM]: Execution time: {(end_time - start_time):.3f} seconds")
 
     return p_data
 

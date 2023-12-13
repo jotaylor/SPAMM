@@ -65,20 +65,20 @@ class NarrowComponent(Component):
     def ln_priors(self, params):
         ln_priors = []
 
-        width = params[self.parameter_index('width')]
+        width = params['width']
         if self.width_min < width < self.width_max:
             ln_priors.append(0.)
         else:
             ln_priors.append(-np.inf)
         
         for i in range(len(self.wavelengths)):
-            amp = params[self.parameter_index(f'amp_{i+1}')]
+            amp = params[f'amp_{i+1}']
             if self.amp_min < amp < self.amp_max:
                 ln_priors.append(0.)
             else:
                 ln_priors.append(-np.inf)
             
-            center = params[self.parameter_index(f'center_{i+1}')]
+            center = params[f'center_{i+1}']
             if self.center_size[i][0] < center < self.center_size[i][1]:
                 ln_priors.append(0.)
             else:
@@ -103,10 +103,10 @@ class NarrowComponent(Component):
             f"The wrong number of indices were provided: {params}"
         
         total_flux = np.zeros(len(spectrum.spectral_axis))
-        width = params[self.parameter_index('width')]
+        width = params['width']
         for i in range(len(self.wavelengths)):
-            amp = params[self.parameter_index(f'amp_{i+1}')]
-            center = params[self.parameter_index(f'center_{i+1}')]
+            amp = params[f'amp_{i+1}']
+            center = params[f'center_{i+1}']
             gaussian = Gaussian1D(amplitude=amp, mean=center, stddev=width)
             total_flux += gaussian(spectrum.spectral_axis)
         return total_flux

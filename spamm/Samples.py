@@ -122,6 +122,7 @@ def read_pickle(pname):
     
     model = p_data["model"]
     params = p_data["comp_params"]
+
     if pname == "model_20180627_1534.pickle.gz":
         params = {'fe_norm_2': 3.5356725072091589e-15, 
                   'fe_norm_3': 8.9351374726858118e-15, 

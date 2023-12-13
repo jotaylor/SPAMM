@@ -51,6 +51,8 @@ class BalmerCombined(Component):
         self.name = "Balmer"
         self.coeff = pickle.load(open('../data/SH95recombcoeff/coeff.interpers.pickle','rb'), encoding="latin1")
 
+        #
+
         # parameters for the continuum
         self.model_parameter_names.append("bc_norm")
         self.model_parameter_names.append("bc_Te")
@@ -88,13 +90,13 @@ class BalmerCombined(Component):
         self.BC = BalmerContinuum
         self.BpC = BalmerPseudocContinuum
         
-#-----------------------------------------------------------------------------#
+###############################################################################
             
     @property
     def is_analytic(self):
         return True
     
-#-----------------------------------------------------------------------------#
+###############################################################################
 
     def initial_values(self, spectrum=None):
         """
@@ -137,7 +139,7 @@ class BalmerCombined(Component):
 
         return [normalization_init, Te_init, tauBE_init, loffset_init, lwidth_init, logNe_init] #,lscale_init]
 
-#-----------------------------------------------------------------------------#
+###############################################################################
 
     def ln_priors(self, params):
         """
@@ -158,13 +160,13 @@ class BalmerCombined(Component):
         ln_priors = list()
 
         # Extract the parameters from the input list using their respective indices
-        normalization = params[self.parameter_index("bc_norm")]
-        Te            = params[self.parameter_index("bc_Te")]
-        tauBE         = params[self.parameter_index("bc_tauBE")]
-        loffset       = params[self.parameter_index("bc_loffset")]
-        lwidth        = params[self.parameter_index("bc_lwidth")]
-        logNe         = params[self.parameter_index("bc_logNe")]
-#        lscale        = params[self.parameter_index("lscale")]
+        normalization = params["bc_norm"]
+        Te            = params["bc_Te"]
+        tauBE         = params["bc_tauBE"]
+        loffset       = params["bc_loffset"]
+        lwidth        = params["bc_lwidth"]
+        logNe         = params["bc_logNe"]
+#        lscale        = params["lscale"]
         
         # Check each parameter against its allowed range
         # If a parameter is within its range, append 0 to ln_priors (since ln(1) = 0)
@@ -207,10 +209,9 @@ class BalmerCombined(Component):
         # Return the list of natural logarithm of priors
         return ln_priors
         
-#-----------------------------------------------------------------------------#
+###############################################################################
     
     #TODO add convolution function to utils
-    
     def log_conv(self, wave, flux, line_width):
         """
         Perform convolution in log space. 
@@ -265,7 +266,7 @@ class BalmerCombined(Component):
         # Return the convolved spectrum
         return rebinned_flux_conv
         
-#-----------------------------------------------------------------------------#
+###############################################################################
     
     def balmerseries(self, line_orders):
         """
@@ -282,7 +283,7 @@ class BalmerCombined(Component):
         return 1. / ilambda
     
     
-#-----------------------------------------------------------------------------#
+###############################################################################
     
     def balmer_ratio(self, n_e, line_orders, T): # 
         """
@@ -314,7 +315,8 @@ class BalmerCombined(Component):
                 flux_ratios[i - minline] = flux_ratios[i-minline-1]*np.exp(E0*(1./i**2-1./(i-1)**2)/(k*T))
         return flux_ratios
     
-#-----------------------------------------------------------------------------#
+###############################################################################
+
     #@profile
     def makelines(self, sp_wavel, T, n_e, shift, width):
         """
@@ -325,11 +327,10 @@ class BalmerCombined(Component):
             shift (int or float): Offset from expected Balmer wavelengths.
             width (int or float): Width of emission line. 
         """
-
         line_orders = np.arange(self.inputpars["bc_lines_min"], self.inputpars["bc_lines_max"]) 
         lcenter = self.balmerseries(line_orders)
     
-        lcenter -= shift*lcenter
+        lcenter -= shift * lcenter
         lcenter_reshaped = lcenter.reshape(lcenter.size, 1)
         LL = sp_wavel - lcenter_reshaped #(is this simply x-x0)
         lwidth = width * lcenter_reshaped
@@ -344,166 +345,155 @@ class BalmerCombined(Component):
     
         lflux = self.balmer_ratio(n_e, line_orders, T)
 
-        #scale = np.repeat(lflux.reshape(lflux.size,1), lines.shape[1], axis=1)
         scale = lflux[:, np.newaxis]
 
         lines *= scale
     
-        balmer_lines = np.sum(lines,axis = 0)
+        balmer_lines = np.sum(lines, axis = 0)
     
         return balmer_lines
     
+###############################################################################
 
-       
-#-----------------------------------------------------------------------------#
-    
-    def BpC_flux(self, spectrum=None, params=None):
-        """
-        Analytic model of the high-order Balmer lines, making up the Pseudo continuum near 3666 A.
-    
-        Line profiles are Gaussians (for now).  The line ratios are fixed to Storey &^ Hummer 1995,
-        case B, n_e = 10^10 cm^-3.
-        
-        This component has 3 parameters:
-        
-        parameter1 : The flux normalization near the Balmer Edge lambda = 3666 A, F(3666)
-        parameter4 : A shift of the line centroids
-        parameter5 : The width of the Gaussians
-        parameter6 : The log of the electron density
-        
-        note that all constants, and the units, are absorbed in the
-        parameter F(3656 A).  
-        
-        priors:
-        p1 :  Flat, between 0 and the observed flux F(3656).
-        p4 :  Determined from Hbeta, if applicable.
-        p5 :  Determined from Hbeta, if applicable.
-        p6 :  Flat between 2 and 14.
+    def flux(self, spectrum, params):
+            """
+            This method implements an approximate model of the Balmer Continuum (BC)
+            based on the works of Grandi et al. (1982) and Kovacevic & Popovic (2013).
+
+            The model is defined as follows:
+
+            F(lam) = Sum_i=2^400 G_i(3646), for lam > 3646 Å
+                   = F_G82(lam), for lam ≤ 3646 Å
+
+            where:
+            - F(lam) is the flux at wavelength lam.
+            - G_i(lam) is the Gaussian function for the i-th line.
+            - F_G82(lam) is the flux at wavelength lam according to the Grandi et al. (1982) model.
+
+            F_G82(lam) = F_BaC * B_lam(T_e) * (1 - e^-tau(lam)), for lam <= 3646 Å
+
+            where:
+            - F_BaC is the estimate of the Balmer continuum flux at the Balmer edge.
+            - B_lam(T_e) is the Planck function at the electron temperature T_e.
+            - tau(lam) is the optical depth at wavelength lam.
+
+            The optical depth tau(lam) is defined as:
+
+            tau(lam) = tau_BE * (lam_BE / lam)^-3
+
+            where:
+            - tau_BE is the optical depth at the Balmer edge lambda = 3646 Å.
+            - lam_BE = 3646 Å is the wavelength of the Balmer edge.
+
+            The Balmer continuum flux F_BaC is estimated as:
+
+            F_BaC = Sum_i=6^400 G_i(3646) / F_G82(3646)
+
+            where:
+            - G_i(lam) = I_i * e^-[ (lam - lam_i - d*lam_i) / W_D ]^2 is the Gaussian function for the i-th line.
+            - I_i is the relative intensity.
+            - lam_i is the central wavelength.
+            - d is the shift of the Gaussian relative to lam_i (d = Delta_lam/lam_i).
+            - W_D is the Doppler width.
+
+            Args:
+                spectrum (Spectrum, optional): The spectrum for which to estimate the flux. 
+                    If not provided, the method will use the spectrum currently associated 
+                    with the component.
+                params (list, optional): The parameters to use for the flux estimation. 
+                    If not provided, the method will use the current parameters of the component.
+
+            Returns:
+                numpy.ndarray: The estimated flux for this component.
+
+            Note:
+                All constants, and the units, are absorbed in the
+                parameter F_BaC. To implement this appropriately, the
+                Planck function is normalized at 3646 Å, so that F_BaC
+                actually represents the flux at this wavelength.
+
+            Parameters:
+                F_BaC    : The flux normalization at the Balmer Edge lambda = 3646 Å (erg cm-2 s-1 AA-1)
+                T_e      : The electron temperature T_e for the Planck function (K)
+                tau_BE   : The optical depth at the Balmer edge
+                d        : A shift of the line centroids (km/s)
+                W_D      : The width of the Gaussians (km/s)
+                log(n_e) : Logarithm of the electron density
+
+            Priors:
+                F_BaC    : Flat between 0 and the maximum flux
+                T_e      : Flat between 5000 and 20000 Kelvin
+                tau_BE   : Flat between 0.1 and 2.0
+                d        : Determined from H_beta, if applicable
+                W_D      : Determined from H_beta, if applicable
+                log(n_e) : Flat between 2 and 9
+            """
+            wave = spectrum.spectral_axis
+
+            # Extract the parameters
+            norm       = params["bc_norm"]    # F_BaC
+            Te         = params["bc_Te"]      # T_e
+            tauBE      = params["bc_tauBE"]   # tau_BE
+            loffset    = params["bc_loffset"] # d
+            lwidth     = params["bc_lwidth"]  # W_D
+            logNe      = params["bc_logNe"]   # log(n_e)
+
+            # Wavelength at which Balmer components merge.
+            edge_wave = balmer_edge * (1 - loffset/c_kms)
+
+            # Find the index of the Balmer edge wavelength in the spectral axis
+            edge_index = find_nearest_index(wave, edge_wave)
+
+            def BC_flux():
+                # TODO: Replace astropy's blackbody function with our own for speed. Attaching
+                # units to the temperature causes surprising slowdowns over time.
+                # Create a blackbody model with the temperature Te
+                blackbody_model = BlackBody(temperature=Te*u.K)
+
+                blackbody = blackbody_model(wave)
+
+                # Calculate optical depth and absorption
+                tau = tauBE * (balmer_edge / wave)**-3.0
+                absorption = 1 - np.exp(-tau)
+
+                # Calculate the Balmer continuum flux
+                bc_flux = absorption * blackbody
+
+                # The convolution with `log_conv` approximates the aggregate effect of high-order Balmer lines on 
+                # the Balmer continuum near 3646 Å. Rather than summing the contributions of each line, which is 
+                # computationally demanding, we apply a Gaussian broadening in log-wavelength space. This broadening 
+                # mimics the blending of numerous Balmer transitions that cannot be resolved individually at the 
+                # Balmer edge due to their close spacing and the Doppler broadening effect. The convolution parameter 
+                # 'lwidth/c_kms' accounts for the velocity dispersion of the emitting gas. The below line is an attempt
+                # at approximating the term `Sum_i=6^400 G_i(3646)` in eq. (7) in Kovacevic & Popovic (2013):
+                bc_flux = self.log_conv(wave, bc_flux, lwidth/c_kms)
+
+                # Normalize the Balmer continuum flux at the Balmer edge
+                flux_at_edge = bc_flux[edge_index]
+                bc_flux[wave > wave[edge_index]] = 0.
+                bc_flux *= norm / flux_at_edge
+
+                return bc_flux
+
+            def BpC_flux():
+                n_e = 10.**logNe
+                bpc_flux = self.makelines(wave, Te, n_e, loffset/c_kms, lwidth/c_kms)
                 
-        note that all constants, and the units, are absorbed in the
-        parameter F(3656 A).  
-        """
-        normalization = params[self.parameter_index("bc_norm")]
-        Te            = params[self.parameter_index("bc_Te")]
-        tauBE         = params[self.parameter_index("bc_tauBE")]
-        loffset       = params[self.parameter_index("bc_loffset")]
-        lwidth        = params[self.parameter_index("bc_lwidth")]
-        logNe         = params[self.parameter_index("bc_logNe")]
-#        lscale         = params[self.parameter_index("lscale")]
-    
-        #c_kms = c.to("km/s")
-        edge_wl = balmer_edge*(1 - loffset/c_kms)
+                flux_at_edge = bpc_flux[edge_index]
+                bpc_flux[wave <= wave[edge_index]] = 0
+                bpc_flux *= norm / flux_at_edge
         
-        n_e =10.**logNe
-        bpc_flux = self.makelines(spectrum.spectral_axis, 
-                                  Te,
-                                  n_e, 
-                                  loffset/c_kms, 
-                                  lwidth/c_kms)
-                 
-        
-        norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
-        
-        fnorm = bpc_flux[norm_index]
-        bpc_flux[spectrum.spectral_axis <= spectrum.spectral_axis[norm_index]] = 0
-        bpc_flux *= normalization/fnorm
-#        bpc_flux *= lscale
-    
-        return bpc_flux
-    
-#-----------------------------------------------------------------------------#
-    
-    def BC_flux(self, spectrum=None, params=None):
-        """
-        Analytic model of the BalmerContinuum (BC) based on Grandi et
-        al. (1982) and Kovacevic & Popovic (2013).
-    
-        F(lambda) = F(3646 A) * B(T_e) * (1 - e^-tau(lambda))
-        tau(lambda) = tau(3646) * (lambda/3646)^3
-    
-        This component has 5 parameters:
-    
-        parameter1 : The flux normalization at the Balmer Edge lambda = 3646 A, F(3646)
-        parameter2 : The electron temperture T_e for the Planck function B(T_e)
-        parameter3 : The optical depth at the Balmer edge, tau(3646)
-        parameter4 : A shift of the line centroids (km/s)
-        parameter5 : The width of the Gaussians (km/s)
-    
-    
-        note that all constants, and the units, are absorbed in the
-        parameter F(3646 A).  To impliment this appropriately, the
-        planck function is normalized at 3646 A, so that F(3646)
-        actually represents the flux at this wavelength.
-    
-        priors:
-        p1 :  Flat between 0 and the measured flux at 3466 A.
-        p2 :  Flat between 5 000 and 20 000 Kelvin
-        p3 :  Flat between 0.1 and 2.0
-        p4 :  Determined from Hbeta, if applicable.
-        p5 :  Determined from Hbeta, if applicable.            
-        """
-        #get the parameters
-        normalization = params[self.parameter_index("bc_norm")]
-        Te            = params[self.parameter_index("bc_Te")]
-        tauBE         = params[self.parameter_index("bc_tauBE")]
-        loffset       = params[self.parameter_index("bc_loffset")]
-        lwidth        = params[self.parameter_index("bc_lwidth")]
-        #logNe         = params[self.parameter_index("bc_logNe")]
-        
-        #c_kms = c.to("km/s")
+                return bpc_flux
 
-        # Wavelength at which Balmer components merge.
-        edge_wl = balmer_edge*(1 - loffset/c_kms)
+            if self.BC and self.BpC:
+                flux_BC = BC_flux()
+                flux_BpC = BpC_flux()
+                flux_est = flux_BC + flux_BpC
 
-    #TODO need WL as quantity objects for better astropy functionality
-        # Create a blackbody model with the temperature Te
-        blackbody_model = BlackBody(temperature=Te*u.K)
-
-        # Evaluate the model at the wavelengths in spectrum.spectral_axis
-        blackbody = blackbody_model(spectrum.spectral_axis)
-
-        # Calculates [1 - e^(-tau)] (optically-thin emitting slab)
-        # Assumes angstroms
-        tau = tauBE*(spectrum.spectral_axis / balmer_edge)**3
-        absorption = 1 - np.exp(-tau)
-        
-        bc_flux = absorption * blackbody
-        bc_flux = self.log_conv(spectrum.spectral_axis, bc_flux, lwidth/c_kms)
-    
-        norm_index = find_nearest_index(spectrum.spectral_axis, edge_wl) 
-        fnorm = bc_flux[norm_index]
-        bc_flux[spectrum.spectral_axis > spectrum.spectral_axis[norm_index]] = 0.
-        bc_flux *= normalization/fnorm
-        
-        return bc_flux
-    
-
-    
-#-----------------------------------------------------------------------------#
-
-    
-    def flux(self, spectrum=None, params=None):
-        """
-        Returns the flux for this component for a given wavelength grid
-        and parameters. 
-        """
-        if self.BC and self.BpC:
-            #start_time = timeit.default_timer()
-            flux_BC = self.BC_flux(spectrum=spectrum, params=params)
-            #end_time = timeit.default_timer()
-            #print(f"Execution time (BC): {end_time - start_time} seconds")
-
-            #start_time = timeit.default_timer()
-            flux_BpC = self.BpC_flux(spectrum=spectrum, params=params)
-            #end_time = timeit.default_timer()
-            #print(f"Execution tim (BpC): {end_time - start_time} seconds")
-
-            flux_est = flux_BC + flux_BpC
-
-        else:
-            if self.BC:
-                flux_est = self.BC_flux(spectrum=spectrum, params=params)
-            if self.BpC:
-                flux_est = self.BpC_flux(spectrum=spectrum, params=params)
-                
-        return np.array(flux_est)
+            else:
+                if self.BC:
+                    flux_est = BC_flux()
+                if self.BpC:
+                    flux_est = BpC_flux()
+                    
+            return flux_est

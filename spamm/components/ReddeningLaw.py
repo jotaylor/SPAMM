@@ -175,7 +175,7 @@ class Extinction(Component):
         ln_priors = list()
         
         #get the parameters
-        EBV = params[self.parameter_index("E(B-V)")]
+        EBV = params["E(B-V)"]
         
         #Flat priors, appended in order
         if self.EBV_min < EBV < self.EBV_max:
@@ -195,7 +195,7 @@ class Extinction(Component):
         
     
     def extinction(self, spectrum=None, params=None):
-        EBV = params[self.parameter_index("E(B-V)")]
+        EBV = params["E(B-V)"]
         parameters = [EBV]
         if spectrum is None:
             raise Exception("Need a data spectrum")

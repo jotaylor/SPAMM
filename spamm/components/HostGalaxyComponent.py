@@ -51,11 +51,14 @@ class HostGalaxyComponent(Component):
     def __init__(self, pars=None):
         super(HostGalaxyComponent, self).__init__()
 
+        self.name = "HostGalaxy"
+
         if pars is None:
             self.inputpars = parse_pars()["host_galaxy"]
         else:
             self.inputpars = pars
         
+        self.no_templates = self.inputpars["hg_no_templates"]
         self.load_templates()
 
         self.model_parameter_names = [f"hg_norm_{x}" for x in range(1, len(self.host_gal)+1)]
@@ -63,7 +66,6 @@ class HostGalaxyComponent(Component):
 
         self.interp_host = [] 
         self.interp_host_norm_flux = []
-        self.name = "HostGalaxy"
 
         self.norm_min = self.inputpars["hg_norm_min"]
         self.norm_max = self.inputpars["hg_norm_max"]
@@ -94,6 +96,10 @@ class HostGalaxyComponent(Component):
         """Read in all of the host galaxy models."""
 
         template_list = glob.glob(os.path.join(self.inputpars["hg_models"], "*"))
+
+        if self.no_templates is not None:
+            template_list = template_list[:self.no_templates]
+
         assert len(template_list) != 0, \
         f"No host galaxy templates found in specified diretory {self.inputpars['hg_models']}"
     
@@ -225,9 +231,9 @@ class HostGalaxyComponent(Component):
         norm = []
         
         for i in range(1, len(self.host_gal)+1):
-            norm.append(params[self.parameter_index(f"hg_norm_{i}")])
+            norm.append(params[f"hg_norm_{i}"])
         
-        stellar_disp = params[self.parameter_index("hg_stellar_disp")]
+        stellar_disp = params["hg_stellar_disp"]
         
         # Flat prior within the expected ranges.
         for i in range(len(self.host_gal)):
@@ -279,15 +285,12 @@ class HostGalaxyComponent(Component):
         log_norm_wl = np.log(norm_wl)
 # TODO, check on handling of dispersions
 
-        # print("parameters:",  parameters)
-        # print(len(parameters), len(parameters))
-        # print("self.parameter_index('hg_stellar_disp')", self.parameter_index('hg_stellar_disp'))
-        stellar_disp = params[self.parameter_index("hg_stellar_disp")]
+        stellar_disp = params["hg_stellar_disp"]
         self.flux_arrays = np.zeros(len(spectrum.spectral_axis))
 
             
         for i in range(len(self.host_gal)):
-            norm_i = params[i]
+            norm_i = params[f"hg_norm_{i+1}"]
             # Want to smooth and convolve in log space, since 
             # d(log(lambda)) ~ dv/c and we can broaden based on a constant 
             # velocity width. Compare smoothing (v/c) to bin size, and that 
