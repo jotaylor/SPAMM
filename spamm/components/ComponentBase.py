@@ -32,20 +32,11 @@ class Component(ABC):
         self.data_wavelength_grid = None
         self.interpolated_flux = None # based on data, defined in initialize()
 
-    def parameter_index(self, parameter_name):
-        ''' '''
-        for idx, pname in enumerate(self.model_parameter_names):
-            if parameter_name == pname:
-                return idx
-
-        return None
-
     @property
+    @abstractmethod
     def is_analytic(self):
-
-        # define this property in the subclass
-        print("Please define the 'is_analytic' property for the class '{0}'.".format(__class__.__name__))
-        sys.exit(1)
+        ''' Subclasses must provide an implementation of this property. '''
+        pass
 
     @property
     def parameter_count(self):
@@ -57,7 +48,7 @@ class Component(ABC):
 
     @abstractmethod
     def initial_values(self, spectrum=None):
-        ''' Return type must be a list (not an np.array. '''
+        ''' Return type must be a list (not an np.array) '''
         pass
 
     @abstractmethod
@@ -67,6 +58,7 @@ class Component(ABC):
 
         @param params
         '''
+        pass
 
     def native_wavelength_grid(self):
         '''
@@ -80,7 +72,7 @@ class Component(ABC):
             assert True, "The method 'native_wavelength_grid' must be defined for {0}.".format(self.__class__.__name__)
 
     @abstractmethod
-    def flux(self, wavelengths=None, parameters=None):
+    def flux(self, wavelengths=None, params=None):
         pass
 
     def grid_spacing(self):
@@ -91,21 +83,29 @@ class Component(ABC):
         else:
             return self.native_wavelength_grid[1] - self.native_wavelength_grid[0]
 
+    # TODO: also, shouldn't this be an abstract method? -oliver
     def initialize(self, data_spectrum=None):
-        ''' '''
+        '''
+        Initialize the component with a given data spectrum.
+
+        This method is intended to be overridden by subclasses. If a subclass does not provide its own implementation,
+        an AssertionError will be raised when this method is called.
+
+        Parameters:
+        data_spectrum (Spectrum): The data spectrum to initialize the component with. Default is None.
+
+        Raises:
+        AssertionError: If the component is not analytic and a subclass has not provided its own implementation.
+        '''
         # Check that the component wavelength grid is not more coarse than the data wavelength grid
-        if self.is_analytic:
-            pass
-        else:
+        assert self.is_analytic, f"The 'initialize' method of the component '{self.__class__.__name__}' must be defined."
 
-            assert True, "The 'initialize' method of the component '{0}' must be defined.".format(self.__class__.__name__)
+# TODO - what if component grid is not uniform? currently require that it be.
+            # self.data_wavelength_grid = np.array(data_spectrum.spectral_axis)
+            # data_delta_wavelength = data_spectrum.spectral_axis[1] - data_spectrum.spectral_axis[0]
+            # comp_delta_wavelength = self.native_wavelength_grid[1] - native_wavelength_grid[0]
 
-
-            #self.data_wavelength_grid = np.array(data_spectrum.spectral_axis)
-            #data_delta_wavelength = data_spectrum.spectral_axis[1] - data_spectrum.spectral_axis[0]
-            #comp_delta_wavelength = self.native_wavelength_grid[1] - native_wavelength_grid[0]
-
-            # TODO - what if component grid is not uniform? currently require that it be.
+            
             #if comp_delta_wavelength > data_delta_wavelength:
 
 

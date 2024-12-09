@@ -5,9 +5,9 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-build/
 develop-eggs/
 dist/
+/build
 downloads/
 eggs/
 .eggs/
@@ -37,7 +37,8 @@ docs/source/_templates
 documentation/tmp
 documentation/_build
 *pickle.gz
-examples/.ipynb_checkpoints/
+.ipynb*
+experimentation/
 
 # Fortran
 *.f90

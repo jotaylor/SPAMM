@@ -1,0 +1,190 @@
+
+
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+
+	
+
+# !!!!!!!!!!!!!!!!!!!!!!!
+# !!!!    WARNING    !!!!
+# !!!!!!!!!!!!!!!!!!!!!!!
+# PyYAML resolves scientific notation numbers as strings-
+# e.g. 1.6e3 is interpreted as '1.6e3', not 1600. These numbers should
+# be expanded (see bc_Te_max)
+
+# Basic Parameters ##
+# Units MUST exactly match astropy.units counterparts
+# http://docs.astropy.org/en/stable/units/
+global:
+    flux_unit: "erg cm-2 s-1 AA-1"
+    wl_unit: "AA"
+
+emission_lines:
+    boxcar_width: 5
+    narrow_width_min: 100. # km/s
+    narrow_width_max: 1000. # km/s
+    broad_width_min: 1200. # km/s
+    broad_width_max: 10000. # km/s
+    narrow_amp_min: 0.
+    narrow_amp_max: "max_flux"
+    broad_amp_min: 0
+    broad_amp_max: "max_flux"
+    loc_size: 15
+
+## Host Galaxy ##
+host_galaxy:
+    boxcar_width: 5
+    hg_no_templates: 2
+    hg_models: "../Data/HostModels"
+    hg_norm_min: 0
+    hg_norm_max: "max_flux"
+    hg_stellar_disp_min: 30. # km/s. Must be dispersion, not FWHM
+    hg_stellar_disp_max: 500. # km/s. Must be dispersion, not FWHM
+    hg_template_stellar_disp: 0.0
+    hg_kernel_size_sigma: 10 # pixels
+
+## Boxcar width to use when calculating running mean ##
+boxcar_width: 5
+
+## PowerLawComponent parameters ##
+## WARNING: If using broken power law, need to have estimation of priors otherwise model cannot converge ##
+power_law:
+    boxcar_width: 5
+    broken_pl: False
+    pl_slope_min: -3
+    pl_slope_max: 3.
+    pl_norm_min: 0.
+    pl_norm_max: "max_flux"
+    pl_wave_break_min: "min_wl"
+    pl_wave_break_max: "max_wl"
+
+## Balmer Continuum ##
+balmer_continuum:
+    bc_line_type: "lorentzian" #or "gaussian"
+    bc_lines_min: 3. #km/s
+    bc_lines_max: 400. #km/s
+    bc_norm_min: 0.
+    bc_norm_max: "bcmax_flux" # Balmer Continuum max flux
+    bc_Te_min: 5000.
+    bc_Te_max: 20000.
+    bc_tauBE_min: 0.1
+    bc_tauBE_max: 2.
+    bc_loffset_min: -10.
+    bc_loffset_max: 10.
+    bc_lwidth_min: 100.
+    bc_lwidth_max: 10000.
+    bc_logNe_min: 2
+    bc_logNe_max: 9
+
+
+## Fe Component ##
+fe_forest:
+    boxcar_width: 10
+    fe_templates: "../Data/FeModels"
+    fe_template_width: 900. #km/s
+    fe_norm_min: 0.
+    fe_norm_max: "fnw" #max_flux or fnw
+    fe_width_min: 901. # km/s (FWHM)
+    fe_width_max: 10000. # km/s (FWHM)
+    fe_line_type: "gaussian" # or "lorentzian"
+    fe_kernel_size_sigma: 3 # pixels
+
+## Flux Conserving Binning ##
+rebin_spec: False
+
+## Testing ##
+testing:
+    wl_min: 1000
+    wl_max: 10000
+    wl_step: 0.5
+

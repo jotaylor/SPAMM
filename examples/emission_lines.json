@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Hbeta_4861",
+        "wavelength": 4861.32,
+        "is_broad": true,
+        "num_components": 1
+    },
+    {
+        "name": "[OIII]_5006",
+        "wavelength": 5006.84,
+        "is_broad": false,
+        "num_components": 1
+    }
+]

@@ -82,6 +82,8 @@ def create_fe(fe_params=None):
             - fe_width (in km/s)
             - fe_norm_{} (1,2,3 depending on number of templates)
     """
+    wl = fe_params["wl"]
+    del fe_params["wl"]
 
     if fe_params is None:
         fe_params = {"no_templates": 3, "wl": WL}
@@ -93,18 +95,17 @@ def create_fe(fe_params=None):
         sample = draw_from_sample.gaussian(PARS["fe_width_min"], PARS["fe_width_max"])
         fe_params["fe_width"] = sample
 
-    print("Fe params: {}".format(fe_params))
     fe = FeComponent()
     # Make a Spectrum object with dummy flux and flux error
-    spectrum = Spectrum(fe_params["wl"], fe_params["wl"], fe_params["wl"])
+    spectrum = Spectrum(wl, wl, wl)
     fe.initialize(spectrum)
-    comp_params = [fe_params["fe_norm_{}".format(x)] for x in range(1, fe_params["no_templates"]+1)] + [fe_params["fe_width"]]
-    fe_flux = FeComponent.flux(fe, spectrum, comp_params)
+    #comp_params = [fe_params["fe_norm_{}".format(x)] for x in range(1, fe_params["no_templates"]+1)] + [fe_params["fe_width"]]
+    fe_flux = FeComponent.flux(fe, spectrum, fe_params)
     fe_err = fe_flux * 0.05
 
 #    pl.errorbar(fe_params["wl"], fe_flux, fe_err)
 #    pl.savefig("fe_data.png")
 
-    return fe_params["wl"], fe_flux, fe_err, fe_params
+    return wl, fe_flux, fe_err, fe_params
 
 #-----------------------------------------------------------------------------#

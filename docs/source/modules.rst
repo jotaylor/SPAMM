@@ -4,6 +4,11 @@ Modules
 Core SPAMM Modules
 ------------------
 
+SPAMM
+~~~~~
+.. automodule:: spamm.run_spamm
+   :members:
+
 Spectrum
 ~~~~~~~~
 .. automodule:: spamm.Spectrum
@@ -11,34 +16,24 @@ Spectrum
 
 Model
 ~~~~~
-.. automodule:: spamm.Spectrum
-   :members:
-
-Analysis
-~~~~~~~~
-.. automodule:: spamm.Spectrum
+.. automodule:: spamm.Model
    :members:
 
 Spectral Components
 -------------------
-
-Component Base
-~~~~~~~~~~~~~~
-.. automodule:: spamm.components.ComponentBase
-   :members:
 
 Balmer Continuum
 ~~~~~~~~~~~~~~~~
 .. automodule:: spamm.components.BalmerContinuumCombined
    :members:
 
-Broad Lines
-~~~~~~~~~~~
-.. automodule:: spamm.components.BroadLineComponent
+Emission Lines
+~~~~~~~~~~~~~~
+.. automodule:: spamm.components.EmissionComponent
    :members:
 
-Iron Forest
-~~~~~~~~~~~
+Iron Component
+~~~~~~~~~~~~~~
 .. automodule:: spamm.components.FeComponent
    :members:
 
@@ -47,8 +42,9 @@ Host Galaxy
 .. automodule:: spamm.components.HostGalaxyComponent
    :members:
 
-Nuclear Continuum
-~~~~~~~~~~~~~~~~~
-.. automodule:: spamm.components.NuclearContinuumComponent
+Power Law Continuum
+~~~~~~~~~~~~~~~~~~~
+.. automodule:: spamm.components.PowerLawComponent
    :members:
+   :exclude-members: __init__
 

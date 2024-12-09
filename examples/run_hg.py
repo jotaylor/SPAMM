@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Test the Iron Component code. This code can be run from teh command line:
+Test the Host galaxy code. This code can be run from teh command line:
 > python test_fe.py --datafile /user/jotaylor/git/spamm//Data/FakeData/Iron_comp/fakeFe1_deg.dat
 --redshift 0.5
 
@@ -81,6 +81,8 @@ def create_hg(hg_params=None):
             - wl (wavelength range of HG model, redshift must be accounted for already)
             - hg_norm_{} (1,2,3 depending on number of templates)
     """
+    wl = hg_params["wl"]
+    del hg_params["wl"]
 
     if hg_params is None:
         hg_params = {"no_templates": 3, "wl": WL}
@@ -91,18 +93,14 @@ def create_hg(hg_params=None):
         hg_params["hg_norm_3"] = samples[2]
         hg_params["hg_stellar_disp"] = draw_from_sample.gaussian(PARS["hg_stellar_disp_min"], PARS["hg_stellar_disp_max"])
 
-    print("HG params: {}".format(hg_params))
     hg = HostGalaxyComponent()
     # Make a Spectrum object with dummy flux and flux error
-    spectrum = Spectrum(hg_params["wl"], hg_params["wl"], hg_params["wl"])
+    spectrum = Spectrum(wl, wl, wl)
+
     hg.initialize(spectrum)
-    comp_params = [hg_params["hg_norm_{}".format(x)] for x in range(1, hg_params["no_templates"]+1)] + [hg_params["hg_stellar_disp"]]
-    hg_flux = HostGalaxyComponent.flux(hg, spectrum, comp_params)
+    hg_flux = HostGalaxyComponent.flux(hg, spectrum, hg_params)
     hg_err = hg_flux * 0.05
-
-#    pl.errorbar(hg_params["wl"], hg_flux, hg_err)
-#    pl.savefig("hg_data.png")
-
-    return hg_params["wl"], hg_flux, hg_err, hg_params
+    
+    return wl, hg_flux, hg_err, hg_params
 
 #-----------------------------------------------------------------------------#

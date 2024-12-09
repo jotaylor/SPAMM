@@ -1,0 +1,9 @@
+*.py linguist-language=Python
+docs/* linguist-documentation
+data/* linguist-vendored
+templates/* linguist-vendored
+*.ps linguist-generated=true
+*.png linguist-generated=true
+*.pdf linguist-generated=true
+*.gz linguist-generated=true
+*.jpg linguist-generated=true
